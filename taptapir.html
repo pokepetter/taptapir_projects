@@ -96,40 +96,37 @@ else {
     }
 }
 
-function Entity(options=null) {
-    var that = Object.create(Entity.prototype)
-    that.el = document.createElement('button')
-    that.el.text_entity = document.createElement('text')
-    that.el.style.opacity = 1
-    that.el.appendChild(that.el.text_entity)
-    that.setTimeout_calls = {}
-    scene.appendChild(that.el)
-    that._enabled = true
+class Entity {
+    constructor(options=null) {
+        this.el = document.createElement('button')
+        this.el.text_entity = document.createElement('text')
+        this.el.style.opacity = 1
+        this.el.appendChild(this.el.text_entity)
+        this.setTimeout_calls = {}
+        scene.appendChild(this.el)
+        this._enabled = true
 
-    for (const [key, value] of Object.entries(options)) {
-        that[key] = value
+        for (const [key, value] of Object.entries(options)) {
+            this[key] = value
+        }
     }
-    return that
-}
-
-Entity.prototype =  {
-    get parent() {return this.el.parentElement},
+    get parent() {return this.el.parentElement}
     set parent(value) {
         return value.el.appendChild(this.el)
-    },
-    get children() {return this.el.children},
+    }
+    get children() {return this.el.children}
     set children(value) {
         for (const e of value) {
             e.parent = this
         }
-    },
-    get enabled() {return this._enabled},
+    }
+    get enabled() {return this._enabled}
     set enabled(value) {
         if (value) {this.el.style.visibility = 'visible'}
         else {this.el.style.visibility = 'hidden'}
         return this._enabled = value
-    },
-    get visible_self() {return this._visible_self},
+    }
+    get visible_self() {return this._visible_self}
     set visible_self(value) {
         if (!value) {
             this.color = 'rgba(0,0,0,0)'
@@ -140,129 +137,142 @@ Entity.prototype =  {
             this.text_color = 'white'
         }
         return this._visible_self = value
-    },
-    get color() {return this._color},
+    }
+    get color() {return this._color}
     set color(value) {
         this.el.style.backgroundColor = value
         return this._color = value
-    },
-    get scale_x() {return this._scale_x},
+    }
+    get scale_x() {return this._scale_x}
     set scale_x(value) {
         this.el.style.width = `${value*100}%`
         return this._scale_x = value
-    },
-    get scale_y() {return this._scale_y},
+    }
+    get scale_y() {return this._scale_y}
     set scale_y(value) {
         this.el.style.height = `${value*100}%`
         return this._scale_y = value
-    },
-    get scale() {return [this._scale_x, this._scale_y]},
+    }
+    get scale() {return [this._scale_x, this._scale_y]}
     set scale(value) {
         if (typeof value == "number") {value = [value, value]}
         this.scale_x = value[0]
         this.scale_y = value[1]
-    },
-    get x() {return this._x},
+    }
+    get x() {return this._x}
     set x(value) {
         this.el.style.left = `${50+(value*100)}%`
         return this._x = value
-    },
-    get y() {return this._y},
+    }
+    get y() {return this._y}
     set y(value) {
         this.el.style.top = `${50+(-value*100)}%`
         return this._y = value
-    },
-    get z() {return this._z},
+    }
+    get z() {return this._z}
     set z(value) {
         this.el.style.zIndex = -value
         return this._z = value
-    },
-    get xy() {return [this._x, this._y]},
+    }
+    get xy() {return [this._x, this._y]}
     set xy(value) {
         this.x = value[0]
         this.y = value[1]
         return true
-    },
-    get xyz() {return [this._x, this._y, this._z]},
+    }
+    get xyz() {return [this._x, this._y, this._z]}
     set xyz(value) {
         this.x = value[0]
         this.y = value[1]
         this.z = value[2]
         return true
-    },
-    get position() {return this.xyz},
+    }
+    get position() {return this.xyz}
     set position(value) {
         if (value.length == 2) {return this.xy = value}
         if (value.length == 3) {return this.xyz = value}
-    },
-    get origin() {return this._origin},
+    }
+    get origin() {return this._origin}
     set origin(value) {
         this.el.style.transform = `translate(${(-value[0]-.5)*100}%, ${(value[1]-.5)*100}%)`
         return this._origin = value
-    },
-    get texture() {return this.el.style.backgroundImage},
+    }
+    get texture() {return this.el.style.backgroundImage}
     set texture(value) {
-        return this.el.style.backgroundImage = `url('${value}.jpg'), url('${value}.png')`
-    },
-    get roundness() {return this._roundness},
+        var loaded = 0
+        var img = new Image();
+        img.src = value + '.jpg'
+        img.onload = function() {loaded += 1}
+        img.src = value + '.png'
+        img.onload = function() {loaded += 1}
+        if (loaded == 0) {  // if no texture is found, hide self
+            this.visible_self = false
+        }
+        this.el.style.backgroundImage = "url(" + img.src + ")";
+    }
+    get roundness() {return this._roundness}
     set roundness(value) {
-        this.el.style.borderRadius = `${value*100}%`
+        this.el.style.borderRadius = `${value*Math.min(this.el.clientWidth, this.el.clientHeight)}px`
         this._roundness = value
-    },
-    get text() {return this.el.text_entitytextContent},
+    }
+    get text() {return this.el.text_entitytextContent}
     set text(value) {
         return this.el.text_entity.textContent = value
-    },
-    get text_color() {return this.el.style.color},
+    }
+    get text_color() {return this.el.style.color}
     set text_color(value) {
         return this.el.style.color = value
-    },
-    get alpha() {return this.el.style.opacity; print(this.el.style.opacity)},
+    }
+    get alpha() {return this.el.style.opacity; print(this.el.style.opacity)}
     set alpha(value) {
         // print('set opac', value)
         this.el.style.opacity = value
         return this._alpha = value
-    },
-    get on_click() {return this._on_click},
+    }
+    get on_click() {return this._on_click}
     set on_click(value) {
         this.el.on_click = value
         if (value) {this.el.style.pointerEvents = 'auto'}
         else {this.el.style.pointerEvents = 'none'}
         return this._on_click = value
-    },
-}
+    }
 
-function animate(variable_name, target_value, duration=.1) {
-    // print('animate:', this, variable_name)
-    if (!this.enabled) {return false}
-    let entity = this
-    // stop ongoing animation of this varibale
-    if (variable_name in entity.setTimeout_calls) {
-        for (const id of entity.setTimeout_calls[variable_name]) {
-            clearTimeout(id)
-            // print('clear:', id)
+    animate(variable_name, target_value, duration=.1) {
+        // print('animate:', this, variable_name)
+        if (!this.enabled) {return false}
+        let entity = this
+        // stop ongoing animation of this varibale
+        if (variable_name in entity.setTimeout_calls) {
+            for (const id of entity.setTimeout_calls[variable_name]) {
+                clearTimeout(id)
+                // print('clear:', id)
+            }
+        }
+        entity.setTimeout_calls[variable_name] = []
+
+        for (let i=0; i<duration*60; i+=1) {
+            entity.setTimeout_calls[variable_name].push(
+                setTimeout(
+                    function () {
+                        if (!entity.enabled) {
+                            return false};
+                        entity[variable_name] = lerp(entity[variable_name], target_value, i/duration/60);
+                    },
+                    1000*i*1/60
+                )
+            )
         }
     }
-    entity.setTimeout_calls[variable_name] = []
-
-    for (let i=0; i<duration*60; i+=1) {
-        entity.setTimeout_calls[variable_name].push(
-            setTimeout(
-                function () {
-                    if (!entity.enabled) {
-                        return false};
-                    entity[variable_name] = lerp(entity[variable_name], target_value, i/duration/60);
-                },
-                1000*i*1/60
-            )
-        )
-    }
 }
-Entity.prototype.animate = animate
+
+
 
 function lerp(a, b, t) {
     // return a + (b - a) * t
     return a * (1-t)+b * t
+}
+function clamp(num, min, max) {
+  return num <= min ? min : num >= max ? max : num;
 }
 
 function handle_click(event) {
@@ -289,7 +299,7 @@ function StateHandler(states, fade=true) {
     that.states = states
     that.fade = fade
 
-    that.overlay = Entity({name:'overlay', color:'black', alpha:Number(fade), z:-1, scale:[1,aspect_ratio]})
+    that.overlay = new Entity({name:'overlay', color:'black', alpha:Number(fade), z:-1, scale:[1,aspect_ratio]})
 
     that['state'] = Object.keys(states)[0]
     return that
@@ -340,7 +350,7 @@ function Button(options) {
         }
     }
     // print(options)
-    return Entity(options)
+    return new Entity(options)
 }
 state_handler = StateHandler({
     // main_menu : b,
@@ -348,18 +358,49 @@ state_handler = StateHandler({
 })
 
 function Scene(name='', options=false) {
-    if (options) {
-        _entity = Entity(options)
+    settings = {visible_self:false}
+    for (const [key, value] of Object.entries(options)) {
+        settings[key] = value
     }
-    else {
-        _entity = Entity({})
-    }
+
+    _entity = new Entity(settings)
+    _entity.bg = new Entity({parent:_entity, scale_y:aspect_ratio})
+    _entity.bg.texture = name
     state_handler.states[name] = _entity
     return _entity
 }
 
 function goto_scene(scene_name) {
     state_handler.state = scene_name
+}
+class HealthBar extends Entity {
+    constructor(options=false) {
+        let settings = {min:0, max:100, color:'#222', scale:[.8,.05], y:.75, roundness:.25}
+        settings['default'] = settings['max']
+        for (const [key, value] of Object.entries(options)) {
+            if (key == 'bar_color') {continue}
+            print(key, value)
+            settings[key] = value
+        }
+        super(settings)
+        this.bar = new Entity({parent:this, origin:[-.5,0], x:-.5, roundness:.25, scale_x:.25, color:'lime'})
+
+        if (('bar_color' in options)) {
+            this.bar_color = settings['bar_color']
+        }
+
+        this.value = this.default
+
+    }
+
+    get value() {return this._value}
+    set value(value) {
+        value = clamp(value, this.min, this.max)
+        print('set value:', value)
+        this._value = value
+        this.bar.scale_x = value / this.max}
+    get bar_color() {return this.bar.color}
+    set bar_color(value) {this.bar.color = value}
 }
 
 
