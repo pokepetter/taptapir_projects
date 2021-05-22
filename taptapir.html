@@ -110,6 +110,11 @@ class Entity {
             this[key] = value
         }
     }
+    ontouchstart_handler(event) {
+        this.on_click()
+        event.preventDefault();
+    }
+
     get parent() {return this.el.parentElement}
     set parent(value) {
         return value.el.appendChild(this.el)
@@ -232,9 +237,18 @@ class Entity {
     get on_click() {return this._on_click}
     set on_click(value) {
         this.el.on_click = value
-        if (value) {this.el.style.pointerEvents = 'auto'}
+        if (value) {
+            this.el.style.pointerEvents = 'auto'
+            this.el.ontouchstart = this.ontouchstart_handler
+            this.el.addEventListener('mousedown', function handle_mouse_click() {
+                // let original_col = this.style.backgroundColor
+                // this.style.backgroundColor = 'CornflowerBlue'
+                // setTimeout(function () {this.style.backgroundColor = original_col}, 1000 * .1)
+                this.on_click()
+
+            })
+        }
         else {this.el.style.pointerEvents = 'none'}
-        return this._on_click = value
     }
 
     animate(variable_name, target_value, duration=.1) {
@@ -275,24 +289,6 @@ function clamp(num, min, max) {
   return num <= min ? min : num >= max ? max : num;
 }
 
-function handle_click(event) {
-    hits = document.elementsFromPoint(event.x, event.y)
-    if (!hits) {
-        return false
-    }
-    else {
-        if (!hits[0].on_click) {
-            return false
-        }
-        let original_col = hits[0].style.backgroundColor
-        hits[0].style.backgroundColor = 'CornflowerBlue'
-        setTimeout(function () {hits[0].style.backgroundColor = original_col}, 1000 * .1)
-
-        hits[0].on_click()
-        return hits[0]
-    }
-}
-document.addEventListener('mousedown', handle_click)
 
 function StateHandler(states, fade=true) {
     var that = Object.create(StateHandler.prototype)
