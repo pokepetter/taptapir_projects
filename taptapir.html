@@ -304,15 +304,12 @@ function StateHandler(states, fade=true) {
 StateHandler.prototype =  {
     get state() {return this._state},
     set state(value) {
-        if (this.fade) {
+        if (this.fade && (value != this._state)) {
             this.overlay.animate('alpha', 1, .1)
-            setTimeout(
-                () => {
-                    this.overlay.animate('alpha', 0, 1)
-                    this.hard_state = value
-                },
-                100
-            )
+            setTimeout(() => {
+                this.overlay.animate('alpha', 0, 1)
+                this.hard_state = value
+            }, 100)
         }
         else {
             this.hard_state = value
@@ -392,7 +389,7 @@ class HealthBar extends Entity {
     get value() {return this._value}
     set value(value) {
         value = clamp(value, this.min, this.max)
-        print('set value:', value)
+        // print('set value:', value)
         this._value = value
         this.bar.scale_x = value / this.max}
     get bar_color() {return this.bar.color}
