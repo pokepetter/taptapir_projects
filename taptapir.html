@@ -13,7 +13,12 @@
     button {
         width:100%; height:100%; position:absolute; top:50%; left:50%; will-change: transform;
         transform:translate(-50%, -50%); font-size:50; color:black; background-size: 100% 100%; padding:0; border-width:0px;
-        visibility: 'visible'; font-size:1v; display:inherit;
+        visibility: 'visible'; font-size:1v; display:inherit; image-rendering: pixelated;
+        background-blend-mode:multiply;
+        background-repeat:repeat;
+        /* background-attachment:fixed; */
+
+
         /* border-radius: 128px; border-style:solid; border-color: white; */
     }
     button:focus {
@@ -145,7 +150,13 @@ class Entity {
     }
     get color() {return this._color}
     set color(value) {
-        this.el.style.backgroundColor = value
+        if (!this.texture) {
+            this.el.style.backgroundColor = value
+        }
+        else {  // tint the image
+            this.el.style.backgroundImage = `linear-gradient(${value}, ${value}),` + this.texture_address
+        }
+
         return this._color = value
     }
     get scale_x() {return this._scale_x}
@@ -213,8 +224,22 @@ class Entity {
         if (loaded == 0) {  // if no texture is found, hide self
             this.visible_self = false
         }
-        this.el.style.backgroundImage = "url(" + img.src + ")";
+        this.texture_address = "url(" + img.src + ")"
+        this.el.style.backgroundImage = this.texture_address
     }
+    get tileset_size() {return this._tileset_size}
+    set tileset_size(value) {
+        this._tileset_size = value
+        this.el.style.backgroundSize = `${value[0]*100}% ${value[1]*100}%`
+    }
+    get tile() {return this._tile}
+    set tile(value) {
+        this._tile = value
+        // print('----', `${self._tileset_size[0]}-1) * ${value[0]} * 100)}% ${0/16}%`)
+        var x_val = (16-1)*value[0]*100
+        this.el.style.backgroundPosition = `${(16-1)*value[0]*100}% ${(16-1)*value[1]*100}%`
+    }
+
     get roundness() {return this._roundness}
     set roundness(value) {
         this.el.style.borderRadius = `${value*Math.min(this.el.clientWidth, this.el.clientHeight)}px`
@@ -288,6 +313,11 @@ function lerp(a, b, t) {
 function clamp(num, min, max) {
   return num <= min ? min : num >= max ? max : num;
 }
+function random_int(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 
 function StateHandler(states, fade=true) {
@@ -295,7 +325,7 @@ function StateHandler(states, fade=true) {
     that.states = states
     that.fade = fade
 
-    that.overlay = new Entity({name:'overlay', color:'black', alpha:Number(fade), z:-1, scale:[1,aspect_ratio]})
+    that.overlay = new Entity({name:'overlay', color:'black', alpha:0, z:-1, scale:[1,aspect_ratio]})
 
     that['state'] = Object.keys(states)[0]
     return that
