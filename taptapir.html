@@ -35,7 +35,7 @@
 
 </style>
 
-<body style="margin: 0;">
+<body style="margin: 0; background-color:'#111'">
     <div id="game" class="game">
         <div id="loading_text" style="position: absolute; top: 50%; left: 50%; width: 100%; color: white; font-family:monospace;
             transform: translate(-50%, -5%); text-align: center;">
@@ -100,6 +100,9 @@ else {
         game_window.style.height = `${height*scale}px`
     }
 }
+
+function set_window_color(value) {game_window.style.backgroundColor = value}
+function set_background_color(value) {document.body.style.backgroundColor = value}
 
 class Entity {
     constructor(options=null) {
