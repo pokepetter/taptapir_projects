@@ -1,6 +1,9 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="utf-8" />
+    <!-- <link rel="manifest" href="/manifest.json"> -->
+
     <title>snootboop.js</title>
 </head>
 <style>
@@ -10,18 +13,15 @@
         font-size: 5vh;
     }
 
-    button {
+    .entity {
         width:100%; height:100%; position:absolute; top:50%; left:50%; will-change: transform;
-        transform:translate(-50%, -50%); font-size:50; color:black; background-size: 100% 100%; padding:0; border-width:0px;
+        transform:translate(-50%, -50%); color:black; background-size: 100% 100%; padding:0; border-width:0px;
         visibility: 'visible'; font-size:1v; display:inherit; image-rendering: pixelated;
-        background-blend-mode:multiply;
+        background-color: 'red';
         background-repeat:repeat;
-        /* background-attachment:fixed; */
-
-
         /* border-radius: 128px; border-style:solid; border-color: white; */
     }
-    button:focus {
+    .entity:focus {
         outline: 0; -moz-outline-style: none;
     }
 
@@ -44,6 +44,7 @@
         powered by snootboop
         </div>
     </div>
+
 </body>
 <fullscreen_button id="fullscreen_button" onclick="enter_fullscreen()">&#x26F6;</fullscreen_button>
 
@@ -67,7 +68,8 @@ format = 'horizontal'
 format = 'vertical'
 
 document.getElementById('loading_text').remove();
-scene = document.createElement('button')
+scene = document.createElement('entity')
+scene.className = 'entity'
 if (format == 'vertical') { // make width=1
     scene.style.height = `${100}%`
     scene.style.height = `${9/16*100}%`
@@ -106,10 +108,11 @@ function set_background_color(value) {document.body.style.backgroundColor = valu
 
 class Entity {
     constructor(options=null) {
-        this.el = document.createElement('button')
-        this.el.text_entity = document.createElement('text')
+        this.el = document.createElement('entity')
+        this.el.className = 'entity'
+        // this.el.text_entity = document.createElement('text')
+        // this.el.appendChild(this.el.text_entity)
         this.el.style.opacity = 1
-        this.el.appendChild(this.el.text_entity)
         this.setTimeout_calls = {}
         scene.appendChild(this.el)
         this._enabled = true
@@ -153,13 +156,7 @@ class Entity {
     }
     get color() {return this._color}
     set color(value) {
-        if (!this.texture) {
-            this.el.style.backgroundColor = value
-        }
-        else {  // tint the image
-            this.el.style.backgroundImage = `linear-gradient(${value}, ${value}),` + this.texture_address
-        }
-
+        this.el.style.backgroundColor = value
         return this._color = value
     }
     get scale_x() {return this._scale_x}
@@ -264,11 +261,12 @@ class Entity {
     }
     get on_click() {return this._on_click}
     set on_click(value) {
-        this.el.on_click = value
+        this._on_click = value
+        // this.el.on_click = value
         if (value) {
             this.el.style.pointerEvents = 'auto'
             this.el.ontouchstart = this.ontouchstart_handler
-            this.el.addEventListener('mousedown', function handle_mouse_click() {
+            this.el.addEventListener('mousedown', () => {
                 // let original_col = this.style.backgroundColor
                 // this.style.backgroundColor = 'CornflowerBlue'
                 // setTimeout(function () {this.style.backgroundColor = original_col}, 1000 * .1)
@@ -429,7 +427,103 @@ class HealthBar extends Entity {
     set bar_color(value) {this.bar.color = value}
 }
 
+mouse_pressed = false
+mouse_moved = false
+document.addEventListener('mousedown', e => {
+    mouse_x = e.offsetX;
+    mouse_y = e.offsetY;
+    print(mouse_x, mouse_y)
+    mouse_pressed = true
+    mouse_moved = false
+})
+document.addEventListener('mouseup', e => {
+    mouse_pressed = false;
+    if(e.offsetX != mouse_x && e.offsetY != mouse_y) {
+        mouse_moved = true
+    }
+})
+// document.addEventListener('mousemove', e => {
+//     if (e.offsetX != mouse_x && e.offsetY != mouse_y) {
+//         mouse_moved = true
+//     }
+// })
+function range(n) {return Array(n).keys()}
+function Array_2d(w, h) {
+    var tiles = new Array(w)
+    for (var i = 0; i < tiles.length; i++) {
+        tiles[i] = new Array(h);
+    }
+    return tiles
+}
+
+function hex_to_rgb(hex) {
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+}
+palette = [
+    '#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8',
+    '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA'
+    ]
+let filter_code = ''
+for (i = 0; i < palette.length; i++) {
+    let rgb = hex_to_rgb(palette[i])
+    let r = rgb.r/255
+    let g = rgb.g/255
+    let b = rgb.b/255
+    let redToBlue = `${r**2.4} 0 0 0 0  ${g**2.4} 0 0 0 0  ${b**2.4} 0 0 0 0  0 0 0 1 0`;
+    filter_code += `
+        <svg xmlns="http://www.w3.org/2000/svg">
+            <filter id="tint_filter_${i}">
+                <feColorMatrix type="matrix" values="${redToBlue}" />
+            </filter>
+        </svg>
+    `
+}
+filters = document.createElement('div')
+game_window.appendChild(filters)
+filters.innerHTML = filter_code
+
+
+class TintableTile extends Entity {
+    get tint() {return this._tint}
+    set tint(value) {
+        this._tint = value
+        if (value < 16) {
+            this.el.style.filter = `url(#tint_filter_${value})`
+        }
+    }
+
+}
+
+// print('cccccccccccccccccc:', hsv(120, 1, 1))
+// const COLOR_NAMES = ['white', 'light_gray', 'gray', 'dark_gray', 'black', 'red', 'orange', 'yellow', 'lime', 'green', 'turquoise', 'cyan', 'azure', 'blue', 'violet', 'magenta', 'pink']
+// const ORIGINS = {'center', 'top', 'bottom', 'right', 'left', 'top_left', 'top_right', 'bottom_left', 'bottom_right'}
+//
+// function E(...args) {
+//     print('..args:', args)
+//     var data = {}
+//     for (const arg of args) {
+//         if (typeof arg === 'string') {
+//             // print('......')
+//             if (COLOR_NAMES.includes(arg)) {
+//                 data['color'] = arg
+//             }
+//         }
+//     }
+//     print('data:', data)
+// }
+//
+// E('Hack_square_64x64', 0, 0, .1,.1, 'yellow', 'top_left')
 
 </script>
 <script src="main.js"></script>
+<!-- <script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service_worker.js')
+    }
+</script> -->
 </html>
