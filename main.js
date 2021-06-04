@@ -87,6 +87,7 @@ for (let x = 0; x < tools.length; x++) {
 }
 tool_functions[0]()
 
+
 for (const x of range(w)) {
     for (const y of range(h)) {
         let e = new Entity({x:-.5 + (x/w), y:(.5*aspect_ratio) - (y/w),
@@ -99,26 +100,40 @@ for (const x of range(w)) {
             tileset_size:[16,16],
             // tile:[random_int(0,14), random_int(0,14)],
             tile:[0,0],
+            on_click : function() {
+                if (colorize_target == 'fg') {
+                    this.tint = selected_color
+                }
+                if (colorize_target == 'bg') {
+                    e.color = palette[selected_color]
+                }
+                skip = false
+            }
             })
-        e.on_click = function() {
-            if (colorize_target == 'fg') {
-                e.icon.tint = selected_color
-            }
-            if (colorize_target == 'bg') {
-                e.color = palette[selected_color]
-            }
-            skip = false
-        }
         tiles[x][y] = e
 
-        e.el.addEventListener('mouseenter', function() {
-            if (mouse_pressed && !skip) {
-                e.on_click()
-            }
-        });
     }
 }
 
+hovered_entity = null
+hovered_element = null
+document.addEventListener('touchmove', function(event) {event.preventDefault(); on_mouse_moved(event.touches[0])})
+document.addEventListener('mousemove', function(event) {event.preventDefault(); on_mouse_moved(event)})
+
+function on_mouse_moved(event) {
+    if (!mouse_pressed) {
+        return
+    }
+    element_hit = document.elementFromPoint(event.pageX - window.pageXOffset, event.pageY - window.pageYOffset);
+
+    if (element_hit != hovered_element && element_hit.entity_index) {
+        hovered_entity = entities[element_hit.entity_index]
+        // hovered_entity.on_mouse_enter()
+        if (mouse_pressed && hovered_entity.on_click) {
+            hovered_entity.on_click()
+        }
+    }
+};
 
 // tiles[w-1][h-1].on_click = function randomize() {
 //     for (const x of range(w)) {

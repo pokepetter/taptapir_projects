@@ -12,8 +12,8 @@
         pointer-events: none;
         font-size: 5vh;
     }
-
     .entity {
+        touch-action: none;
         width:100%; height:100%; position:absolute; top:50%; left:50%; will-change: transform;
         transform:translate(-50%, -50%); color:black; background-size: 100% 100%; padding:0; border-width:0px;
         visibility: 'visible'; font-size:1v; display:inherit; image-rendering: pixelated;
@@ -27,7 +27,7 @@
 
     .game {margin:auto; background-color: darkgreen; position: absolute; top: 50%; left: 50%;
         transform: translate(-50%, -50%); overflow: hidden; pointer-events: none; font-size:1vh;
-        width:100%; height:100%; outline: 0; box-shadow: 0
+        width:100%; height:100%; outline: 0; box-shadow: 0; touch-action: none;
     }
     fullscreen_button {padding: 4px 4px; width: 64px; height: 64px; background-color: #555; border-radius: .2em; border-width: 0px;
         text-decoration: none; color: white; font-size: 50.0px; z-index: 1; position: absolute; text-align: center; right: 0%;
@@ -106,10 +106,14 @@ else {
 function set_window_color(value) {game_window.style.backgroundColor = value}
 function set_background_color(value) {document.body.style.backgroundColor = value}
 
+entities = []
+
 class Entity {
     constructor(options=null) {
         this.el = document.createElement('entity')
         this.el.className = 'entity'
+        this.el.entity_index = entities.length
+        entities.push(this)
         // this.el.text_entity = document.createElement('text')
         // this.el.appendChild(this.el.text_entity)
         this.el.style.opacity = 1
@@ -120,10 +124,6 @@ class Entity {
         for (const [key, value] of Object.entries(options)) {
             this[key] = value
         }
-    }
-    ontouchstart_handler(event) {
-        this.on_click()
-        event.preventDefault();
     }
 
     get parent() {return this.el.parentElement}
@@ -262,17 +262,16 @@ class Entity {
     get on_click() {return this._on_click}
     set on_click(value) {
         this._on_click = value
-        // this.el.on_click = value
+    //     // this.el.entity = this
         if (value) {
             this.el.style.pointerEvents = 'auto'
-            this.el.ontouchstart = this.ontouchstart_handler
-            this.el.addEventListener('mousedown', () => {
-                // let original_col = this.style.backgroundColor
-                // this.style.backgroundColor = 'CornflowerBlue'
-                // setTimeout(function () {this.style.backgroundColor = original_col}, 1000 * .1)
-                this.on_click()
-
-            })
+    //         this.el.ontouchstart = e => {
+    //             e.preventDefault();
+    //             this.on_click()
+    //         }
+    //         this.el.addEventListener('mousedown', value)
+    //         this.el.addEventListener("touchstart", value);
+    //
         }
         else {this.el.style.pointerEvents = 'none'}
     }
@@ -428,25 +427,34 @@ class HealthBar extends Entity {
 }
 
 mouse_pressed = false
-mouse_moved = false
-document.addEventListener('mousedown', e => {
-    mouse_x = e.offsetX;
-    mouse_y = e.offsetY;
-    print(mouse_x, mouse_y)
+
+document.addEventListener('mousedown', function(e) {
+    e.preventDefault()
+    handle_mouse_click(e)
+})
+document.addEventListener('touchstart', function(e) {
+    e.preventDefault()
+    handle_mouse_click(e.touches[0])
+})
+function handle_mouse_click(e) {
     mouse_pressed = true
-    mouse_moved = false
-})
-document.addEventListener('mouseup', e => {
-    mouse_pressed = false;
-    if(e.offsetX != mouse_x && e.offsetY != mouse_y) {
-        mouse_moved = true
+    element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
+    if (element_hit && element_hit.entity_index && entities[element_hit.entity_index].on_click) {
+        entities[element_hit.entity_index].on_click()
     }
+}
+document.body.addEventListener('mouseup', function(e) {
+    e.preventDefault()
+    mouse_up()
 })
-// document.addEventListener('mousemove', e => {
-//     if (e.offsetX != mouse_x && e.offsetY != mouse_y) {
-//         mouse_moved = true
-//     }
-// })
+document.body.addEventListener('touchend', function(e) {
+    e.preventDefault()
+    mouse_up()
+})
+function mouse_up(e) {
+    mouse_pressed = false;
+}
+
 function range(n) {return Array(n).keys()}
 function Array_2d(w, h) {
     var tiles = new Array(w)
