@@ -14,14 +14,16 @@ set_background_color('#222')
 set_window_color('#111')
 
 
-w = 15
+w = 7
 h = parseInt(w * aspect_ratio) - 1
 
 var tiles = Array_2d(w, h)
 
+current_tool = 'place_tile'     // place_tile / colorize
 colorize_target = 'fg'
 selected_color = 3
 skip = false    // skip the mouse enter after selecting a color from the color menu
+
 
 color_menu = new Entity({enabled:false, scale:[4/7*1.0, 4/7*1.0], color:'gray', x:-.5 + (1/7), y:(.5*aspect_ratio) - (h/w), z:-1, origin:[-.5,-.5]})
 for (const x of range(4)) {
@@ -37,6 +39,27 @@ for (const x of range(4)) {
                 // setTimeout(function() {color_menu.enabled = false}, 1000*10/60)
                 tools[1].color = palette[(y*4)+x],
                 prev_hovered = color_menu,
+                skip = true
+            }
+        })
+    }
+}
+selected_tile = [0,0]
+size = 8
+tile_menu = new Entity({enabled:false, scale:[6/7*1.0, 6/7*1.0], color:'gray', x:-.5 + (.5/7), y:(.5*aspect_ratio) - (h/w), z:-1, origin:[-.5,-.5]})
+for (const x of range(size)) {
+    for (const y of range(size)) {
+        new Entity({parent:tile_menu, origin:[-.5,.5], scale:1/size, x:-.5+(x/size), y:.5-(y/size),
+            texture:'Hack_square_64x64',
+            tileset_size:[16,16],
+            tile:[x, y],
+            // color:palette[(y*4)+x],
+            on_click: function() {
+                selected_tile=[x,y]
+                tile_menu.enabled = false
+                // setTimeout(function() {color_menu.enabled = false}, 1000*10/60)
+                // tools[1].color = palette[(y*4)+x],
+                prev_hovered = tile_menu
                 skip = true
             }
         })
@@ -58,13 +81,16 @@ tool_functions = [
     },
     function() {
         print('select color')
-        color_menu.enabled = true
+        current_tool = 'colorize'
+        color_menu.enabled = !color_menu.enabled
     },
     function() {
         print('select scene')
     },
     function() {
         print('select tile')
+        current_tool = 'place_tile'
+        tile_menu.enabled = !tile_menu.enabled
     },
     function() {
         print('undo')
@@ -101,11 +127,14 @@ for (const x of range(w)) {
             // tile:[random_int(0,14), random_int(0,14)],
             tile:[0,0],
             on_click : function() {
-                if (colorize_target == 'fg') {
+                if (current_tool == 'colorize' && colorize_target == 'fg') {
                     this.tint = selected_color
                 }
-                if (colorize_target == 'bg') {
+                else if (current_tool == 'colorize' && colorize_target == 'bg') {
                     e.color = palette[selected_color]
+                }
+                else if (current_tool == 'place_tile') {
+                    this.tile = selected_tile
                 }
                 skip = false
             }

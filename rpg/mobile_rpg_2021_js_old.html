@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <!-- <link rel="manifest" href="/manifest.json"> -->
+
+    <title>snootboop.js</title>
+</head>
+<style>
+    text {
+        text-align: center;
+        pointer-events: none;
+        font-size: 5vh;
+    }
+    .entity {
+        touch-action: none;
+        width:100%; height:100%; position:absolute; top:50%; left:50%; will-change: transform;
+        transform:translate(-50%, -50%); color:black; background-size: 100% 100%; padding:0; border-width:0px;
+        visibility: 'visible'; font-size:1v; display:inherit; image-rendering: pixelated;
+        background-color: 'red';
+        background-repeat:repeat;
+        /* border-radius: 128px; border-style:solid; border-color: white; */
+    }
+    .entity:focus {
+        outline: 0; -moz-outline-style: none;
+    }
+
+    .game {margin:auto; background-color: darkgreen; position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%); overflow: hidden; pointer-events: none; font-size:1vh;
+        width:100%; height:100%; outline: 0; box-shadow: 0; touch-action: none;
+    }
+    fullscreen_button {padding: 4px 4px; width: 64px; height: 64px; background-color: #555; border-radius: .2em; border-width: 0px;
+        text-decoration: none; color: white; font-size: 50.0px; z-index: 1; position: absolute; text-align: center; right: 0%;
+    }
+
+</style>
+
+<body style="margin: 0; background-color:'#111'">
+    <div id="game" class="game">
+        <div id="loading_text" style="position: absolute; top: 50%; left: 50%; width: 100%; color: white; font-family:monospace;
+            transform: translate(-50%, -5%); text-align: center;">
+
+        loading...<br><br><br><br><br><br><br>
+        powered by snootboop
+        </div>
+    </div>
+
+</body>
+<fullscreen_button id="fullscreen_button" onclick="enter_fullscreen()">&#x26F6;</fullscreen_button>
+
+<script>
+function enter_fullscreen() {
+    var targetelement = document.documentElement;
+
+    if (targetelement.requestFullscreen) {targetelement.requestFullscreen();}
+    if (targetelement.webkitRequestFullscreen) {targetelement.webkitRequestFullscreen();}
+    if (targetelement.mozRequestFullScreen) {targetelement.mozRequestFullScreen();}
+    if (targetelement.msRequestFullscreen) {targetelement.msRequestFullscreen();}
+
+    document.getElementById("fullscreen_button").style.display = "none";
+ }
+</script>
+
+<script>
+print = console.log
+aspect_ratio = 16/9
+format = 'horizontal'
+format = 'vertical'
+
+document.getElementById('loading_text').remove();
+scene = document.createElement('entity')
+scene.className = 'entity'
+if (format == 'vertical') { // make width=1
+    scene.style.height = `${100}%`
+    scene.style.height = `${9/16*100}%`
+}
+else {  // make height be 1
+    scene.style.width = `${16/9*100}%`
+}
+scene.style.backgroundColor = 'transparent'
+// scene.style.backgroundColor = 'red'
+game_window = document.getElementById('game')
+game_window.appendChild(scene)
+window_size = game_window.getBoundingClientRect();
+var width = window_size.width;
+var height = window_size.height;
+window_aspect_ratio = width / height
+print('aspect_ratio:', window_aspect_ratio)
+scale = 1
+if (format == 'vertical') {
+    game_window.style.width = `${height/aspect_ratio*scale}px`
+    game_window.style.height =  `${height*scale}px`
+}
+else {
+    if (window_aspect_ratio <= aspect_ratio) {
+        game_window.style.height = `${width/aspect_ratio*scale}px`
+        game_window.style.width =  `${width*scale}px`
+
+    }
+    else {
+        game_window.style.width =  `${height*aspect_ratio*scale}px`
+        game_window.style.height = `${height*scale}px`
+    }
+}
+
+function set_window_color(value) {game_window.style.backgroundColor = value}
+function set_background_color(value) {document.body.style.backgroundColor = value}
+
+entities = []
+
+class Entity {
+    constructor(options=null) {
+        this.el = document.createElement('entity')
+        this.el.className = 'entity'
+        this.el.entity_index = entities.length
+        entities.push(this)
+
+        this.el.text_entity = document.createElement('text')
+        this.el.appendChild(this.el.text_entity)
+
+        this.el.style.opacity = 1
+        this.setTimeout_calls = {}
+        scene.appendChild(this.el)
+        this._enabled = true
+        this.color = 'white'
+
+        for (const [key, value] of Object.entries(options)) {
+            this[key] = value
+        }
+    }
+
+    get parent() {return this.el.parentElement}
+    set parent(value) {
+        return value.el.appendChild(this.el)
+    }
+    get children() {return this.el.children}
+    set children(value) {
+        for (const e of value) {
+            e.parent = this
+        }
+    }
+    get enabled() {return this._enabled}
+    set enabled(value) {
+        if (value) {this.el.style.visibility = 'visible'}
+        else {this.el.style.visibility = 'hidden'}
+        return this._enabled = value
+    }
+    get visible_self() {return this._visible_self}
+    set visible_self(value) {
+        if (!value) {
+            this.color = 'rgba(0,0,0,0)'
+            this.text_color = 'rgba(0,0,0,0)'
+        }
+        else {
+            this.color = 'white'
+            this.text_color = 'white'
+        }
+        return this._visible_self = value
+    }
+    get color() {return this._color}
+    set color(value) {
+        this.el.style.backgroundColor = value
+        return this._color = value
+    }
+    get scale_x() {return this._scale_x}
+    set scale_x(value) {
+        this.el.style.width = `${value*100}%`
+        return this._scale_x = value
+    }
+    get scale_y() {return this._scale_y}
+    set scale_y(value) {
+        this.el.style.height = `${value*100}%`
+        return this._scale_y = value
+    }
+    get scale() {return [this._scale_x, this._scale_y]}
+    set scale(value) {
+        if (typeof value == "number") {value = [value, value]}
+        this.scale_x = value[0]
+        this.scale_y = value[1]
+    }
+    get x() {return this._x}
+    set x(value) {
+        this.el.style.left = `${50+(value*100)}%`
+        return this._x = value
+    }
+    get y() {return this._y}
+    set y(value) {
+        this.el.style.top = `${50+(-value*100)}%`
+        return this._y = value
+    }
+    get z() {return this._z}
+    set z(value) {
+        this.el.style.zIndex = -value
+        return this._z = value
+    }
+    get xy() {return [this._x, this._y]}
+    set xy(value) {
+        this.x = value[0]
+        this.y = value[1]
+        return true
+    }
+    get xyz() {return [this._x, this._y, this._z]}
+    set xyz(value) {
+        this.x = value[0]
+        this.y = value[1]
+        this.z = value[2]
+        return true
+    }
+    get position() {return this.xyz}
+    set position(value) {
+        if (value.length == 2) {return this.xy = value}
+        if (value.length == 3) {return this.xyz = value}
+    }
+    get origin() {return this._origin}
+    set origin(value) {
+        this.el.style.transform = `translate(${(-value[0]-.5)*100}%, ${(value[1]-.5)*100}%)`
+        return this._origin = value
+    }
+    get texture() {return this.el.style.backgroundImage}
+    set texture(value) {
+        this.el.style.backgroundImage = `url("assets/${value}")`
+        // var loaded = 0
+        // var img = new Image();
+        // img.src = value + '.jpg'
+        // try {
+        //     // this.texture_address = "url(" + img.src + ")"
+        //     this.el.style.backgroundImage = `url("${value}.jpg")`
+        // }
+        // catch {
+        //     this.el.style.backgroundImage = `url("${value}.png")`
+            // img.src = value + '.png'
+            // this.texture_address = "url(" + img.src + ")"
+            // this.el.style.backgroundImage = this.texture_address
+            // img.onload = function() {loaded += 1}
+        // }
+        // if (loaded == 0) {  // if no texture is found, hide self
+        //     this.visible_self = false
+        // }
+    }
+    get tileset_size() {return this._tileset_size}
+    set tileset_size(value) {
+        this._tileset_size = value
+        this.el.style.backgroundSize = `${value[0]*100}% ${value[1]*100}%`
+    }
+    get tile() {return this._tile}
+    set tile(value) {
+        this._tile = value
+        // print('----', `${self._tileset_size[0]}-1) * ${value[0]} * 100)}% ${0/16}%`)
+        var x_val = (16-1)*value[0]*100
+        this.el.style.backgroundPosition = `${(16-1)*value[0]*100}% ${(16-1)*value[1]*100}%`
+    }
+
+    get roundness() {return this._roundness}
+    set roundness(value) {
+        this.el.style.borderRadius = `${value*Math.min(this.el.clientWidth, this.el.clientHeight)}px`
+        this._roundness = value
+    }
+    get text() {return this.el.text_entitytextContent}
+    set text(value) {
+        return this.el.text_entity.textContent = value
+    }
+    get text_color() {return this.el.style.color}
+    set text_color(value) {
+        return this.el.style.color = value
+    }
+    get text_size() {return this._text_size}
+    set text_size(value) {
+        this._text_size = value
+        this.el.style.fontSize = `${value}v`
+    }
+
+    get alpha() {return this.el.style.opacity; print(this.el.style.opacity)}
+    set alpha(value) {
+        // print('set opac', value)
+        this.el.style.opacity = value
+        return this._alpha = value
+    }
+    get on_click() {return this._on_click}
+    set on_click(value) {
+        this._on_click = value
+    //     // this.el.entity = this
+        if (value) {
+            this.el.style.pointerEvents = 'auto'
+    //         this.el.ontouchstart = e => {
+    //             e.preventDefault();
+    //             this.on_click()
+    //         }
+    //         this.el.addEventListener('mousedown', value)
+    //         this.el.addEventListener("touchstart", value);
+    //
+        }
+        else {this.el.style.pointerEvents = 'none'}
+    }
+
+    animate(variable_name, target_value, duration=.1) {
+        // print('animate:', this, variable_name)
+        if (!this.enabled) {return false}
+        let entity = this
+        // stop ongoing animation of this varibale
+        if (variable_name in entity.setTimeout_calls) {
+            for (const id of entity.setTimeout_calls[variable_name]) {
+                clearTimeout(id)
+                // print('clear:', id)
+            }
+        }
+        entity.setTimeout_calls[variable_name] = []
+
+        for (let i=0; i<duration*60; i+=1) {
+            entity.setTimeout_calls[variable_name].push(
+                setTimeout(
+                    function () {
+                        if (!entity.enabled) {
+                            return false};
+                        entity[variable_name] = lerp(entity[variable_name], target_value, i/duration/60);
+                    },
+                    1000*i*1/60
+                )
+            )
+        }
+    }
+}
+
+
+
+function lerp(a, b, t) {
+    // return a + (b - a) * t
+    return a * (1-t)+b * t
+}
+function clamp(num, min, max) {
+  return num <= min ? min : num >= max ? max : num;
+}
+function random_int(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+
+function StateHandler(states, fade=true) {
+    var that = Object.create(StateHandler.prototype)
+    that.states = states
+    that.fade = fade
+
+    that.overlay = new Entity({name:'overlay', color:'black', alpha:0, z:-1, scale:[1,aspect_ratio]})
+
+    that['state'] = Object.keys(states)[0]
+    return that
+}
+
+StateHandler.prototype =  {
+    get state() {return this._state},
+    set state(value) {
+        if (this.fade && (value != this._state)) {
+            this.overlay.animate('alpha', 1, .1)
+            setTimeout(() => {
+                this.overlay.animate('alpha', 0, 1)
+                this.hard_state = value
+            }, 100)
+        }
+        else {
+            this.hard_state = value
+        }
+    },
+    set hard_state(value) {     // set the state without fading
+        // print('set state to:', value)
+        for (const [key, entity] of Object.entries(this.states)) {
+            if (key == value || value == entity) {
+                entity.enabled = true}
+            else {
+                entity.enabled = false}
+            }
+            return this._state = value
+    }
+}
+
+function Button(options) {
+    if (!('scale' in options)) {
+        options['scale'] = [.2,.2]
+    }
+    if (!('roundness' in options)) {
+        options['roundness'] = .2
+    }
+    if ('scale' in options) {
+        if ('scale_x' in options) {
+            options['scale'][0] = options['scale_x']
+        }
+        if ('scale_y' in options) {
+            options['scale'][1] = options['scale_y']
+        }
+    }
+    // print(options)
+    return new Entity(options)
+}
+state_handler = StateHandler({
+    // main_menu : b,
+    // scene_2 : scene_2
+})
+
+function Scene(name='', options=false) {
+    settings = {visible_self:false}
+    for (const [key, value] of Object.entries(options)) {
+        settings[key] = value
+    }
+
+    _entity = new Entity(settings)
+    _entity.bg = new Entity({parent:_entity, scale_y:aspect_ratio})
+    _entity.bg.texture = name + '.jpg'
+    state_handler.states[name] = _entity
+    return _entity
+}
+
+function goto_scene(scene_name) {
+    state_handler.state = scene_name
+}
+class HealthBar extends Entity {
+    constructor(options=false) {
+        let settings = {min:0, max:100, color:'#222', scale:[.8,.05], y:.75, roundness:.25}
+        settings['default'] = settings['max']
+        for (const [key, value] of Object.entries(options)) {
+            if (key == 'bar_color') {continue}
+            print(key, value)
+            settings[key] = value
+        }
+        super(settings)
+        this.bar = new Entity({parent:this, origin:[-.5,0], x:-.5, roundness:.25, scale_x:.25, color:'lime'})
+
+        if (('bar_color' in options)) {
+            this.bar_color = settings['bar_color']
+        }
+
+        this.value = this.default
+
+    }
+
+    get value() {return this._value}
+    set value(value) {
+        value = clamp(value, this.min, this.max)
+        // print('set value:', value)
+        this._value = value
+        this.bar.scale_x = value / this.max}
+    get bar_color() {return this.bar.color}
+    set bar_color(value) {this.bar.color = value}
+}
+
+mouse_pressed = false
+
+document.addEventListener('mousedown', function(e) {
+    e.preventDefault()
+    handle_mouse_click(e)
+})
+document.addEventListener('touchstart', function(e) {
+    e.preventDefault()
+    handle_mouse_click(e.touches[0])
+})
+function handle_mouse_click(e) {
+    mouse_pressed = true
+    element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
+    if (element_hit && element_hit.entity_index && entities[element_hit.entity_index].on_click) {
+        entities[element_hit.entity_index].on_click()
+    }
+}
+document.body.addEventListener('mouseup', function(e) {
+    e.preventDefault()
+    mouse_up()
+})
+document.body.addEventListener('touchend', function(e) {
+    e.preventDefault()
+    mouse_up()
+})
+function mouse_up(e) {
+    mouse_pressed = false;
+}
+
+function range(n) {return Array(n).keys()}
+function Array_2d(w, h) {
+    var tiles = new Array(w)
+    for (var i = 0; i < tiles.length; i++) {
+        tiles[i] = new Array(h);
+    }
+    return tiles
+}
+
+function rgb(r, g, b) {return `rgb(${parseInt(r*255)},${parseInt(g*255)},${parseInt(b*255)})`}
+
+function hex_to_rgb(hex) {
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+}
+palette = [
+    '#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8',
+    '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA'
+    ]
+let filter_code = ''
+for (i = 0; i < palette.length; i++) {
+    let rgb = hex_to_rgb(palette[i])
+    let r = rgb.r/255
+    let g = rgb.g/255
+    let b = rgb.b/255
+    let redToBlue = `${r**2.4} 0 0 0 0  ${g**2.4} 0 0 0 0  ${b**2.4} 0 0 0 0  0 0 0 1 0`;
+    filter_code += `
+        <svg xmlns="http://www.w3.org/2000/svg">
+            <filter id="tint_filter_${i}">
+                <feColorMatrix type="matrix" values="${redToBlue}" />
+            </filter>
+        </svg>
+    `
+}
+filters = document.createElement('div')
+game_window.appendChild(filters)
+filters.innerHTML = filter_code
+
+function invoke(func, delay) {setTimeout(func, delay*1000)}
+
+
+class TintableTile extends Entity {
+    get tint() {return this._tint}
+    set tint(value) {
+        this._tint = value
+        if (value < 16) {
+            this.el.style.filter = `url(#tint_filter_${value})`
+        }
+    }
+
+}
+
+// print('cccccccccccccccccc:', hsv(120, 1, 1))
+// const COLOR_NAMES = ['white', 'light_gray', 'gray', 'dark_gray', 'black', 'red', 'orange', 'yellow', 'lime', 'green', 'turquoise', 'cyan', 'azure', 'blue', 'violet', 'magenta', 'pink']
+// const ORIGINS = {'center', 'top', 'bottom', 'right', 'left', 'top_left', 'top_right', 'bottom_left', 'bottom_right'}
+//
+// function E(...args) {
+//     print('..args:', args)
+//     var data = {}
+//     for (const arg of args) {
+//         if (typeof arg === 'string') {
+//             // print('......')
+//             if (COLOR_NAMES.includes(arg)) {
+//                 data['color'] = arg
+//             }
+//         }
+//     }
+//     print('data:', data)
+// }
+//
+// E('Hack_square_64x64', 0, 0, .1,.1, 'yellow', 'top_left')
+
+</script>
+<script>
+gold = 0
+woodcutting_xp = 0
+mining_xp = 0
+trading_xp = 0
+// sand_magic_xp = 0
+// water_magic_xp = 0
+sun_magic_xp = 0
+moon_magic_xp = 0
+
+archeology_xp = 0
+fishing_xp = 0
+
+sword_xp = 0
+axe_xp = 0
+spear_xp = 0
+wood = 0
+
+inventory = {
+    'ruby':             {'amount':1, 'sell_value':10},
+    'sapphire':         {'amount':3, 'sell_value':10},
+    'rusty axe':        {'amount':1, 'sell_value':10},
+    'iron axe':         {'amount':1, 'sell_value':10},
+    'steel axe':        {'amount':1, 'sell_value':10},
+    'rusty shovel':     {'amount':1, 'sell_value':10},
+    'iron shovel':      {'amount':1, 'sell_value':10},
+    'steel shovel':     {'amount':1, 'sell_value':10},
+    'bone':             {'amount':1, 'sell_value':10},
+    'plank':            {'amount':1, 'sell_value':10},
+    'pick axe':         {'amount':1, 'sell_value':10},
+}
+
+// function spreadsheet(fields, data) {
+//     if (fields[0] == 'name') {
+//         dict = {}
+//         for (i = 0; i < data.length; i += fields.length) {
+//             dict[data[i]] = {}
+//             for (j = 0; j < fields.length; i++) {
+//                 dict[data[i]][fields[j]] = data[i+j]
+//             }
+//         }
+//         return dict
+//     }
+//     // else {
+//     //     container = []
+//     // }
+//
+// }
+//
+// spreadsheet([
+// 'name',        'amount', 'sell_value'], [
+//
+// 'ruby',          1,        10,
+// 'plank',         1,        10,
+// 'bone',          1,        10,
+// 'axe',           1,        10,
+//
+// ])
+
+
+Scene('woodcutters_valley')
+
+tree = Button({text:'tree', x:.0, y:-.5, 'hp':3})
+tree.on_click = function() {
+    tree.hp -= 1
+    // print('----', rgb(1, 1, 1-(.1*tree.hp)))
+    lightness = (.25*tree.hp)
+    tree.color = rgb(lightness, lightness, lightness)
+    // print('hp:', tree.hp)
+    if (tree.hp <= 0) {
+        inventory['wood'] += 1
+        // print(wood)
+        tree.enabled = false
+        invoke(function(){
+            tree.hp = 3
+            tree.color = 'white'
+            tree.enabled = true
+        }, 2)
+    }
+}
+
+world_map = Scene('world_map')
+Button({parent:world_map, texture:'button_market.png', x:.35, y:-.12, roundness:.5, on_click:function(){goto_scene('market')}})
+Button({parent:world_map, texture:'button_fishing_village.png', x:.1, y:-.65, roundness:.5, on_click:function(){goto_scene('fishing_village')}})
+Button({parent:world_map, texture:'woodcutters_valley.jpg', x:.05, y:.15, roundness:.5, on_click:function(){goto_scene('woodcutters_valley')}})
+// Button({texture:'eagle_armory.jpg', x:.1, y:-.65, roundness:.5, on_click:function(){goto_scene('eagle_armory')}})
+
+market = Scene('market')
+// Button({parent:market, text:'gem store (buy)', x:.05, y:.15, roundness:.5, on_click:function(){goto_scene('woodcutters_valley')}})
+
+sell_menu = new Entity({color:'black', text:'sell', enabled:false, z:-1, x:0, y:.2, scale:.9, marked_for_sale:[],
+    // on_click:function(){}
+})
+
+toggle_sell_menu_button = Button({parent:market, text:'pawn shop (sell)', x:-.2, y:-.52, roundness:.5, on_click:function(){sell_menu.enabled = !sell_menu.enabled}})
+x = 0
+y = 0
+i = 0
+for (const [item_name, amount] of Object.entries(inventory)) {
+    let b = Button({parent:sell_menu, x:-.495 + (x*.2), y:.495 + (-y*.2), text:item_name, origin:[-.5,.5], scale:.19, text_size:.2})
+    b.on_click = function() {
+
+        if (!sell_menu.marked_for_sale.includes(item_name)) {
+            sell_menu.marked_for_sale.push(item_name)
+            b.color = 'red'
+        }
+        else {
+            sell_menu.marked_for_sale = sell_menu.marked_for_sale.filter(item => item !== item_name)
+            b.color = 'white'
+        }
+        sell_button.text = sell_menu.marked_for_sale.filter(item => item !== item_name)
+    }
+
+    x += 1
+    if (x > 4) {
+        y += 1
+        x = 0
+    }
+    i += 1
+}
+
+sell_button = Button({parent:sell_menu, text:'sell', x:.2, y:-.52, roundness:.5, on_click:function(){print(sell_menu.marked_for_sale)}})
+
+Scene('fishing_village')
+Scene('the_north')
+Scene('eagle_armory')
+Scene('round_rock_city')
+// Scene('woodcutters_valley')
+// Scene('woodcutters_valley')
+// Button({texture:'woodcutters_valley', x:.0, y:-.5, roundness:.5})
+
+goto_scene('world_map')
+goto_scene('market')
+sell_menu.enabled=true
+
+inventory_button = Button({texture:'woodcutters_valley.jpg', text:'inv.', x:.35, y:-.78, roundness:.5, on_click:function(){inventory_menu.enabled = !inventory_menu.enabled}})
+inventory_menu = new Entity({color:'red', text:'inventory', enabled:false})
+
+for (const [key, value] of Object.entries(state_handler.states)) {
+    if (value === world_map) {
+        continue
+    }
+    var map_button = Button({texture:'button_world_map.png', x:-.35, y:-.78, roundness:.5, on_click:function(){goto_scene('world_map')}})
+    map_button.parent = value
+}
+
+
+
+
+</script>
+<!-- <script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service_worker.js')
+    }
+</script> -->
+</html>

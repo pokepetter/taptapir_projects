@@ -1,67 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <!-- <link rel="manifest" href="/manifest.json"> -->
-
-    <title>snootboop.js</title>
-</head>
-<style>
-    text {
-        text-align: center;
-        pointer-events: none;
-        font-size: 5vh;
-    }
-    .entity {
-        touch-action: none;
-        width:100%; height:100%; position:absolute; top:50%; left:50%; will-change: transform;
-        transform:translate(-50%, -50%); color:black; background-size: 100% 100%; padding:0; border-width:0px;
-        visibility: 'visible'; font-size:1v; display:inherit; image-rendering: pixelated;
-        background-color: 'red';
-        background-repeat:repeat;
-        /* border-radius: 128px; border-style:solid; border-color: white; */
-    }
-    .entity:focus {
-        outline: 0; -moz-outline-style: none;
-    }
-
-    .game {margin:auto; background-color: darkgreen; position: absolute; top: 50%; left: 50%;
-        transform: translate(-50%, -50%); overflow: hidden; pointer-events: none; font-size:1vh;
-        width:100%; height:100%; outline: 0; box-shadow: 0; touch-action: none;
-    }
-    fullscreen_button {padding: 4px 4px; width: 64px; height: 64px; background-color: #555; border-radius: .2em; border-width: 0px;
-        text-decoration: none; color: white; font-size: 50.0px; z-index: 1; position: absolute; text-align: center; right: 0%;
-    }
-
-</style>
-
-<body style="margin: 0; background-color:'#111'">
-    <div id="game" class="game">
-        <div id="loading_text" style="position: absolute; top: 50%; left: 50%; width: 100%; color: white; font-family:monospace;
-            transform: translate(-50%, -5%); text-align: center;">
-
-        loading...<br><br><br><br><br><br><br>
-        powered by snootboop
-        </div>
-    </div>
-
-</body>
-<fullscreen_button id="fullscreen_button" onclick="enter_fullscreen()">&#x26F6;</fullscreen_button>
-
-<script>
-function enter_fullscreen() {
-    var targetelement = document.documentElement;
-
-    if (targetelement.requestFullscreen) {targetelement.requestFullscreen();}
-    if (targetelement.webkitRequestFullscreen) {targetelement.webkitRequestFullscreen();}
-    if (targetelement.mozRequestFullScreen) {targetelement.mozRequestFullScreen();}
-    if (targetelement.msRequestFullscreen) {targetelement.msRequestFullscreen();}
-
-    document.getElementById("fullscreen_button").style.display = "none";
- }
-</script>
-
-<script>
 print = console.log
 aspect_ratio = 16/9
 format = 'horizontal'
@@ -86,6 +22,7 @@ var width = window_size.width;
 var height = window_size.height;
 window_aspect_ratio = width / height
 print('aspect_ratio:', window_aspect_ratio)
+
 scale = 1
 if (format == 'vertical') {
     game_window.style.width = `${height/aspect_ratio*scale}px`
@@ -106,6 +43,8 @@ else {
 function set_window_color(value) {game_window.style.backgroundColor = value}
 function set_background_color(value) {document.body.style.backgroundColor = value}
 
+ASSETS_FOLDER = ''
+
 entities = []
 
 class Entity {
@@ -114,34 +53,74 @@ class Entity {
         this.el.className = 'entity'
         this.el.entity_index = entities.length
         entities.push(this)
-        // this.el.text_entity = document.createElement('text')
-        // this.el.appendChild(this.el.text_entity)
+
+        this.el.text_entity = document.createElement('text')
+        this.el.appendChild(this.el.text_entity)
+
         this.el.style.opacity = 1
         this.setTimeout_calls = {}
         scene.appendChild(this.el)
+        this.children = []
         this._enabled = true
+        // this.on_enable = null
+        // this.on_disable = null
+        this.color = 'white'
 
         for (const [key, value] of Object.entries(options)) {
             this[key] = value
         }
     }
 
-    get parent() {return this.el.parentElement}
+    get parent() {return this._parent}
     set parent(value) {
-        return value.el.appendChild(this.el)
+        value.el.appendChild(this.el)
+        if (this._parent) [
+            this._parent.children = this.parent.children.filter(item => item !== this) // remove self from old parent's children list
+        ]
+        this._parent = value
+        value.children.push(this)
     }
-    get children() {return this.el.children}
+    get children() {return this._children}
     set children(value) {
+        this._children = value
         for (const e of value) {
             e.parent = this
         }
     }
     get enabled() {return this._enabled}
     set enabled(value) {
-        if (value) {this.el.style.visibility = 'visible'}
-        else {this.el.style.visibility = 'hidden'}
-        return this._enabled = value
+        this._enabled = value
+        if (value) {
+            this.el.style.visibility = 'visible'
+            for (var c of this.children) {
+                c.el.style.visibility = c.el.style.original_visibility
+            }
+        }
+        else {
+            this.el.style.visibility = 'hidden'
+            for (var c of this.children) {
+                c.el.style.original_visibility = c.el.style.visibility
+                c.el.style.visibility = 'inherit'
+            }
+        }
+
+        // if (value && typeof (this.on_enable) === 'function') {
+        // print('a', this.on_enable)
+        // if (typeof this.on_enable !== 'undefined') {
+        //     print('dddddddddddddddddd', this.on_enable)
+        //     // the variable is defined
+        // }
+        // if (value || typeof this.on_enable === 'function') {
+        //     print('enablke', this.on_enable)
+        //     this.on_enable()
+        //     // call(this.enable)
+        // }
+        // else if (!value && this.on_disable != null) {
+        //     this.on_disable()
+        //     // print('disblake')
+        // }
     }
+
     get visible_self() {return this._visible_self}
     set visible_self(value) {
         if (!value) {
@@ -152,22 +131,22 @@ class Entity {
             this.color = 'white'
             this.text_color = 'white'
         }
-        return this._visible_self = value
+        this._visible_self = value
     }
     get color() {return this._color}
     set color(value) {
         this.el.style.backgroundColor = value
-        return this._color = value
+        this._color = value
     }
     get scale_x() {return this._scale_x}
     set scale_x(value) {
         this.el.style.width = `${value*100}%`
-        return this._scale_x = value
+        this._scale_x = value
     }
     get scale_y() {return this._scale_y}
     set scale_y(value) {
         this.el.style.height = `${value*100}%`
-        return this._scale_y = value
+        this._scale_y = value
     }
     get scale() {return [this._scale_x, this._scale_y]}
     set scale(value) {
@@ -178,30 +157,30 @@ class Entity {
     get x() {return this._x}
     set x(value) {
         this.el.style.left = `${50+(value*100)}%`
-        return this._x = value
+        this._x = value
     }
     get y() {return this._y}
     set y(value) {
         this.el.style.top = `${50+(-value*100)}%`
-        return this._y = value
+        this._y = value
     }
     get z() {return this._z}
     set z(value) {
         this.el.style.zIndex = -value
-        return this._z = value
+        this._z = value
     }
     get xy() {return [this._x, this._y]}
     set xy(value) {
         this.x = value[0]
         this.y = value[1]
-        return true
+        true
     }
     get xyz() {return [this._x, this._y, this._z]}
     set xyz(value) {
         this.x = value[0]
         this.y = value[1]
         this.z = value[2]
-        return true
+        true
     }
     get position() {return this.xyz}
     set position(value) {
@@ -211,21 +190,29 @@ class Entity {
     get origin() {return this._origin}
     set origin(value) {
         this.el.style.transform = `translate(${(-value[0]-.5)*100}%, ${(value[1]-.5)*100}%)`
-        return this._origin = value
+        this._origin = value
     }
     get texture() {return this.el.style.backgroundImage}
     set texture(value) {
-        var loaded = 0
-        var img = new Image();
-        img.src = value + '.jpg'
-        img.onload = function() {loaded += 1}
-        img.src = value + '.png'
-        img.onload = function() {loaded += 1}
-        if (loaded == 0) {  // if no texture is found, hide self
-            this.visible_self = false
-        }
-        this.texture_address = "url(" + img.src + ")"
-        this.el.style.backgroundImage = this.texture_address
+        this.el.style.backgroundImage = `url("${ASSETS_FOLDER}${value}")`
+        this.visible_self = false
+        // var loaded = 0
+        // var img = new Image();
+        // img.src = value + '.jpg'
+        // try {
+        //     // this.texture_address = "url(" + img.src + ")"
+        //     this.el.style.backgroundImage = `url("${value}.jpg")`
+        // }
+        // catch {
+        //     this.el.style.backgroundImage = `url("${value}.png")`
+            // img.src = value + '.png'
+            // this.texture_address = "url(" + img.src + ")"
+            // this.el.style.backgroundImage = this.texture_address
+            // img.onload = function() {loaded += 1}
+        // }
+        // if (loaded == 0) {  // if no texture is found, hide self
+        //     this.visible_self = false
+        // }
     }
     get tileset_size() {return this._tileset_size}
     set tileset_size(value) {
@@ -253,11 +240,17 @@ class Entity {
     set text_color(value) {
         return this.el.style.color = value
     }
+    get text_size() {return this._text_size}
+    set text_size(value) {
+        this._text_size = value
+        this.el.style.fontSize = `${value}v`
+    }
+
     get alpha() {return this.el.style.opacity; print(this.el.style.opacity)}
     set alpha(value) {
         // print('set opac', value)
         this.el.style.opacity = value
-        return this._alpha = value
+        this._alpha = value
     }
     get on_click() {return this._on_click}
     set on_click(value) {
@@ -319,6 +312,25 @@ function random_int(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function Button(options) {
+    if (!('scale' in options)) {
+        options['scale'] = [.2,.2]
+    }
+    if (!('roundness' in options)) {
+        options['roundness'] = .2
+    }
+    if ('scale' in options) {
+        if ('scale_x' in options) {
+            options['scale'][0] = options['scale_x']
+        }
+        if ('scale_y' in options) {
+            options['scale'][1] = options['scale_y']
+        }
+    }
+    // print(options)
+    return new Entity(options)
+}
+
 
 function StateHandler(states, fade=true) {
     var that = Object.create(StateHandler.prototype)
@@ -329,6 +341,19 @@ function StateHandler(states, fade=true) {
 
     that['state'] = Object.keys(states)[0]
     return that
+}
+
+function Scene(name='', options=false) {
+    settings = {visible_self:false, on_enter:null}
+    for (const [key, value] of Object.entries(options)) {
+        settings[key] = value
+    }
+
+    _entity = new Entity(settings)
+    _entity.bg = new Entity({parent:_entity, scale_y:aspect_ratio})
+    _entity.bg.texture = name + '.jpg'
+    state_handler.states[name] = _entity
+    return _entity
 }
 
 StateHandler.prototype =  {
@@ -349,52 +374,37 @@ StateHandler.prototype =  {
         // print('set state to:', value)
         for (const [key, entity] of Object.entries(this.states)) {
             if (key == value || value == entity) {
-                entity.enabled = true}
+                entity.enabled = true
+                if (entity.on_enter) {
+                    entity.on_enter()
+                }
+            }
             else {
                 entity.enabled = false}
             }
-            return this._state = value
+
+        // print('........', this.states[this.state])
+        // for (var e of entities) {
+        //     print(this.states[this.state])
+        //     // if (this.states[this.state].el.contains(e.el) ) {
+        //     //     print(e)
+        //     // }
+        // }
+
+        this._state = value
     }
 }
 
-function Button(options) {
-    if (!('scale' in options)) {
-        options['scale'] = [.2,.2]
-    }
-    if (!('roundness' in options)) {
-        options['roundness'] = .2
-    }
-    if ('scale' in options) {
-        if ('scale_x' in options) {
-            options['scale'][0] = options['scale_x']
-        }
-        if ('scale_y' in options) {
-            options['scale'][1] = options['scale_y']
-        }
-    }
-    // print(options)
-    return new Entity(options)
-}
 state_handler = StateHandler({
     // main_menu : b,
     // scene_2 : scene_2
 })
 
-function Scene(name='', options=false) {
-    settings = {visible_self:false}
-    for (const [key, value] of Object.entries(options)) {
-        settings[key] = value
-    }
-
-    _entity = new Entity(settings)
-    _entity.bg = new Entity({parent:_entity, scale_y:aspect_ratio})
-    _entity.bg.texture = name
-    state_handler.states[name] = _entity
-    return _entity
-}
-
 function goto_scene(scene_name) {
     state_handler.state = scene_name
+
+
+
 }
 class HealthBar extends Entity {
     constructor(options=false) {
@@ -464,6 +474,8 @@ function Array_2d(w, h) {
     return tiles
 }
 
+function rgb(r, g, b) {return `rgb(${parseInt(r*255)},${parseInt(g*255)},${parseInt(b*255)})`}
+
 function hex_to_rgb(hex) {
   var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? {
@@ -495,6 +507,8 @@ filters = document.createElement('div')
 game_window.appendChild(filters)
 filters.innerHTML = filter_code
 
+function invoke(func, delay) {setTimeout(func, delay*1000)}
+
 
 class TintableTile extends Entity {
     get tint() {return this._tint}
@@ -506,32 +520,3 @@ class TintableTile extends Entity {
     }
 
 }
-
-// print('cccccccccccccccccc:', hsv(120, 1, 1))
-// const COLOR_NAMES = ['white', 'light_gray', 'gray', 'dark_gray', 'black', 'red', 'orange', 'yellow', 'lime', 'green', 'turquoise', 'cyan', 'azure', 'blue', 'violet', 'magenta', 'pink']
-// const ORIGINS = {'center', 'top', 'bottom', 'right', 'left', 'top_left', 'top_right', 'bottom_left', 'bottom_right'}
-//
-// function E(...args) {
-//     print('..args:', args)
-//     var data = {}
-//     for (const arg of args) {
-//         if (typeof arg === 'string') {
-//             // print('......')
-//             if (COLOR_NAMES.includes(arg)) {
-//                 data['color'] = arg
-//             }
-//         }
-//     }
-//     print('data:', data)
-// }
-//
-// E('Hack_square_64x64', 0, 0, .1,.1, 'yellow', 'top_left')
-
-</script>
-<script src="main.js"></script>
-<!-- <script>
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/service_worker.js')
-    }
-</script> -->
-</html>

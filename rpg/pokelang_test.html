@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <!-- <link rel="manifest" href="/manifest.json"> -->
+
+    <!-- <title>snootboop.js</title> -->
+</head>
+<style>
+    text {
+        text-align: center;
+        pointer-events: none;
+        font-size: 5vh;
+    }
+    .entity {
+        touch-action: none;
+        width:100%; height:100%; position:absolute; top:50%; left:50%; will-change: transform;
+        transform:translate(-50%, -50%); color:black; background-size: 100% 100%; padding:0; border-width:0px;
+        visibility: 'visible'; font-size:1v; display:inherit; image-rendering: pixelated;
+        background-color: 'red';
+        background-repeat:repeat;
+        /* border-radius: 128px; border-style:solid; border-color: white; */
+    }
+    .entity:focus {
+        outline: 0; -moz-outline-style: none;
+    }
+
+    .game {margin:auto; background-color: darkgreen; position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%); overflow: hidden; pointer-events: none; font-size:1vh;
+        width:100%; height:100%; outline: 0; box-shadow: 0; touch-action: none;
+    }
+    fullscreen_button {padding: 4px 4px; width: 64px; height: 64px; background-color: #555; border-radius: .2em; border-width: 0px;
+        text-decoration: none; color: white; font-size: 50.0px; z-index: 1; position: absolute; text-align: center; right: 0%;
+    }
+
+</style>
+
+<body style="margin: 0; background-color:'#111'">
+    <div id="game" class="game">
+        <div id="loading_text" style="position: absolute; top: 50%; left: 50%; width: 100%; color: white; font-family:monospace;
+            transform: translate(-50%, -5%); text-align: center;">
+
+        loading...<br><br><br><br><br><br><br>
+        powered by snootboop
+        </div>
+    </div>
+
+</body>
+
+<script src="taptapir.js"></script>
+
+
+<script type='text/pokescript'>
+
+ASSETS_FOLDER = 'assets/'
+
+# # e = new Entity()
+# # print('-----yay------', e)
+#
+#
+# def some_func(a, b):
+#     if a < 0 and a > -19:
+#         print('lol')
+#     else:
+#         print('error')
+#     return a + b
+#
+# print(some_func(-2, 1   ))
+a = {x:1}
+entities = [{x:0}, a, {x:2}]
+selection = [e for e in entities if e.x > 0]
+selection = [e for e in entities if e.x > 0 and e.x < 2]
+selection = [e for e in entities].sum()
+// selection = [e for e in entities if e.x > 0][0]
+print('selection:', selection)
+
+print('ddddddddddddd', a in selection)
+#
+# for e in entities:
+#     print(e)
+#
+# for i in range(10):
+#     print(i)
+
+
+inventory = {
+'ruby':             {'amount':1, 'sell_value':10},
+'sapphire':         {'amount':3, 'sell_value':10},
+'rusty axe':        {'amount':1, 'sell_value':10},
+'iron axe':         {'amount':1, 'sell_value':10},
+'steel axe':        {'amount':1, 'sell_value':10},
+'rusty shovel':     {'amount':1, 'sell_value':10},
+'iron shovel':      {'amount':1, 'sell_value':10},
+'steel shovel':     {'amount':1, 'sell_value':10},
+'bone':             {'amount':1, 'sell_value':10},
+'plank':            {'amount':1, 'sell_value':10},
+'pick axe':         {'amount':1, 'sell_value':10},
+'wood':             {'amount':0, 'sell_value':5},
+}
+world_map = Scene('world_map')
+
+
+def Scenebutton(name, x, y) {
+    return Button(parent=world_map, texture=`${name}.jpg`, x=x, y=y, roundness=.5, on_click=function(){goto_scene(name)})
+}
+
+
+print('sell_valiuee:', inventory['plank'].sell_value)
+woodcutters_valley = Scene('woodcutters_valley')
+woodcutters_valley_button = Scenebutton('woodcutters_valley', .05, .15)
+tree = Button(parent=woodcutters_valley, text='tree', x=.0, y=-.5, 'hp'=3)
+tree.on_click = def():
+    tree.hp -= 1
+    lightness = (.25*tree.hp)
+    tree.color = rgb(lightness, lightness, lightness)
+    if tree.hp <= 0:
+        inventory['wood'] += 1
+        tree.enabled = false
+
+woodcutters_valley.on_enter = def():
+    if tree.hp == 0:
+        tree.hp = 3
+        lightness = (.25*tree.hp)
+        tree.color = rgb(lightness, lightness, lightness)
+        tree.enabled = true
+
+
+
+
+Button(parent=world_map, texture='button_fishing_village.png', x=.1, y=-.65, roundness=.5, on_click=function(){goto_scene('fishing_village')})
+Button(parent=world_map, texture='eagle_armory.jpg', x=-.2, y=-.2, roundness=.5, on_click=function(){goto_scene('eagle_armory')})
+market_button = Button(parent=world_map, texture='button_market.png', x=.35, y=-.12, roundness=.5, on_click=function(){goto_scene('market')})
+
+
+market = Scene('market')
+market.on_enter = def():
+    sell_menu.enabled = false
+    buy_menu.enabled = false
+
+sell_menu = Entity(parent=market, color='black', text='sell', enabled=false, z=-1, x=0, y=.2, scale=.9, marked_for_sale=[])
+toggle_sell_menu_button = Button(parent=market, text='pawn shop (sell)', x=-.2, y=-.52, roundness=.5, on_enable=function(){print('lodkwdokwd')})
+toggle_sell_menu_button.on_click = def():
+    sell_menu.enabled = !sell_menu.enabled
+    sell_menu.marked_for_sale = []
+    for e in sell_menu.children:
+        e.color = 'white'
+
+    buy_menu.enabled = false
+
+buy_menu = Entity(parent=market, color='black', text='sell', enabled=false, z=-1, x=0, y=.2, scale=.9)
+buy_menu_button = Button(parent=market, text='gem store (buy)', x=.05, y=.15, roundness=.5)
+buy_menu_button.on_click = def():
+    buy_menu.enabled = not buy_menu.enabled
+
+
+x = 0
+y = 0
+i = 0
+
+for key, value in inventory.items():
+    // print(key, value)
+    let b = Button(parent=sell_menu, x=-.495 + (x*.2), y=.495 + (-y*.2), text=key, origin=[-.5,.5], scale=.19, text_size=.2)
+    b.on_click = def():
+        if not key in sell_menu.marked_for_sale:
+            sell_menu.marked_for_sale.add(key)
+            b.color = 'red'
+        else:
+            // sell_menu.marked_for_sale = sell_menu.marked_for_sale.filter(value => value !== key)
+            sell_menu.marked_for_sale = [e for e in sell_menu.marked_for_sale if e != key]
+            b.color = 'white'
+
+        sell_button.text = [inventory[key].sell_value for e in sell_menu.marked_for_sale].sum()
+    x += 1
+    if x > 4:
+        y += 1
+        x = 0
+
+    i += 1
+
+
+sell_button = Button(parent=sell_menu, text='sell', x=.2, y=-.52, roundness=.5, on_click=function(){print(sell_menu.marked_for_sale)})
+
+Scene('fishing_village')
+Scene('the_north')
+Scene('eagle_armory')
+Scene('round_rock_city')
+# // Scene('woodcutters_valley')
+# // Scene('woodcutters_valley')
+# // Button({texture='woodcutters_valley', x=.0, y=-.5, roundness=.5})
+
+goto_scene('world_map')
+# goto_scene('market')
+# sell_menu.enabled=true
+
+inventory_button = Button(texture='woodcutters_valley.jpg', text='inv.', x=.35, y=-.78, roundness=.5)
+inventory_button.on_click = def():
+    inventory_menu.enabled = not inventory_menu.enabled
+
+inventory_menu = Entity(color='red', text='inventory', enabled=false)
+
+for key, value in state_handler.states.items():
+    if value == world_map:
+        continue
+
+    map_button = Button(texture='button_world_map.png', x=-.35, y=-.78, roundness=.5, on_click=function(){goto_scene('world_map')})
+    map_button.parent = value
+
+
+
+</script>
+<script src="pokescript_compiler.js"></script>
+
+
+
+
+</html>

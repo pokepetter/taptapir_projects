@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <!-- <link rel="manifest" href="/manifest.json"> -->
+    <title>snootboop.js</title>
+</head>
+<style>
+    text {
+        text-align: center;
+        pointer-events: none;
+        font-size: 5vh;
+    }
+    .entity {
+        touch-action: none;
+        width:100%; height:100%; position:absolute; top:50%; left:50%; will-change: transform;
+        transform:translate(-50%, -50%); color:black; background-size: 100% 100%; padding:0; border-width:0px;
+        visibility: 'visible'; font-size:1v; display:inherit; image-rendering: pixelated;
+        background-color: 'red';
+        background-repeat:repeat;
+        /* border-radius: 128px; border-style:solid; border-color: white; */
+    }
+    .entity:focus {
+        outline: 0; -moz-outline-style: none;
+    }
+
+    .game {margin:auto; background-color: darkgreen; position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%); overflow: hidden; pointer-events: none; font-size:1vh;
+        width:100%; height:100%; outline: 0; box-shadow: 0; touch-action: none;
+    }
+    fullscreen_button {padding: 4px 4px; width: 64px; height: 64px; background-color: #555; border-radius: .2em; border-width: 0px;
+        text-decoration: none; color: white; font-size: 50.0px; z-index: 1; position: absolute; text-align: center; right: 0%;
+    }
+
+</style>
+
+// <body style="margin: 0; background-color:'#111'"; onload="brython()">
+<body style="margin: 0; background-color:'#111'"; onload="brython()">
+    <div id="game" class="game">
+        <div id="loading_text" style="position: absolute; top: 50%; left: 50%; width: 100%; color: white; font-family:monospace;
+            transform: translate(-50%, -5%); text-align: center;">
+
+        loading...<br><br><br><br><br><br><br>
+        powered by BUTTon engine
+        </div>
+    </div>
+
+</body>
+<fullscreen_button id="fullscreen_button" onclick="enter_fullscreen()">&#x26F6;</fullscreen_button>
+
+<script>
+function enter_fullscreen() {
+    var tardefelement = document.documentElement;
+
+    if (tardefelement.requestFullscreen) {tardefelement.requestFullscreen();}
+    if (tardefelement.webkitRequestFullscreen) {tardefelement.webkitRequestFullscreen();}
+    if (tardefelement.mozRequestFullScreen) {tardefelement.mozRequestFullScreen();}
+    if (tardefelement.msRequestFullscreen) {tardefelement.msRequestFullscreen();}
+
+    document.getElementById("fullscreen_button").style.display = "none";
+ }
+
+// aspect_ratio = 16/9
+// format = 'horizontal'
+// format = 'vertical'
+//
+// document.getElementById('loading_text').remove();
+// scene = document.createElement('entity')
+// //scene.setAttribute('id', 'scene');
+// scene.className = 'entity'
+// if (format == 'vertical') { // make width=1
+//     scene.style.height = `${100}%`
+//     scene.style.height = `${9/16*100}%`
+// }
+// else {  // make height be 1
+//     scene.style.width = `${16/9*100}%`
+// }
+// scene.style.backgroundColor = 'transparent'
+// // scene.style.backgroundColor = 'red'
+// game_window = document.getElementById('game')
+// game_window.appendChild(scene)
+// window_size = game_window.getBoundingClientRect();
+// var width = window_size.width;
+// var height = window_size.height;
+// window_aspect_ratio = width / height
+// # print('aspect_ratio:', window_aspect_ratio)
+// scale = 1
+// if (format == 'vertical') {
+//     game_window.style.width = `${height/aspect_ratio*scale}px`
+//     game_window.style.height =  `${height*scale}px`
+// }
+// else {
+//     if (window_aspect_ratio <= aspect_ratio) {
+//          game_window.style.height = `${width/aspect_ratio*scale}px`
+//          game_window.style.width =  `${width*scale}px`
+//      }
+//      else {
+//          game_window.style.width =  `${height*aspect_ratio*scale}px`
+//          game_window.style.height = `${height*scale}px`
+//      }
+// }
+// </script>
+
+<script type="text/javascript"
+    src="https://cdn.jsdelivr.net/npm/brython@3.9.5/brython.min.js">
+    // src="brython.min.js">
+</script>
+<script src="https://cdn.jsdelivr.net/npm/brython@3/brython_stdlib.js">
+</script>
+<script type="text/python">
+from browser import document
+from browser import window
+
+aspect_ratio = 16/9
+format = 'horizontal'
+format = 'vertical'
+
+document.getElementById('loading_text').remove();
+scene = document.createElement('entity')
+scene.className = 'entity'
+if format == 'vertical': # make width=1
+    scene.style.height = f'{100}%'
+    scene.style.height = f'{9/16*100}%'
+
+else:  # make height be 1
+    scene.style.width = f'{16/9*100}%'
+scene.style.backgroundColor = 'transparent'
+# scene.style.backgroundColor = 'red'
+game_window = document.getElementById('game')
+game_window.appendChild(scene)
+window_size = game_window.getBoundingClientRect()
+width = window_size.width
+height = window_size.height
+window_aspect_ratio = width / height
+print('aspect_ratio:', window_aspect_ratio)
+scale = 1
+if format == 'vertical':
+    game_window.style.width = f'{height/aspect_ratio*scale}px'
+    game_window.style.height =  f'{height*scale}px'
+
+else:
+    if window_aspect_ratio <= aspect_ratio:
+        game_window.style.height = f'{width/aspect_ratio*scale}px'
+        game_window.style.width =  f'{width*scale}px'
+
+    else:
+        game_window.style.width =  f'{height*aspect_ratio*scale}px'
+        game_window.style.height = f'{height*scale}px'
+
+# game_window = document.getElementById('game')
+def set_window_color(value):
+    game_window.style.backgroundColor = value
+
+def set_background_color(value):
+    document.body.style.backgroundColor = value
+
+# scene = document.getElementById('scene')
+entities = []
+
+class Entity:
+    def __init__(self, **kwargs):
+        self.el = document.createElement('entity')
+        self.el.className = 'entity'
+        self.el.entity_index = len(entities)
+        entities.append(self)
+
+        self.el.text_entity = document.createElement('text')
+        self.el.appendChild(self.el.text_entity)
+
+        self.el.style.opacity = 1
+        self.setTimeout_calls = {}
+        scene.appendChild(self.el)
+        self._enabled = True
+        self.color = 'white'
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+
+    def ontouchstart(self, event):
+        event.preventDefault();
+        self.on_click()
+
+
+    def __setattr__(self, name, value):
+        object.__setattr__(self, name, value)
+
+        if name == 'parent':            value.el.appendChild(self.el)
+        elif name == 'children':        [setattr(e, 'parent', self) for e in value]
+        elif name == 'enabled':         self.el.style.visibility  = ('hidden', 'inherit')[int(value)]
+
+        elif name == 'visible_self':
+            if not value:
+                self.color = 'rgba(0,0,0,0)'
+                self.text_color = 'rgba(0,0,0,0)'
+            else:
+                self.color = 'white'
+                self.text_color = 'white'
+
+        elif name == 'color':           self.el.style.backgroundColor = value
+        elif name == 'scale_x':         self.el.style.width = f'{value*100}%'
+        elif name == 'scale_y':         self.el.style.height = f'{value*100}%'
+        elif name == 'scale':
+            if isinstance(value, (int, float, complex)):
+                value = (value, value)
+            self.scale_x = value[0];
+            self.scale_y = value[1]
+
+        elif name == 'world_scale_x':   self.el.style.width = f'{value*window.width}px'
+        elif name == 'world_scale_y':   self.el.style.height = f'{value*window.height}px'
+        elif name == 'world_scale':
+            if isinstance(value, (int, float, complex)):
+                value = (value, value)
+            self.scale_x = value[0];
+            self.scale_y = value[1]
+
+        elif name == 'x':               self.el.style.left = f'{50+(value*100)}%'
+        elif name == 'y':               self.el.style.top = f'{50+(-value*100)}%'
+        elif name == 'z':               self.el.style.zIndex = -value
+
+        elif name == 'xy':
+            self.x = value[0]
+            self.y = value[1]
+
+        elif name == 'xyz':
+            self.x = value[0]
+            self.y = value[1]
+            self.z = value[2]
+
+        elif name == 'position':
+            if len(value) == 2: self.xy = value
+            if len(value) == 3: self.xyz = value
+
+        elif name == 'origin':          self.el.style.transform = f'translate({(-value[0]-.5)*100}%, {(value[1]-.5)*100}%)'
+        elif name == 'texture':         self.el.style.backgroundImage = f"url('{value}.jpg'), url('{value}.png')"
+        # elif name == 'name':            self.el.id = value
+
+        elif name == 'tileset_size':    self.el.style.backgroundSize = f'{value[0]*100}% {value[1]*100}%'
+        elif name == 'tile':            self.el.style.backgroundPosition = f'{(16-1)*value[0]*100}% {(16-1)*value[1]*100}%'
+
+        elif name == 'roundness':       self.el.style.borderRadius = f'{value*Math.min(self.el.clientWidth, self.el.clientHeight)}px'
+        elif name == 'text':            self.el.text_entity.textContent = value
+        elif name == 'text_color':      self.el.style.color = value
+        elif name == 'text_size':       self.el.style.fontSize = f'{value}v'
+        elif name == 'alpha':           self.el.style.opacity = value
+
+        elif name == 'on_click':
+            if value:
+                self.el.style.pointerEvents = 'auto'
+                self.el.ontouchstart = self.ontouchstart
+                self.el.addEventListener('mousedown', value)
+                self.el.addEventListener("touchstart", value);
+            else:
+                self.el.style.pointerEvents = 'none'
+
+
+    def _animate(self, variable_name, target_value):
+        setattr(self, variable_name, lerp(getattr(self, variable_name), target_value))
+
+    from browser import timer
+    def animate(self, variable_name, target_value, duration=.1):
+        # print('animate:', self, variable_name)
+        if not hasattr(self, 'enabled') or not self.enabled:
+            return False
+
+        # stop ongoing animation of self varibale
+        if variable_name in self.setTimeout_calls:
+            for id in self.setTimeout_calls[variable_name]:
+                clearTimeout(id)
+                # print('clear:', id)
+
+        self.setTimeout_calls[variable_name] = []
+
+        start_value = getattr(self, variable_name)
+
+        for i in range(duration*60):
+            print('--', i/duration*60)
+            # timer.set_timeout(setattr, i/10, self, variable_name, lerp(start_value, target_value, i/duration*60))
+            invoke(setattr, self, variable_name, lerp(start_value, target_value, i/duration*60), delay=i/10)
+            # timer.set_timeout(self._animate, variable_name, lerp(start_value, target_value, i/duration*60))
+            # def anim(self, variable_name, target_value, delay):
+            #     setTimeout(self._animate, variable_name, target_value, i/duration/60*1000))
+            #
+            # self.setTimeout_calls[variable_name].append(lambda: setTimeout(self._animate, variable_name, target_value, i/duration/60*1000))
+                # setTimeout(
+#                     function () {
+#                         if (!entity.enabled) {
+#                             return False};
+#                         entity[variable_name] = lerp(entity[variable_name], target_value, i/duration/60);
+#                     },
+#                     1000*i*1/60
+#                 )
+#             )
+#         }
+#     }
+# }
+from browser import timer
+def invoke(func, *args, **kwargs):
+    print('...............', 'delay' in kwargs)
+    delay = kwargs['delay']
+    del kwargs['delay']
+
+    if delay == 0:
+        func(*args, **kwargs)
+        return
+
+    timer.set_timeout(func, *args, **kwargs, delay)
+
+
+def lerp(a, b, t):
+    # return a + (b - a) * t
+    return a * (1-t)+b * t
+
+def clamp(num, min, max):
+  return max(min(value, ceiling), floor)
+
+class StateHandler:
+    def __init__(self, states, fade=True):
+        self.states = states
+        self.fade = fade
+
+        self.overlay = Entity(name='overlay', color='black', alpha=0, z=-1, scale=(1,aspect_ratio))
+        if states:
+            self.state = states[0]
+
+    @property
+    def state(self):
+        return self._state
+
+    @state.setter
+    def state(self, value):
+        if self.fade and value != self._state:
+            self.overlay.animate('alpha', 1, .1)
+            invoke(self.set_state_nofade, delay=.1)
+            invoke(self.overlay.animate, 'alpha', 0, delay=.1)
+        else:
+            self.hard_state = value
+
+        def set_state_nofade(self):     # set the state without fading
+            for key, entity in self.states.items():
+                entity.enabled = (key == value or value == entity)
+
+#
+# function Button(options) {
+#     if (!('scale' in options)) {
+#         options['scale'] = [.2,.2]
+#     }
+#     if (!('roundness' in options)) {
+#         options['roundness'] = .2
+#     }
+#     if ('scale' in options) {
+#         if ('scale_x' in options) {
+#             options['scale'][0] = options['scale_x']
+#         }
+#         if ('scale_y' in options) {
+#             options['scale'][1] = options['scale_y']
+#         }
+#     }
+#     # print(options)
+#     return new Entity(options)
+# }
+state_handler = StateHandler({
+    # main_menu : b,
+    # scene_2 : scene_2
+})
+#
+
+class Scene(Entity):
+    def __init__(self, name='', **kwargs):
+        super().__init__(name=name, scale_y=aspect_ratio, texture=name, **kwargs)
+        state_handler.states[name] = self
+
+
+# function Scene(name='', options=False) {
+#     settings = {visible_self:False}
+#     for (const [key, value] of Object.entries(options)) {
+#         settings[key] = value
+#     }
+#
+#     _entity = new Entity(settings)
+#     _entity.bg = new Entity({parent:_entity, scale_y:aspect_ratio})
+#     _entity.bg.texture = name + '.jpg'
+#     state_handler.states[name] = _entity
+#     return _entity
+# }
+#
+def goto_scene(scene_name):
+    state_handler.state = scene_name
+# function goto_scene(scene_name) {
+#     state_handler.state = scene_name
+# }
+# class HealthBar extends Entity {
+#     constructor(options=False) {
+#         let settings = {min:0, max:100, color:'#222', scale:[.8,.05], y:.75, roundness:.25}
+#         settings['default'] = settings['max']
+#         for (const [key, value] of Object.entries(options)) {
+#             if (key == 'bar_color') {continue}
+#             print(key, value)
+#             settings[key] = value
+#         }
+#         super(settings)
+#         self.bar = new Entity({parent:self, origin:[-.5,0], x:-.5, roundness:.25, scale_x:.25, color:'lime'})
+#
+#         if (('bar_color' in options)) {
+#             self.bar_color = settings['bar_color']
+#         }
+#
+#         self.value = self.default
+#
+#     }
+#
+#     def value() {return self._value}
+#     def value(value) {
+#         value = clamp(value, self.min, self.max)
+#         # print('def value:', value)
+#         self._value = value
+#         self.bar.scale_x = value / self.max}
+#     def bar_color() {return self.bar.color}
+#     def bar_color(value) {self.bar.color = value}
+# }
+
+mouse_pressed = False
+def mousedown(e):
+    e.preventDefault()
+    handle_mouse_click(e)
+document.addEventListener('mousedown', mousedown)
+
+def touchstart(e):
+    e.preventDefault()
+    handle_mouse_click(e.touches[0])
+document.addEventListener('touchstart', touchstart)
+
+def handle_mouse_click(e):
+    mouse_pressed = True
+    element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset)
+    if element_hit and hasattr(element_hit, 'entity_index') and entities[element_hit.entity_index].on_click:
+        entities[element_hit.entity_index].on_click()
+
+def mouseup(e):
+    e.preventDefault()
+    mouse_up(e)
+document.body.addEventListener('mouseup', mouseup)
+document.body.addEventListener('touchend', mouseup)
+
+def mouse_up(e):
+    mouse_pressed = False
+
+# function range(n) {return Array(n).keys()}
+# function Array_2d(w, h) {
+#     var tiles = new Array(w)
+#     for (var i = 0; i < tiles.length; i++) {
+#         tiles[i] = new Array(h);
+#     }
+#     return tiles
+# }
+
+def rgb(r, g, b):
+    return f'rgb({int(r*255)},{int(g*255)},{int(b*255)})'
+
+# def hex_to_rgb(hex):
+#   var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})/i.exec(hex);
+#   return result ? {
+#     r: parseInt(result[1], 16),
+#     g: parseInt(result[2], 16),
+#     b: parseInt(result[3], 16)
+#   } : null;
+# }
+# palette = [
+#     '#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8',
+#     '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA'
+#     ]
+# let filter_code = ''
+# for (i = 0; i < palette.length; i++) {
+#     let rgb = hex_to_rgb(palette[i])
+#     let r = rgb.r/255
+#     let g = rgb.g/255
+#     let b = rgb.b/255
+#     let redToBlue = f'{r**2.4} 0 0 0 0  {g**2.4} 0 0 0 0  {b**2.4} 0 0 0 0  0 0 0 1 0';
+#     filter_code += '
+#         <svg xmlns="http:#www.w3.org/2000/svg">
+#             <filter id="tint_filter_{i}">
+#                 <feColorMatrix type="matrix" values="{redToBlue}" />
+#             </filter>
+#         </svg>
+#     '
+# }
+# filters = document.createElement('div')
+# game_window.appendChild(filters)
+# filters.innerHTML = filter_code
+#
+# function invoke(func, delay) {setTimeout(func, delay*1000)}
+#
+#
+# class TintableTile extends Entity {
+#     def tint() {return self._tint}
+#     def tint(value) {
+#         self._tint = value
+#         if (value < 16) {
+#             self.el.style.filter = 'url(#tint_filter_{value})'
+#         }
+#     }
+#
+# }
+
+# print('cccccccccccccccccc:', hsv(120, 1, 1))
+# const COLOR_NAMES = ['white', 'light_gray', 'gray', 'dark_gray', 'black', 'red', 'orange', 'yellow', 'lime', 'green', 'turquoise', 'cyan', 'azure', 'blue', 'violet', 'magenta', 'pink']
+# const ORIGINS = {'center', 'top', 'bottom', 'right', 'left', 'top_left', 'top_right', 'bottom_left', 'bottom_right'}
+#
+# function E(...args) {
+#     print('..args:', args)
+#     var data = {}
+#     for (const arg of args) {
+#         if (typeof arg === 'string') {
+#             # print('......')
+#             if (COLOR_NAMES.includes(arg)) {
+#                 data['color'] = arg
+#             }
+#         }
+#     }
+#     print('data:', data)
+# }
+#
+# E('Hack_square_64x64', 0, 0, .1,.1, 'yellow', 'top_left')
+
+def test_func():
+    print('aaaaa')
+
+Scene('market')
+Entity(texture='market', on_click=test_func)
+e = Entity(color='red', scale=.1)
+#
+def anim_on_click():
+    # e.animate('y', .5, duration=.2)
+    for i in range(10):
+        e.y = i/10
+        # invoke(setattr, e, 'y', i/10, delay=i/10/2)
+        print(e.y)
+    print('anim')
+
+Entity(position=(.4,-.5), scale=.1, text='play anim', on_click=anim_on_click)
+
+
+</script>
+
+// <!-- <script>
+//     if ('serviceWorker' in navigator) {
+//         navigator.serviceWorker.register('/service_worker.js')
+//     }
+// </script> -->
+</html>

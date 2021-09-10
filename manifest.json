@@ -1,0 +1,18 @@
+{
+  "name": "tapatapir: game engine",
+  "short_name": "tapatapir",
+  "description": "Game engine",
+  "icons": [
+    {
+      "src": "blue_valley.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/taptapir.html",
+
+  "background_color": "darkgreen",
+  "theme_color": "darkgreen",
+  "display": "fullscreen",
+  "orientation" : "portrait"
+}
