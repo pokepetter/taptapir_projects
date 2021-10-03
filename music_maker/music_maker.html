@@ -10,7 +10,6 @@
     text {
         text-align: center;
         pointer-events: none;
-        font-size: 5vh;
     }
     .entity {
         touch-action: none;
@@ -19,6 +18,7 @@
         visibility: 'visible'; font-size:1v; display:inherit; image-rendering: pixelated;
         background-color: 'red';
         background-repeat:repeat;
+        /* font-size: 5vh; */
         /* border-radius: 128px; border-style:solid; border-color: white; */
     }
     .entity:focus {
@@ -41,7 +41,7 @@
             transform: translate(-50%, -5%); text-align: center;">
 
         loading...<br><br><br><br><br><br><br>
-        powered by snootboop
+        powered by taptapir
         </div>
     </div>
 
@@ -56,26 +56,42 @@ ASSETS_FOLDER = 'assets/'
 
 
 symbols = ['☀️','🌙','🌟','🪐','🌠']
+sample_names = ['UoIowaPiano_n24.wav','UoIowaPiano_n36.wav','UoIowaPiano_n48.wav','UoIowaPiano_n60.wav','UoIowaPiano_n72.wav']
+for e in sample_names:
+    var audio = new Audio(e)
+
+
+set_window_color('rgb(49 72 60)')
 
 for y in range(5):
     for x in range(7):
-        let b = Button(x=-.5 + (x*1/7), y=-.5+(y*1/7), scale=1/7, text=symbols[y], origin=[-.5,.5], octave=y)
+        let b = Button(x=-.5 + (x*1/7), y=-.5+(y*1/7), scale=1/7,  origin=[-.5,.5], color=rgb(x/3,x/7,y/7), octave=y)
+        b.text_size = 3
+        n = 12 + y*12 + [2,3,5,7,9,10,12][x]
+        b.text = n
+        b.text_color = 'white'
+        // b.text_size = 2
+        // b.text = symbols[y]
+        b.original_color = b.color
+        b.roundness=.5
+        b.el.style.boxShadow = "10px 20px 30px rgb(19 12 10)"
         b.el.style.textAlign =  'center'
 
         b.on_click = def():
             b.color = 'gold'
             invoke(def reset():
-                b.color = 'white'
-            , .4)
+                b.color = b.original_color
+            , .1)
 
-            names = ['UoIowaPiano_n24.wav','UoIowaPiano_n36.wav','UoIowaPiano_n48.wav','UoIowaPiano_n60.wav','UoIowaPiano_n72.wav']
-            var audio = new Audio(names[b.octave])
+            var audio = new Audio(sample_names[b.octave])
 
             audio.volume = .5
             audio.mozPreservesPitch = false
             audio.preservesPitch = false
-            n = 12 + y*12 + x
+            n = 12 + y*12 + [2,3,5,7,9,10,12][x]
             audio.playbackRate = 2 ** ((n - (24 + 12*b.octave)) / 12)
+            b.text = n
+            b.text_color = 'white'
 
             audio.play()
 

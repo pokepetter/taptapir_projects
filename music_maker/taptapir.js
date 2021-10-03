@@ -54,8 +54,9 @@ class Entity {
         this.el.entity_index = entities.length
         entities.push(this)
 
-        this.el.text_entity = document.createElement('text')
-        this.el.appendChild(this.el.text_entity)
+        // this.el.text_entity = document.createElement('text')
+        // this.el.text_entity.style.margin = 'auto'
+        // this.el.appendChild(this.el.text_entity)
 
         this.el.style.opacity = 1
         this.setTimeout_calls = {}
@@ -232,9 +233,9 @@ class Entity {
         this.el.style.borderRadius = `${value*Math.min(this.el.clientWidth, this.el.clientHeight)}px`
         this._roundness = value
     }
-    get text() {return this.el.text_entitytextContent}
+    get text() {return this.el.textContent}
     set text(value) {
-        return this.el.text_entity.textContent = value
+        this.el.textContent = value
     }
     get text_color() {return this.el.style.color}
     set text_color(value) {
