@@ -65,6 +65,10 @@ class Entity {
         // this.on_enable = null
         // this.on_disable = null
         this.color = 'white'
+        this.x = 0
+        this.y = 0
+        this.draggable = false
+        this.dragging = false
 
         for (const [key, value] of Object.entries(options)) {
             this[key] = value
@@ -232,6 +236,15 @@ class Entity {
         this.el.style.borderRadius = `${value*Math.min(this.el.clientWidth, this.el.clientHeight)}px`
         this._roundness = value
     }
+    get shadow() {return this._shadow}
+    set shadow(value) {
+        this._shadow = value
+        if (value) {
+            this.el.style.boxShadow = "5px 20px 40px black";
+        }
+        else {this.el.style.boxShadow = 'none'}
+    }
+
     get text() {return this.el.text_entitytextContent}
     set text(value) {
         return this.el.text_entity.textContent = value
@@ -267,6 +280,16 @@ class Entity {
     //
         }
         else {this.el.style.pointerEvents = 'none'}
+    }
+    get draggable() {return this._draggable}
+    set draggable(value) {
+        this._draggable = value
+        if (value) {
+            this.el.style.pointerEvents = 'auto'
+        }
+        else {
+            this.el.style.pointerEvents = 'none'
+        }
     }
 
     animate(variable_name, target_value, duration=.1) {
@@ -436,7 +459,7 @@ class HealthBar extends Entity {
     set bar_color(value) {this.bar.color = value}
 }
 
-mouse_pressed = false
+mouse = {x:0, y:0, position:[0,0], pressed:false}
 
 document.addEventListener('mousedown', function(e) {
     e.preventDefault()
@@ -447,11 +470,20 @@ document.addEventListener('touchstart', function(e) {
     handle_mouse_click(e.touches[0])
 })
 function handle_mouse_click(e) {
-    mouse_pressed = true
+    mouse.pressed = true
     element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
-    if (element_hit && element_hit.entity_index && entities[element_hit.entity_index].on_click) {
-        entities[element_hit.entity_index].on_click()
+    entity = entities[element_hit.entity_index]
+    if (element_hit && entity) {
+        if (entity.on_click) {
+            entity.on_click()
+        }
+        if (entity.draggable) {
+            print('aaaaa')
+            entity.start_offset = [mouse.x - entity.x, mouse.y - entity.y]
+            entity.dragging = true
+        }
     }
+
 }
 document.body.addEventListener('mouseup', function(e) {
     e.preventDefault()
@@ -462,8 +494,27 @@ document.body.addEventListener('touchend', function(e) {
     mouse_up()
 })
 function mouse_up(e) {
-    mouse_pressed = false;
+    mouse.pressed = false;
+    for (var e of entities) {
+        e.dragging = false
+    }
 }
+
+function onmousemove(event) {
+    window_position = game_window.getBoundingClientRect()
+    mouse.x = ((event.x - window_position.left) / game_window.clientWidth) - .5
+    mouse.y = -(((event.y - window_position.top) / game_window.clientHeight ) - .5) / (9/16)
+    mouse.position = [mouse.x, mouse.y]
+    for (var e of entities) {
+        if (e.dragging) {
+            e.x = mouse.x - e.start_offset[0]
+            e.y = mouse.y - e.start_offset[1]
+            e.x = clamp(e.x, -.5, .5)
+            e.y = clamp(e.y, -.5*aspect_ratio, .5*aspect_ratio)
+        }
+    }
+}
+document.onmousemove = onmousemove
 
 function range(n) {return Array(n).keys()}
 function Array_2d(w, h) {
@@ -473,6 +524,8 @@ function Array_2d(w, h) {
     }
     return tiles
 }
+// min = Math.min
+// max = Math.max
 
 function rgb(r, g, b) {return `rgb(${parseInt(r*255)},${parseInt(g*255)},${parseInt(b*255)})`}
 

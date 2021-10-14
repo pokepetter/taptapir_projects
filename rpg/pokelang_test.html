@@ -97,15 +97,16 @@ inventory = {
 'pick axe':         {'amount':1, 'sell_value':10},
 'wood':             {'amount':0, 'sell_value':5},
 }
+
 world_map = Scene('world_map')
 
 
 def Scenebutton(name, x, y) {
-    return Button(parent=world_map, texture=`${name}.jpg`, x=x, y=y, roundness=.5, on_click=function(){goto_scene(name)})
+    return Button(parent=world_map, texture=`${name}.jpg`, x=x, y=y, z=-1, roundness=.5, shadow=true, on_click=function(){goto_scene(name)})
 }
 
 
-print('sell_valiuee:', inventory['plank'].sell_value)
+print('sell_value:', inventory['plank'].sell_value)
 woodcutters_valley = Scene('woodcutters_valley')
 woodcutters_valley_button = Scenebutton('woodcutters_valley', .05, .15)
 tree = Button(parent=woodcutters_valley, text='tree', x=.0, y=-.5, 'hp'=3)
@@ -205,6 +206,9 @@ for key, value in state_handler.states.items():
     map_button = Button(texture='button_world_map.png', x=-.35, y=-.78, roundness=.5, on_click=function(){goto_scene('world_map')})
     map_button.parent = value
 
+
+
+b = Button(color='gray', text='|||', draggable=true, z=-1, shadow=true)
 
 
 </script>
