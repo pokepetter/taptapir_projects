@@ -515,7 +515,24 @@ function onmousemove(event) {
     }
 }
 document.onmousemove = onmousemove
-document.ontouchmove = onmousemove
+
+function ontouchmove(event) {
+    event.preventDefault()
+    event = event.targetTouches[0]
+    window_position = game_window.getBoundingClientRect()
+    mouse.x = ((event.clientX - window_position.left) / game_window.clientWidth) - .5
+    mouse.y = -(((event.clientY - window_position.top) / game_window.clientHeight ) - .5) / (9/16)
+    mouse.position = [mouse.x, mouse.y]
+    for (var e of entities) {
+        if (e.dragging) {
+            e.x = mouse.x - e.start_offset[0]
+            e.y = mouse.y - e.start_offset[1]
+            e.x = clamp(e.x, -.5, .5)
+            e.y = clamp(e.y, -.5*aspect_ratio, .5*aspect_ratio)
+        }
+    }
+}
+document.ontouchmove = ontouchmove
 
 function range(n) {return Array(n).keys()}
 function Array_2d(w, h) {
