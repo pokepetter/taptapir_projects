@@ -54,8 +54,8 @@ class Entity {
         this.el.entity_index = entities.length
         entities.push(this)
 
-        this.el.text_entity = document.createElement('text')
-        this.el.appendChild(this.el.text_entity)
+        // this.el.text_entity = document.createElement('text')
+        // this.el.appendChild(this.el.text_entity)
 
         this.el.style.opacity = 1
         this.setTimeout_calls = {}
@@ -245,9 +245,9 @@ class Entity {
         else {this.el.style.boxShadow = 'none'}
     }
 
-    get text() {return this.el.text_entitytextContent}
+    get text() {return this.el.textContent}
     set text(value) {
-        return this.el.text_entity.textContent = value
+        return this.el.textContent = value
     }
     get text_color() {return this.el.style.color}
     set text_color(value) {
@@ -256,7 +256,7 @@ class Entity {
     get text_size() {return this._text_size}
     set text_size(value) {
         this._text_size = value
-        this.el.style.fontSize = `${value}v`
+        this.el.style.fontSize = `${value}vh`
     }
 
     get alpha() {return this.el.style.opacity; print(this.el.style.opacity)}
