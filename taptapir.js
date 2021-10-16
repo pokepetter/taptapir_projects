@@ -515,6 +515,7 @@ function onmousemove(event) {
     }
 }
 document.onmousemove = onmousemove
+document.ontouchmove = onmousemove
 
 function range(n) {return Array(n).keys()}
 function Array_2d(w, h) {
