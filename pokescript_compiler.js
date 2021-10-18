@@ -1,6 +1,19 @@
 print = console.log
 var poke_script = document.querySelector('script[type="text/pokescript"]').textContent
 
+
+// remove text so it doesn't get parsed as code.
+var strings = poke_script.split("'")
+
+let texts = strings.filter((element, index) => {
+    return index % 2 === 1 && !element.startsWith('#') && !element === "''";
+    })
+
+for (var i=0; i<texts.length; i++) {
+    poke_script = poke_script.replace(texts[i], `TEXT_CONTENT_${i}`)
+}
+
+// start parsing
 poke_script = poke_script.replaceAll(',\n', ',')
 poke_script = poke_script.replaceAll('(\n', '(')
 
@@ -8,7 +21,7 @@ var all_lines = poke_script.split('\n');
 var lines = []
 lines.push('\n')
 
-for(var i=0; i<all_lines.length; i++) {
+for (var i=0; i<all_lines.length; i++) {
 
     if (!all_lines[i].trim()) {
         continue
@@ -183,6 +196,12 @@ for (var i=0; i<lines.length; i++) {
 }
 
 var compiled_code = lines.join('\n')
+
+// add text back in
+for (var i=0; i<texts.length; i++) {
+    compiled_code = compiled_code.replace(`'TEXT_CONTENT_${i}'`, `'${texts[i]}'`)
+}
+
 print('COMPILED CODE:', compiled_code)
 eval(compiled_code)
 

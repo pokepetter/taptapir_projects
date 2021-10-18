@@ -35,7 +35,7 @@ b = Button(text='test me', scale_x=.4)
 b.on_click = def():
     b.text = 'calculating...'
     result.text = ''
-    invoke(show_result, delay=2)
+    invoke(show_result, delay=1)
 
 
 def show_result()
@@ -43,7 +43,7 @@ def show_result()
 
     r = Math.random()
     if r < .5:
-        result.text = 'you are no gey😞'
+        result.text = 'you are not gay😞'
         bg.enabled = false
     else:
         result.text = 'you are very gay🏳️‍🌈'
