@@ -6,7 +6,7 @@ var poke_script = document.querySelector('script[type="text/pokescript"]').textC
 var strings = poke_script.split("'")
 
 let texts = strings.filter((element, index) => {
-    return index % 2 === 1 && !element.startsWith('#') && !element === "''";
+    return index % 2 === 1 && !element.startsWith('#') && element.length > 0;
     })
 
 for (var i=0; i<texts.length; i++) {
