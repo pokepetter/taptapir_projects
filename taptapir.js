@@ -69,6 +69,7 @@ class Entity {
         this.y = 0
         this.draggable = false
         this.dragging = false
+        this.text_size = 5
 
         for (const [key, value] of Object.entries(options)) {
             this[key] = value
@@ -247,7 +248,7 @@ class Entity {
 
     get text() {return this.el.textContent}
     set text(value) {
-        return this.el.textContent = value
+        this.el.textContent = value
     }
     get text_color() {return this.el.style.color}
     set text_color(value) {
@@ -287,7 +288,7 @@ class Entity {
         if (value) {
             this.el.style.pointerEvents = 'auto'
         }
-        else {
+        else if (!this._on_click) {
             this.el.style.pointerEvents = 'none'
         }
     }
@@ -466,7 +467,7 @@ document.addEventListener('mousedown', function(e) {
     handle_mouse_click(e)
 })
 document.addEventListener('touchstart', function(e) {
-    e.preventDefault()
+    // e.preventDefault()
     handle_mouse_click(e.touches[0])
 })
 function handle_mouse_click(e) {
@@ -478,8 +479,11 @@ function handle_mouse_click(e) {
             entity.on_click()
         }
         if (entity.draggable) {
-            print('aaaaa')
-            entity.start_offset = [mouse.x - entity.x, mouse.y - entity.y]
+            window_position = game_window.getBoundingClientRect()
+            entity.start_offset = [
+                ((e.clientX - window_position.left) / game_window.clientWidth) - .5 - entity.x,
+                (-(((e.clientY - window_position.top) / game_window.clientHeight ) - .5) / (9/16)) - entity.y
+                ]
             entity.dragging = true
         }
     }
@@ -496,14 +500,29 @@ document.body.addEventListener('touchend', function(e) {
 function mouse_up(e) {
     mouse.pressed = false;
     for (var e of entities) {
-        e.dragging = false
+        if (e.dragging) {
+            e.dragging = false
+            if (e.drop) {
+                e.drop()
+            }
+        }
     }
 }
 
 function onmousemove(event) {
     window_position = game_window.getBoundingClientRect()
-    mouse.x = ((event.x - window_position.left) / game_window.clientWidth) - .5
-    mouse.y = -(((event.y - window_position.top) / game_window.clientHeight ) - .5) / (9/16)
+
+    if (event.targetTouches !== undefined) {
+        event = event.targetTouches[0]
+        event_x = event.clientX
+        event_y = event.clientY
+    }
+    else {
+        event_x = event.x
+        event_y = event.y
+    }
+    mouse.x = ((event_x - window_position.left) / game_window.clientWidth) - .5
+    mouse.y = -(((event_y - window_position.top) / game_window.clientHeight ) - .5) / (9/16)
     mouse.position = [mouse.x, mouse.y]
     for (var e of entities) {
         if (e.dragging) {
@@ -515,24 +534,8 @@ function onmousemove(event) {
     }
 }
 document.onmousemove = onmousemove
+document.ontouchmove = onmousemove
 
-function ontouchmove(event) {
-    event.preventDefault()
-    event = event.targetTouches[0]
-    window_position = game_window.getBoundingClientRect()
-    mouse.x = ((event.clientX - window_position.left) / game_window.clientWidth) - .5
-    mouse.y = -(((event.clientY - window_position.top) / game_window.clientHeight ) - .5) / (9/16)
-    mouse.position = [mouse.x, mouse.y]
-    for (var e of entities) {
-        if (e.dragging) {
-            e.x = mouse.x - e.start_offset[0]
-            e.y = mouse.y - e.start_offset[1]
-            e.x = clamp(e.x, -.5, .5)
-            e.y = clamp(e.y, -.5*aspect_ratio, .5*aspect_ratio)
-        }
-    }
-}
-document.ontouchmove = ontouchmove
 
 function range(n) {return Array(n).keys()}
 function Array_2d(w, h) {
