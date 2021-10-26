@@ -5,8 +5,9 @@
     visibility: 'visible'; display:inherit; image-rendering: pixelated;
     background-color: 'red';
     background-repeat:repeat;
-    font-size: 5vh;
-    text-align: center;
+    /* font-size: 5vh; */
+    /* padding: .75em; */
+    /* text-align: center; */
     /* border-radius: 128px; border-style:solid; border-color: white; */
 }
 .entity:focus {
@@ -23,6 +24,8 @@ fullscreen_button {padding: 4px 4px; width: 64px; height: 64px; background-color
 body {
     margin:0;
     background-color:'#111';
+    font-family: Verdana, Arial, sans-serif;
+    white-space: pre-wrap;
 }
 #loading_text {
     position: absolute;

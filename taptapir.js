@@ -69,7 +69,7 @@ class Entity {
         this.y = 0
         this.draggable = false
         this.dragging = false
-        this.text_size = 5
+        this.text_size = 3
 
         for (const [key, value] of Object.entries(options)) {
             this[key] = value
@@ -260,12 +260,24 @@ class Entity {
         this.el.style.fontSize = `${value}vh`
     }
 
+    get text_origin() {return this._text_origin}
+    set text_origin(value) {
+        this._text_origin = value
+        this.el.style.textAlign = value
+    }
+
     get alpha() {return this.el.style.opacity; print(this.el.style.opacity)}
     set alpha(value) {
         // print('set opac', value)
         this.el.style.opacity = value
         this._alpha = value
     }
+    get padding() {return this._padding}
+    set padding(value) {
+        this._padding = value
+        this.el.style.padding = `${value}em`
+    }
+
     get on_click() {return this._on_click}
     set on_click(value) {
         this._on_click = value
@@ -319,6 +331,11 @@ class Entity {
             )
         }
     }
+
+    fit_to_text() {
+        this.el.style.width = 'fit-content'
+        this.el.style.height = 'fit-content'
+    }
 }
 
 
@@ -342,6 +359,9 @@ function Button(options) {
     }
     if (!('roundness' in options)) {
         options['roundness'] = .2
+    }
+    if (!('text_origin' in options)) {
+        options['text_origin'] = 'center'
     }
     if ('scale' in options) {
         if ('scale_x' in options) {
@@ -594,3 +614,18 @@ class TintableTile extends Entity {
     }
 
 }
+function Text(options) {
+    if (!('scale' in options && !'scale_x' in options)) {
+        options['scale_x'] = .8
+    }
+
+    defaults = {'roundness':.05, 'shadow':1, 'alpha':.9, 'padding':.75, 'z':-1}
+    for (const [key, value] of Object.entries(defaults)) {
+        if (!(key in options)) {
+            options[key] = value
+        }
+    }
+    return new Entity(options)
+}
+
+CLEAR = '#00000000'
