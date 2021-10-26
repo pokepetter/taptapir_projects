@@ -28,8 +28,11 @@ for (var i=0; i<all_lines.length; i++) {
     }
     // remove text so it doesn't get parsed as code.
     quotes = [...all_lines[i].matchAll(regexp)];
-    // strings.push(...quotes)
+
     for (var j=0; j<quotes.length; j++) {
+        if (quotes[j][1].length == 0) {
+            continue
+        }
         strings.push(quotes[j][1])
         string_index += 1
         all_lines[i] = all_lines[i].replace(quotes[j], `TEXT_CONTENT_${string_index}`)
