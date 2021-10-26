@@ -30,12 +30,11 @@ for (var i=0; i<all_lines.length; i++) {
     quotes = [...all_lines[i].matchAll(regexp)];
 
     for (var j=0; j<quotes.length; j++) {
-        if (quotes[j][1].length == 0) {
-            continue
+        if (quotes[j][1].length > 0) {
+            strings.push(quotes[j][1])
+            all_lines[i] = all_lines[i].replace(quotes[j][1], `TEXT_CONTENT_${string_index}`)
+            string_index += 1
         }
-        strings.push(quotes[j][1])
-        string_index += 1
-        all_lines[i] = all_lines[i].replace(quotes[j], `TEXT_CONTENT_${string_index}`)
     }
 
     lines.push(all_lines[i])
@@ -178,16 +177,18 @@ for (var i=0; i<lines.length; i++) {
         lines[i] = lines[i].replace(`${word_before_in} in ${word_after_in}`, `${word_after_in}.includes(${word_before_in})`)
     }
 
-    if (lines[i].includes('Button({')) {
-        continue
-    }
-    if (lines[i].includes('Button(')) {
-        part_after = lines[i].split('Button(')[1]
-        // print('aaaa', part_after)
-        arguments = get_inside_brackets(part_after, '(', ')')
-        // print('------args:', lines[i], arguments)
-        js_style_arguments = '{' + arguments.replaceAll('=', ':') + '}'
-        lines[i] = lines[i].replace(arguments, js_style_arguments)
+    for (var class_name of ['Button', 'Text']) {
+        if (lines[i].includes(`${class_name}({`)) {
+            continue
+        }
+        if (lines[i].includes(`${class_name}(`)) {
+            part_after = lines[i].split(`${class_name}(`)[1]
+            // print('aaaa', part_after)
+            arguments = get_inside_brackets(part_after, '(', ')')
+            // print('------args:', lines[i], arguments)
+            js_style_arguments = '{' + arguments.replaceAll('=', ':') + '}'
+            lines[i] = lines[i].replace(arguments, js_style_arguments)
+        }
     }
     if (lines[i].includes('new Entity({')) {
         continue
@@ -204,7 +205,6 @@ for (var i=0; i<lines.length; i++) {
 var compiled_code = lines.join('\n')
 
 // add text back in
-// print('strings:', strings)
 for (var i=0; i<strings.length; i++) {
     compiled_code = compiled_code.replace(`'TEXT_CONTENT_${i}'`, `'${strings[i]}'`)
 }
