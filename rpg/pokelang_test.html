@@ -181,13 +181,28 @@ for key, value in state_handler.states.items():
 
 
 
-b = Button(color='gray', text='drag me', draggable=true, z=-1, shadow=true)
+b = Button(parent=world_map, color='gray', text='drag me', draggable=true, z=-1, shadow=true)
 b.on_click = def():
     b.color = 'red'
 
 b.drop = def():
     b.color = 'blue'
     invoke(function(){b.color='gray'}, delay=.2)
+
+// par = Entity(visible_self=false, scale_x=.9)
+Text(text='Tapir City', text_size=2, padding=.5, roundness=.02, color='smoke', x=market_button.x, y=market_button.y+.15, parent=world_map).fit_to_text()
+// text = Text(text='Hi there traveler! Is there anything I can help you with? \n\nI need help with something', x=0)
+// Entity(scale_x=.5, alpha=.2, color='red')
+// text.color='#00000000'
+// text.shadow = 0
+// text.fit_to_text()
+
+// text.scale *= .7
+// text.el.style.margin = '.75em'
+// text.el.style.whiteSpace = 'pre-wrap'
+// text.el.style.display = 'pre'
+// text.el.style.whiteSpace= 'pre'
+
 
 </script>
 <script src="../pokescript_compiler.js"></script>

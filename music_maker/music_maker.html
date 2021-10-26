@@ -32,42 +32,137 @@ for e in sample_names:
     var audio = new Audio(e)
 
 
-set_window_color('rgb(49 72 60)')
+bg_color = 'rgb(49 72 60)'
+set_window_color(bg_color)
 
-text = Entity(text='music', text_size=7, color='#00000000', text_color='white')
+note_view_parent = Entity(visible_self=false)
+composer_view =    Entity(visible_self=false)
+// text = Entity(text='music', text_size=7, color='#00000000', text_color='white')
+cursor = Button(parent=note_view_parent, scale=1/8,  origin=[-.5,.5], color='magenta', alpha=.5, z=1, roundness=.5)
+current_block = null
+blocks = Array_2d(8, 5)
 
+
+w = 8
+for y in range(5):
+    for x in range(w):
+        let b = Button(parent=note_view_parent, x=-.5 + (x*1/8), y=.2+(y*1/w), scale=1/(w+1),  origin=[-.5,.5], color=bg_color, roundness=.5, text_size=3)
+        blocks[x][y] = b
+        b.el.style.borderWidth = '3px'
+        b.el.style.borderStyle = 'solid'
+
+        b.on_click = def():
+            current_block = b
+            cursor.position = b.xy
+
+        b.set_note = def set_note(n):
+            b.n = n
+            if not n:
+                b.text = ''
+                b.color = bg_color
+                return
+
+            octave = Math.floor(n / 12)
+            // print('oct:', octave)
+            // print(n - (octave*12))
+            note_name = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'][n - (octave*12)]
+            b.text = note_name + octave + '\n' + n
+
+current_time = 0
+play_button = Button(text='▶️', color='orange', scale=1/7, y=-.025, shadow=true)
+
+composer_view.enabled = false
+note_view_parent.enabled = true
+
+toggle_note_view_button = Button(text='~', color='orange', scale=1/7, y=-.025, shadow=true, x=-.4, on_click=toggle_note_view, text_size=2.5)
+def toggle_note_view():
+    note_view_parent.enabled = not note_view_parent.enabled
+    composer_view.enabled = not composer_view.enabled
+    if note_view_parent.enabled:
+        toggle_note_view_button.text = '<-ovrview'
+    else:
+        toggle_note_view_button.text = '->notes'
+
+
+
+def play():
+    for y in range(5):
+        for x in range(8):
+            // invoke()
+            b = blocks[x][y]
+            if b.n:
+                // let octave = Math.floor(b.n / 12)
+                invoke(def test():
+                    play_note(blocks[x][y].n)
+                , delay=x*.25)
+                print('play note', blocks[x][y].n)
+                // print(octave)
+
+play_button.on_click = play
+
+erase_button = Button(text='x', color=bg_color, scale=1/7, y=-.025, shadow=true, x=-.2)
+erase_button.on_click = def():
+    if current_block:
+        current_block.set_note(null)
+
+
+def play_note(n):
+    print('a', n)
+    octave = Math.floor(n / 12)
+    // print('octave:', octave)
+    var audio = new Audio(sample_names[octave])
+    audio.volume = .5
+    audio.mozPreservesPitch = false
+    audio.preservesPitch = false
+    audio.playbackRate = 2 ** ((n - (0 + 12*octave)) / 12)
+    audio.play()
+
+w = 7
+keyboard = Array_2d(w, 5)
 
 for y in range(5):
-    for x in range(7):
-        let b = Button(x=-.5 + (x*1/7), y=-.5+(y*1/7), scale=1/7,  origin=[-.5,.5], color=rgb(x/3,x/7,y/7), octave=y)
+    for x in range(w):
+        offset = 0
+        // offset = y%2 * .05
+        let b = Button(x=-.5 + (x*1/w) + offset, y=-.7+(y*1/w), scale=1/w,  origin=[-.5,.5], color=rgb(x/3,x/7,y/7), shadow=1)
+        keyboard[x][y] = b
         b.text_size = 2
-        n = 12 + y*12 + [2,3,5,7,9,10,12][x]
-        b.text = n
+        b.n = 12 + y*12 + [2,3,5,7,9,10,12][x]
+        // b.n = 12 + y*12 + x
+        b.text = b.n
         b.text_color = 'white'
         // b.text_size = 2
         // b.text = symbols[y]
-        b.original_color = b.color
-        b.roundness=.5
-        b.el.style.boxShadow = "10px 20px 30px rgb(19 12 10)"
-        b.el.style.textAlign =  'center'
+        // b.original_color = b.color
+        b.roundness = .5
+        // b.el.style.boxShadow = "10px 20px 30px rgb(19 12 10)"
+        // b.el.style.textAlign =  'center'
 
         b.on_click = def():
-            b.color = 'gold'
-            invoke(def reset():
-                b.color = b.original_color
-            , .1)
+            // b.color = 'gold'
+            // invoke(def reset():
+            //     b.color = b.original_color
+            // , .1)
+            // n = 12 + y*12 + [2,3,5,7,9,10,12][x]
+            play_note(b.n)
 
-            var audio = new Audio(sample_names[b.octave])
+            // b.text = b.n
+            // b.text_color = 'white'
 
-            audio.volume = .5
-            audio.mozPreservesPitch = false
-            audio.preservesPitch = false
-            n = 12 + y*12 + [2,3,5,7,9,10,12][x]
-            audio.playbackRate = 2 ** ((n - (24 + 12*b.octave)) / 12)
-            b.text = n
-            b.text_color = 'white'
 
-            audio.play()
+            if current_block:
+                current_block.color = b.color
+                current_block.text = b.text
+                current_block.set_note(b.n)
+                print(current_block.n)
+
+
+// blocks[0][0].on_click()
+// keyboard[0][0].on_click()
+// blocks[0][0].()
+// for i in range(4)
+//     blocks[(i*2)][0].set_note(14)
+//     blocks[(i*2)+1][0].set_note(22)
 
 </script>
 
