@@ -32,7 +32,8 @@ for (var i=0; i<all_lines.length; i++) {
     for (var j=0; j<quotes.length; j++) {
         if (quotes[j][1].length > 0) {
             strings.push(quotes[j][1])
-            all_lines[i] = all_lines[i].replace(quotes[j][1], `TEXT_CONTENT_${string_index}`)
+            print(quotes[j][1])
+            all_lines[i] = all_lines[i].replace(`'${quotes[j][1]}'`, `[TEXT_CONTENT_${string_index}]`)
             string_index += 1
         }
     }
@@ -206,7 +207,7 @@ var compiled_code = lines.join('\n')
 
 // add text back in
 for (var i=0; i<strings.length; i++) {
-    compiled_code = compiled_code.replace(`'TEXT_CONTENT_${i}'`, `'${strings[i]}'`)
+    compiled_code = compiled_code.replace(`[TEXT_CONTENT_${i}]`, `'${strings[i]}'`)
 }
 
 print('COMPILED CODE:', compiled_code)
