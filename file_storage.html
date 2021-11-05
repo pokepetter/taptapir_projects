@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="taptapir.css">
+</head>
+<body>
+    <div id="game">
+        <div id="loading_text">
+        loading...<br><br><br><br><br><br><br>
+        powered by taptapir
+        </div>
+    </div>
+
+</body>
+
+<script src="taptapir.js"></script>
+
+<script>
+
+
+
+
+
+</script>
+
+<script type='text/pokescript'>
+var canvas = document.createElement("canvas");
+
+document.body.appendChild(canvas)
+
+canvas.width = 128;
+canvas.height = 128;
+
+var ctx = canvas.getContext("2d");
+
+# localStorage.removeItem('saved_image')
+
+var dataImage = localStorage.getItem('saved_image');
+# helper = Entity(color="blue", scale=.3, y=.4)
+# helper.texture = dataImage;
+# bannerImg = document.getElementById('tableBanner');
+var image = new Image();
+image.id = "pic";
+image.src = dataImage;
+ctx.drawImage(image, 0, 0)
+
+if not image:
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, 32, 32);
+    ctx.fillStyle = "#FF0000";
+    ctx.fillRect(5, 5, 10, 10);
+
+# print('a')
+opt_a = Button(text='a_', x=-.15)
+opt_a.on_click = def():
+    ctx.fillStyle = "green"
+    ctx.fillRect(0,0,canvas.width,canvas.width)
+    save()
+opt_b = Button(text='b_', x=.15)
+opt_b.on_click = def():
+    ctx.fillStyle = "red"
+    ctx.fillRect(0,0,canvas.width,canvas.width)
+    save()
+
+def save():
+    var dataURL = canvas.toDataURL("mycanvasimage");
+    window.localStorage.setItem("saved_image", dataURL);
+    console.log('yay!', dataURL)
+
+
+print('done')
+</script>
+<script src="pokescript_compiler.js"></script>
+</html>

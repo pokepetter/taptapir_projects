@@ -1,0 +1,82 @@
+
+looks like python
+compiles into javascript
+
+
+ASSETS_FOLDER
+aspect_ratio, 9/16
+
+
+
+
+Entity()
+
+parent
+children
+enabled
+visible_self
+color
+
+scale_x
+scale_y
+scale
+
+x
+y
+z
+xy
+xyz
+position
+origin
+texture     # texture='my_sprite.png' (supports transparency) / texture='my_sprite.jpg' / texture='my_sprite.gif' (supports animation)
+
+tileset_size  # If the texture is a tileset, say how many tiles there are so it only use one tile of the texture
+tile          # [0,0]. Set the tile coordinate
+
+roundness   # 0.0 - 0.5
+shadow      # false / true
+
+text        # set text content
+text_color
+text_size
+alpha       # set transparency
+on_click    # set a function you want get called when an Entity is clicked on. This will also enable mouse collision
+draggable   # false / true    #
+
+
+Button() // an Entity, but scaled to 0.2 and has rounded corners
+StateHandler(states, fade=true)    # toggles .enabled of entities in states.
+# You can for example use this to toggle between menues where only one should be active at a time.
+# Example:
+menus = {
+'a' : Entity(scale=.2, x=-.3, color='red'),
+'b' : Entity(scale=.2, x=-.0, color='green'),
+'c' : Entity(scale=.2, x=0.3, color='blue'),
+}
+menu_handler = StateHandler(menus, fade=false)
+
+
+Scene(name='')
+# Creates an Entity and adds it to the built in scene_changer (a StateHandler).
+# You can parent entities to this to toggle between scenes with goto_scene(name).
+# Also creates a background entity that fills the screen and gives it a texture: name + '.jpg'
+
+goto_scene(scene_name)
+range(n)    #
+
+invoke(function, delay)
+# useful for calling a function with a delay.
+# code
+def test(text='hello!'):
+  print(text)
+
+# invoke(test, delay=1)
+
+# or with an argument
+# invoke(test, 'goodbye!', delay=1)
+
+## functions
+
+lerp(a, b, t)
+clamp(n, min, max)
+random_int(min, max)
