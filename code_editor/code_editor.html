@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8" /><link rel="stylesheet" href="../taptapir.css">
+    <!-- <link rel="manifest" href="/manifest.json"> -->
+    <title>code_editor.js</title>
+</head>
+<body><div id="game"></div></body>
+
+<script src="../taptapir.js"></script>
+<script type='text/pokescript'>
+
+set_background_color("white")
+
+text = ''
+text_entity = Text(text='...', z=1, color='black', text_color='white', y=.3)
+# space_bar = Button(scale=[.6,.1], y=(-.5*aspect_ratio) + .1, origin=[0,-.5])
+# space_bar.on_click = def():
+#     text += ' '
+#     text_entity.text = text
+
+x = 0
+y = 0
+for line in ['<qwertyuiop', '>asdfghjkl*', '\'zxcvbnm<<', '$():   _nn'].reverse():
+    x = 0
+
+    for e in line:
+        b = Button(text=e, scale=.1, origin=[-.5,-.5], x=-.5+(.1*x), y=(-.5*aspect_ratio)+.105+(.105*y))
+        b.on_click = def():
+            text += e
+            text_entity.text = text
+
+        print(i, e)
+        x += 1
+    y += 1
+
+
+
+run_button = Button(text='>', scale=.1, origin=[.5,-.5], position=[.5,.5*aspectr])
+run_button.on_click = def():
+    pass
+
+
+
+</script>
+<script src="../pokescript_compiler.js"></script>
+</html>

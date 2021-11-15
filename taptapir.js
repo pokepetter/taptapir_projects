@@ -3,7 +3,10 @@ aspect_ratio = 16/9
 format = 'horizontal'
 format = 'vertical'
 
-document.getElementById('loading_text').remove();
+var loading_text = document.getElementById('loading_text')
+if (loading_text) {
+    loading_text.remove()
+}
 scene = document.createElement('entity')
 scene.className = 'entity'
 if (format == 'vertical') { // make width=1
