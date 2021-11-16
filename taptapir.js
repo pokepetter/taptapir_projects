@@ -72,6 +72,12 @@ class Entity {
         this.y = 0
         this.draggable = false
         this.dragging = false
+        this.lock_x = false
+        this.lock_y = false
+        this.min_x = -.5
+        this.max_x = .5
+        this.min_y = -.5 * aspect_ratio
+        this.max_y = .5 * aspect_ratio
         this.text_size = 3
 
         for (const [key, value] of Object.entries(options)) {
@@ -549,10 +555,14 @@ function onmousemove(event) {
     mouse.position = [mouse.x, mouse.y]
     for (var e of entities) {
         if (e.dragging) {
-            e.x = mouse.x - e.start_offset[0]
-            e.y = mouse.y - e.start_offset[1]
-            e.x = clamp(e.x, -.5, .5)
-            e.y = clamp(e.y, -.5*aspect_ratio, .5*aspect_ratio)
+            if (!e.lock_x) {
+                e.x = mouse.x - e.start_offset[0]
+                e.x = clamp(e.x, e.min_x, e.max_x)
+            }
+            if (!e.lock_y) {
+                e.y = mouse.y - e.start_offset[1]
+                e.y = clamp(e.y, e.min_y, e.max_y)
+            }
         }
     }
 }
@@ -568,6 +578,11 @@ function Array_2d(w, h) {
     }
     return tiles
 }
+String.prototype.count=function(c) {
+  var result = 0, i = 0;
+  for(i;i<this.length;i++)if(this[i]==c)result++;
+  return result;
+};
 // min = Math.min
 // max = Math.max
 

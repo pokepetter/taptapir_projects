@@ -145,10 +145,17 @@ for (var i=0; i<lines.length; i++) {
         lines[i] = `${code_before_list_comprehension}${target_list}${map_code}${filter_code}${code_after_list_comprehension}`
     }
 
-    // ifs
     lines[i] = lines[i].replace(': {', ' {')
+
+
+    // ifs
     if (lines[i].trim().startsWith('if ') && lines[i].trim().endsWith(' {')) {
         lines[i] = lines[i].replace('if ', 'if (')
+        lines[i] = lines[i].replace(' {', ') {')
+    }
+    // elifs
+    if (lines[i].trim().startsWith('elif ') && lines[i].trim().endsWith(' {')) {
+        lines[i] = lines[i].replace('elif ', 'else if (')
         lines[i] = lines[i].replace(' {', ') {')
     }
 

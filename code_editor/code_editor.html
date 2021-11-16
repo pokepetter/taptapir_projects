@@ -9,33 +9,76 @@
 <script src="../taptapir.js"></script>
 <script type='text/pokescript'>
 
-set_background_color("white")
+set_window_color("#21496b")
+
+button_size = .1
+button_color = 'smoke'
 
 text = ''
-text_entity = Text(text='...', z=1, color='black', text_color='white', y=.3)
-# space_bar = Button(scale=[.6,.1], y=(-.5*aspect_ratio) + .1, origin=[0,-.5])
+text = 'print(\'hello world!\')\n\nfor i in range(10):\n    print(i)\n    '
+text_entity = Text(text=text, z=1, color='black', text_color='white', y=(.5*aspect_ratio)-.05, draggable=true, lock_x=true, scale_y=100, origin=[0,.5])
+space_bar = Button(scale=[.4,.1], y=(-.5*aspect_ratio) + .1, origin=[0,-.5], color=button_color, on_click=function(){write(' ')})
+keyboard_background = Entity(origin=[0,-.5], scale_y=.52, y=-.5*aspect_ratio, color='#080808', shadow=1, z=1)
 # space_bar.on_click = def():
 #     text += ' '
 #     text_entity.text = text
 
-x = 0
-y = 0
-for line in ['<qwertyuiop', '>asdfghjkl*', '\'zxcvbnm<<', '$():   _nn'].reverse():
+y = 1
+for line in ['qwertyuiop', 'asdfghjkl\'', '⇧zxcvbnm,⌫'].reverse():
     x = 0
-
     for e in line:
-        b = Button(text=e, scale=.1, origin=[-.5,-.5], x=-.5+(.1*x), y=(-.5*aspect_ratio)+.105+(.105*y))
-        b.on_click = def():
-            text += e
-            text_entity.text = text
-
-        print(i, e)
+        b = Button(text=e, scale=.1, origin=[-.5,-.5], x=-.5+(.1*x), y=(-.5*aspect_ratio)+.1+(.105*y), color=button_color, on_click=function(){write(e)})
+        # print(i, e)
         x += 1
     y += 1
 
+x = 0
+y = 0
+for e in '():':
+    b = Button(text=e, scale=.1, origin=[-.5,-.5], x=-.5+(.1*x), y=(-.5*aspect_ratio)+.1+(.105*y), color=button_color, on_click=function(){write(e)})
+    x += 1
+
+x = 0
+y = 0
+for e in ['_', '.', '⏎'].reverse():
+    b = Button(text=e, scale=.1, origin=[.5,-.5], x=.5-(.1*x), y=(-.5*aspect_ratio)+.1+(.105*y), color=button_color, on_click=function(){write(e)})
+    x += 1
+
+y = 4
+for line in ['0.+', '123', '456', '789', '/*-']:
+    x = 10-3
+    for e in line:
+        b = Button(text=e, scale=.095, origin=[-.5,-.5], x=-.5+(.1*x), y=(-.5*aspect_ratio)+.11+(.1*y), color=button_color, alpha=.5, on_click=function(){write(e)})
+        x += 1
+    y += 1
+
+def write(key):
+    if key == '⌫' and text:
+        last_char = text[text.length-1]
+        # print('last_char', last_char)
+        if last_char == '\n':
+            y -= 1
+
+        text = text.slice(0, -1)
 
 
-run_button = Button(text='>', scale=.1, origin=[.5,-.5], position=[.5,.5*aspectr])
+    elif key == '⏎':
+        text += '\n'
+        # text_entity.y += .1
+
+    elif key == '⇧':
+        return
+
+    else:
+        text += key
+
+    text_entity.text = text
+    text_entity.fit_to_text()
+    text_entity.scale_x = .8
+
+text_entity.fit_to_text()
+text_entity.scale_x = .8
+run_button = Button(text='>', scale=.1, origin=[.5,-.5], position=[.5,.5*aspect_ratio])
 run_button.on_click = def():
     pass
 
