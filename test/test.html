@@ -28,12 +28,12 @@ set_window_color('rgb(49 72 60)')
 
 
 bg = Entity(scale_y=aspect_ratio, enabled=false)
-text = Entity(text='gay test', color='#00000000', text_color='white')
-result = Entity(text='', color='#00000000', text_color='white', y=-.5, scale_y=.1)
+text = Button(text='gay test', color='#00000000', text_color='white', y=.5, scale_x=1)
+result = Button(text='', color='#00000000', text_color='white', y=-.5, scale_x=1)
 
-b = Button(text='test me', scale_x=.4)
+b = Button(text='\ntest me', scale_x=.4, shadow=1)
 b.on_click = def():
-    b.text = 'calculating...'
+    b.text = '\ncalculating...'
     result.text = ''
     invoke(show_result, delay=1)
 
@@ -54,7 +54,7 @@ def show_result()
 
 def clear():
     b.enabled = true
-    b.text = 'test again'
+    b.text = '\ntest again'
 
 
 
