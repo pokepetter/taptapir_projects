@@ -236,7 +236,7 @@ class Entity:
         # elif name == 'name':            self.el.id = value
 
         elif name == 'tileset_size':    self.el.style.backgroundSize = f'{value[0]*100}% {value[1]*100}%'
-        elif name == 'tile':            self.el.style.backgroundPosition = f'{(16-1)*value[0]*100}% {(16-1)*value[1]*100}%'
+        elif name == 'tile_coordiante':            self.el.style.backgroundPosition = f'{(16-1)*value[0]*100}% {(16-1)*value[1]*100}%'
 
         elif name == 'roundness':       self.el.style.borderRadius = f'{value*Math.min(self.el.clientWidth, self.el.clientHeight)}px'
         elif name == 'text':            self.el.text_entity.textContent = value

@@ -31,7 +31,7 @@ origin
 texture     # texture='my_sprite.png' (supports transparency) / texture='my_sprite.jpg' / texture='my_sprite.gif' (supports animation)
 
 tileset_size  # If the texture is a tileset, say how many tiles there are so it only use one tile of the texture
-tile          # [0,0]. Set the tile coordinate
+tile_coordiante          # [0,0]. Set the tile coordinate, starts in the lower left.
 
 roundness   # 0.0 - 0.5
 shadow      # false / true

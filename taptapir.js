@@ -54,13 +54,19 @@ class Entity {
     constructor(options=null) {
         this.el = document.createElement('entity')
         this.el.className = 'entity'
-        this.el.entity_index = entities.length
-        entities.push(this)
 
         // this.el.text_entity = document.createElement('text')
         // this.el.appendChild(this.el.text_entity)
+        // create another div for the model, for setting origin to work
+        this.el.style.backgroundColor = 'rgba(0,0,0,0)'
+        this.el.style.pointerEvents = 'none'
+        this.model = document.createElement('div')
+        this.model.entity_index = entities.length
+        this.el.appendChild(this.model)
+        this.model.className = 'entity'
+        this.model.style.opacity = 1
+        entities.push(this)
 
-        this.el.style.opacity = 1
         this.setTimeout_calls = {}
         scene.appendChild(this.el)
         this.children = []
@@ -78,6 +84,8 @@ class Entity {
         this.max_x = .5
         this.min_y = -.5 * aspect_ratio
         this.max_y = .5 * aspect_ratio
+        this.snap_x = 0
+        this.snap_y = 0
         this.text_size = 3
 
         for (const [key, value] of Object.entries(options)) {
@@ -139,17 +147,18 @@ class Entity {
     set visible_self(value) {
         if (!value) {
             this.color = 'rgba(0,0,0,0)'
+            this.model.color = 'rgba(0,0,0,0)'
             this.text_color = 'rgba(0,0,0,0)'
         }
         else {
-            this.color = 'white'
+            this.model.color = 'white'
             this.text_color = 'white'
         }
         this._visible_self = value
     }
     get color() {return this._color}
     set color(value) {
-        this.el.style.backgroundColor = value
+        this.model.style.backgroundColor = value
         this._color = value
     }
     get scale_x() {return this._scale_x}
@@ -203,12 +212,12 @@ class Entity {
     }
     get origin() {return this._origin}
     set origin(value) {
-        this.el.style.transform = `translate(${(-value[0]-.5)*100}%, ${(value[1]-.5)*100}%)`
+        this.model.style.transform = `translate(${(-value[0]-.5)*100}%, ${(value[1]-.5)*100}%)`
         this._origin = value
     }
-    get texture() {return this.el.style.backgroundImage}
+    get texture() {return this.model.style.backgroundImage}
     set texture(value) {
-        this.el.style.backgroundImage = `url("${ASSETS_FOLDER}${value}")`
+        this.model.style.backgroundImage = `url("${ASSETS_FOLDER}${value}")`
         this.visible_self = false
         // var loaded = 0
         // var img = new Image();
@@ -231,60 +240,60 @@ class Entity {
     get tileset_size() {return this._tileset_size}
     set tileset_size(value) {
         this._tileset_size = value
-        this.el.style.backgroundSize = `${value[0]*100}% ${value[1]*100}%`
+        this.model.style.backgroundSize = `${value[0]*100}% ${value[1]*100}%`
     }
-    get tile() {return this._tile}
-    set tile(value) {
+    get tile_coordiante() {return this._tile}
+    set tile_coordiante(value) {
         this._tile = value
         // print('----', `${self._tileset_size[0]}-1) * ${value[0]} * 100)}% ${0/16}%`)
         var x_val = (16-1)*value[0]*100
-        this.el.style.backgroundPosition = `${(16-1)*value[0]*100}% ${(16-1)*value[1]*100}%`
+        this.model.style.backgroundPosition = `${(16-1)*value[0]*100}% ${(16-1)*value[1]*100}%`
     }
 
     get roundness() {return this._roundness}
     set roundness(value) {
-        this.el.style.borderRadius = `${value*Math.min(this.el.clientWidth, this.el.clientHeight)}px`
+        this.model.style.borderRadius = `${value*Math.min(this.model.clientWidth, this.model.clientHeight)}px`
         this._roundness = value
     }
     get shadow() {return this._shadow}
     set shadow(value) {
         this._shadow = value
         if (value) {
-            this.el.style.boxShadow = "5px 20px 40px black";
+            this.model.style.boxShadow = "5px 20px 40px black";
         }
-        else {this.el.style.boxShadow = 'none'}
+        else {this.model.style.boxShadow = 'none'}
     }
 
-    get text() {return this.el.textContent}
+    get text() {return this.model.textContent}
     set text(value) {
-        this.el.textContent = value
+        this.model.textContent = value
     }
-    get text_color() {return this.el.style.color}
+    get text_color() {return this.model.style.color}
     set text_color(value) {
-        return this.el.style.color = value
+        return this.model.style.color = value
     }
     get text_size() {return this._text_size}
     set text_size(value) {
         this._text_size = value
-        this.el.style.fontSize = `${value}vh`
+        this.model.style.fontSize = `${value}vh`
     }
 
     get text_origin() {return this._text_origin}
     set text_origin(value) {
         this._text_origin = value
-        this.el.style.textAlign = value
+        this.model.style.textAlign = value
     }
 
-    get alpha() {return this.el.style.opacity; print(this.el.style.opacity)}
+    get alpha() {return this.model.style.opacity}
     set alpha(value) {
         // print('set opac', value)
-        this.el.style.opacity = value
+        this.model.style.opacity = value
         this._alpha = value
     }
     get padding() {return this._padding}
     set padding(value) {
         this._padding = value
-        this.el.style.padding = `${value}em`
+        this.model.style.padding = `${value}em`
     }
 
     get on_click() {return this._on_click}
@@ -292,7 +301,7 @@ class Entity {
         this._on_click = value
     //     // this.el.entity = this
         if (value) {
-            this.el.style.pointerEvents = 'auto'
+            this.model.style.pointerEvents = 'auto'
     //         this.el.ontouchstart = e => {
     //             e.preventDefault();
     //             this.on_click()
@@ -301,16 +310,16 @@ class Entity {
     //         this.el.addEventListener("touchstart", value);
     //
         }
-        else {this.el.style.pointerEvents = 'none'}
+        else {this.model.style.pointerEvents = 'none'}
     }
     get draggable() {return this._draggable}
     set draggable(value) {
         this._draggable = value
         if (value) {
-            this.el.style.pointerEvents = 'auto'
+            this.model.style.pointerEvents = 'auto'
         }
         else if (!this._on_click) {
-            this.el.style.pointerEvents = 'none'
+            this.model.style.pointerEvents = 'none'
         }
     }
 
@@ -342,8 +351,8 @@ class Entity {
     }
 
     fit_to_text() {
-        this.el.style.width = 'fit-content'
-        this.el.style.height = 'fit-content'
+        this.model.style.width = 'fit-content'
+        this.model.style.height = 'fit-content'
     }
 }
 
@@ -465,7 +474,7 @@ class HealthBar extends Entity {
         settings['default'] = settings['max']
         for (const [key, value] of Object.entries(options)) {
             if (key == 'bar_color') {continue}
-            print(key, value)
+            // print(key, value)
             settings[key] = value
         }
         super(settings)
@@ -503,6 +512,7 @@ function handle_mouse_click(e) {
     mouse.pressed = true
     element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
     entity = entities[element_hit.entity_index]
+    // print(element_hit)
     if (element_hit && entity) {
         if (entity.on_click) {
             entity.on_click()
@@ -558,10 +568,18 @@ function onmousemove(event) {
             if (!e.lock_x) {
                 e.x = mouse.x - e.start_offset[0]
                 e.x = clamp(e.x, e.min_x, e.max_x)
+                if (e.snap_x) {
+                    hor_step = 1 / e.snap_x
+                    e.x = round(e.x * hor_step) / hor_step
+                }
             }
             if (!e.lock_y) {
                 e.y = mouse.y - e.start_offset[1]
                 e.y = clamp(e.y, e.min_y, e.max_y)
+                if (e.snap_y) {
+                    hor_step = 1 / e.snap_y
+                    e.y = round(e.y * hor_step) / hor_step
+                }
             }
         }
     }
@@ -620,14 +638,14 @@ game_window.appendChild(filters)
 filters.innerHTML = filter_code
 
 function invoke(func, delay) {setTimeout(func, delay*1000)}
-
+round = Math.round
 
 class TintableTile extends Entity {
     get tint() {return this._tint}
     set tint(value) {
         this._tint = value
         if (value < 16) {
-            this.el.style.filter = `url(#tint_filter_${value})`
+            this.el.model.style.filter = `url(#tint_filter_${value})`
         }
     }
 
