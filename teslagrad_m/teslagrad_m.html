@@ -9,30 +9,24 @@
 </head>
 
 <body>
-    <div id="game">
-        <div id="loading_text">
-        loading...<br><br><br><br><br><br><br>
-        powered by taptapir
-        </div>
-    </div>
-
 </body>
 
 <script src="../taptapir.js"></script>
 
+<script type='text/javascript'>
+    // orientation = 'horizontal'
+    // set_orientation('horizontal')
+    // set_background_color('red')
+</script>
 
 <script type='text/pokescript'>
 
+set_window_color('black')
+set_background_color('#040404')
 
-set_window_color('rgb(49 72 60)')
-
-button = 'test'
-button = Button(text='button')
-
-a = 1
-b = 2
-some_text = 'a'
-c = a + b
+for y in range(12):
+    for x in range(8):
+        Entity(scale=1/8, origin=[-.5,-.5], position=[-.5+(x/8), (-.5*aspect_ratio)+(y/8)+(1/8*1)], color=random_color())
 
 
 

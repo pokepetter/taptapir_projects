@@ -34,6 +34,7 @@ for e in sample_names:
 
 bg_color = 'rgb(49 72 60)'
 set_window_color(bg_color)
+set_background_color('black')
 
 note_view_parent = Entity(visible_self=false)
 composer_view =    Entity(visible_self=false)
@@ -43,30 +44,67 @@ current_block = null
 blocks = Array_2d(8, 5)
 
 
+bg = Entity(y=.2, color='black', origin=[0,-.5])
 w = 8
-for y in range(5):
-    for x in range(w):
-        let b = Button(parent=note_view_parent, x=-.5 + (x*1/8), y=.2+(y*1/w), scale=1/(w+1),  origin=[-.5,.5], color=bg_color, roundness=.5, text_size=3)
-        blocks[x][y] = b
-        b.el.style.borderWidth = '3px'
-        b.el.style.borderStyle = 'solid'
+for i in range(12):
+    Entity(parent=bg, scale_y=.005, y=i*.05)
 
-        b.on_click = def():
-            current_block = b
-            cursor.position = b.xy
 
-        b.set_note = def set_note(n):
-            b.n = n
-            if not n:
-                b.text = ''
-                b.color = bg_color
-                return
+# for i in range(16):
+#     Entity(parent=bg, scale_x=.0025, x=-.5+(i*.25/4), origin=[0,-.5], color='#222')
+# vertical lines
+for i in range(8):
+    Entity(parent=bg, scale_x=.0025, x=-.5+(i*1/8), origin=[0,-.5], color='#555')
+for i in range(1):
+    Entity(parent=bg, scale_x=.0025, x=i*.05, origin=[0,-.5])
 
-            octave = Math.floor(n / 12)
-            // print('oct:', octave)
-            // print(n - (octave*12))
-            note_name = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'][n - (octave*12)]
-            b.text = note_name + octave + '\n' + n
+sixteenth_width = 1/32
+whole_note_width = .5
+
+notes = []
+
+for i in range(8):
+    let note = Button(parent=bg, draggable=true, scale=whole_note_width/8, roundness=.5, color='teal', shadow=1, snap_y=.025, snap_x=sixteenth_width, origin=[-.0,0], max_x=.5-sixteenth_width,
+                        x=-.5+i*whole_note_width/4, y=.025*i, length=1/16)
+    notes.push(note)
+    # note.handle = Button(parent=bg, draggable=true, scale=sixteenth_width*.5, roundness=.1, color='orange', lock_y=true, snap_x=sixteenth_width, origin=[-.5,0], max_x=.5-sixteenth_width, x=-.5+i*sixteenth_width*2)
+
+    convert_y_to_note(note.y)
+
+    # b.on_click = def():
+    #     b.handle.parent = b
+
+    # note.drop = def():
+    #     note.handle.y = note.y
+    #     note.handle.x = note.x + (note.length * sixteenth_width)
+
+
+def convert_y_to_note(y):
+    y = round(y*40)
+    org_y = y
+    octave = round(y/7)
+    x = y - octave * 7
+    print('x:', x)
+    # org_y = y - (y/)
+    # y += [2,1,2,2,2,1,2][x]
+    y += 12
+    print(org_y, '-->', 'octave:', octave, y)
+    return y
+
+
+
+def play():
+    for note in notes:
+        invoke(def anon():
+            play_note(convert_y_to_note(note.y))
+        , delay=note.x*2)
+
+
+
+
+
+
+
 
 current_time = 0
 play_button = Button(text='▶️', color='orange', scale=1/7, y=-.025, shadow=true)
@@ -85,18 +123,18 @@ def toggle_note_view():
 
 
 
-def play():
-    for y in range(5):
-        for x in range(8):
-            // invoke()
-            b = blocks[x][y]
-            if b.n:
-                // let octave = Math.floor(b.n / 12)
-                invoke(def test():
-                    play_note(blocks[x][y].n)
-                , delay=x*.25)
-                print('play note', blocks[x][y].n)
-                // print(octave)
+# def play():
+#     for y in range(5):
+#         for x in range(8):
+#             // invoke()
+#             b = blocks[x][y]
+#             if b.n:
+#                 // let octave = Math.floor(b.n / 12)
+#                 invoke(def test():
+#                     play_note(blocks[x][y].n)
+#                 , delay=x*.25)
+#                 print('play note', blocks[x][y].n)
+#                 // print(octave)
 
 play_button.on_click = play
 
