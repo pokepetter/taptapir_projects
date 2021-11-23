@@ -705,6 +705,13 @@ function Text(options) {
 
 CLEAR = '#00000000'
 
+
+window.navigator.standalone
+// on Android Chrome
+window.matchMedia(
+  '(display-mode: standalone)'
+).matches
+
 // register service worker for PWA (Progressive Web App) to work.
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service_worker.js', {
