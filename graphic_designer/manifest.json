@@ -1,0 +1,19 @@
+{
+  "name": "grpahic desgn",
+  "short_name": "grpahic desgn",
+  "description": "grpahic desgn",
+  "icons": [
+    {
+      "src": "pink_tower_192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ],
+  "start_url": "/",
+  "scope": ".",
+
+  "background_color": "darkgreen",
+  "theme_color": "darkgreen",
+  "display": "fullscreen",
+  "orientation" : "portrait"
+}
