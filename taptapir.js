@@ -1,30 +1,46 @@
 print = console.log
-aspect_ratio = 16/9
-format = 'horizontal'
+// aspect_ratio = 16/9
+scale = 1
+format = 'horizontal'   // orientation
 format = 'vertical'
+print('format:', format)
 
 var loading_text = document.getElementById('loading_text')
 if (loading_text) {
     loading_text.remove()
 }
+var game_window = document.getElementById('game')
+if (!game_window) {
+    var game_window = document.createElement('game')
+    game_window.id = 'game'
+    document.body.appendChild(game_window)
+}
 scene = document.createElement('entity')
 scene.className = 'entity'
-if (format == 'vertical') { // make width=1
-    scene.style.height = `${100}%`
-    scene.style.height = `${9/16*100}%`
-}
-else {  // make height be 1
-    scene.style.width = `${16/9*100}%`
-}
 scene.style.backgroundColor = 'transparent'
-// scene.style.backgroundColor = 'red'
-game_window = document.getElementById('game')
 game_window.appendChild(scene)
-window_size = game_window.getBoundingClientRect();
-var width = window_size.width;
-var height = window_size.height;
-window_aspect_ratio = width / height
-print('aspect_ratio:', window_aspect_ratio)
+
+browser_size = game_window.getBoundingClientRect();
+var width = browser_size.width;
+var height = browser_size.height;
+browser_aspect_ratio = width / height
+// print('browser aspect_ratio:', browser_aspect_ratio)
+
+if (format == 'vertical') {
+    aspect_ratio = 16/9
+    game_window.style.width = `${height/(16/9)*scale}px`
+    game_window.style.height =  `${height*scale}px`
+    scene.style.width = `${100}%`
+    scene.style.height = `${(9/16)*100}%`
+}
+else {
+    aspect_ratio = 9/16
+    game_window.style.height = `${width/(16/9)*scale}px`
+    game_window.style.width =  `${width*scale}px`
+    scene.style.height = `${100}%`
+    scene.style.width = `${(9/16)*100}%`
+}
+
 
 top_left =      [-.5, .5*aspect_ratio]
 top_right =     [.5, .5*aspect_ratio]
@@ -34,23 +50,6 @@ top =           [0, .5*aspect_ratio]
 bottom =        [0, -.5*aspect_ratio]
 left =          [-.5, 0]
 right =         [.5, 0]
-
-scale = 1
-if (format == 'vertical') {
-    game_window.style.width = `${height/aspect_ratio*scale}px`
-    game_window.style.height =  `${height*scale}px`
-}
-else {
-    if (window_aspect_ratio <= aspect_ratio) {
-        game_window.style.height = `${width/aspect_ratio*scale}px`
-        game_window.style.width =  `${width*scale}px`
-
-    }
-    else {
-        game_window.style.width =  `${height*aspect_ratio*scale}px`
-        game_window.style.height = `${height*scale}px`
-    }
-}
 
 function set_window_color(value) {game_window.style.backgroundColor = value}
 function set_background_color(value) {document.body.style.backgroundColor = value}
