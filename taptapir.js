@@ -26,6 +26,15 @@ var height = window_size.height;
 window_aspect_ratio = width / height
 print('aspect_ratio:', window_aspect_ratio)
 
+top_left =      [-.5, .5*aspect_ratio]
+top_right =     [.5, .5*aspect_ratio]
+bottom_left =   [-.5, -.5*aspect_ratio]
+bottom_right =  [.5, -.5*aspect_ratio]
+top =           [0, .5*aspect_ratio]
+bottom =        [0, -.5*aspect_ratio]
+left =          [-.5, 0]
+right =         [.5, 0]
+
 scale = 1
 if (format == 'vertical') {
     game_window.style.width = `${height/aspect_ratio*scale}px`
@@ -109,6 +118,23 @@ class Entity {
             e.parent = this
         }
     }
+    // get world_parent() {return this.parent}
+    // set world_parent(value) {
+    //     wpos = this.world_position
+    //     wscale = this.world_scale
+    //     this.parent = value
+    //
+    //     this.world_position = wpos
+    //     this.world_scale = wscale
+    // }
+    get world_x() {return (this.el.getBoundingClientRect().left - scene.getBoundingClientRect().left) / scene.clientWidth}
+    get world_y() {return -(this.el.getBoundingClientRect().top - scene.getBoundingClientRect().top) / scene.clientHeight}
+    get world_position() {return [world_x, world_y]}
+
+    get world_scale_x() {return this.el.clientWidth / scene.clientWidth}
+    get world_scale_y() {return this.el.clientHeight / scene.clientHeight}
+    get world_scale() {return [this.world_scale_x, this.world_scale_y]}
+
     get enabled() {return this._enabled}
     set enabled(value) {
         this._enabled = value

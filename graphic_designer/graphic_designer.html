@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8" /><link rel="stylesheet" href="../taptapir.css">
+    <!-- <link rel="manifest" href="/manifest.json"> -->
+    <title>code_editor.js</title>
+</head>
+<body><div id="game"></div></body>
+
+<script src="../taptapir.js"></script>
+<script type='text/pokescript'>
+
+set_background_color("#111111")
+set_window_color("#222")
+
+canvas = Entity(scale=[1*.9, 1*aspect_ratio*.9], color='#333', z=2)
+canvas = Entity(parent=canvas, color='red', scale_y=1/aspect_ratio, visible_self=false)
+
+
+# scene = Entity(parent=canvas, color='red', position=[.5,-.5])
+
+# print('-------', window)
+# hierarchy = Entity(position=top_right, origin=[.5,.5], scale=.085, visible_self=false)
+# for i in range(10):
+#     Button(parent=hierarchy, scale=1, origin=[.5,.5], y=-i, color='#777')
+
+tool = 'drag'
+tool = 'select'
+selected_entity = null
+
+add_element_menu = Entity(visible_self=false, position=[-.5+.01,-.82], scale=.09)
+for [i, e] in ['▢','△'].entries():
+    let b = Button(parent=add_element_menu, scale=1, text=e, origin=[-.5,.5], x=i)
+    b.on_click = def():
+        if e == '▢':
+            clone = Entity(parent=canvas, scale=.5, color='gray', draggable=true, lock_x=true, lock_y=true)
+            clone.on_click = def():
+                clone.lock_x = tool != 'drag'
+                clone.lock_y = tool != 'drag'
+
+            #     if tool == 'select':
+            #         selected_entity = b
+            #         clone.el.style.outline = "thick solid #0000FF";
+            #
+            # clone.drop = def():
+            #     print('drop', tool)
+            #     if not tool == 'select':
+            #         print('reset style')
+            #         clone.el.style.outline = "thick dotted red";
+
+            selected_entity = clone
+
+drag_tool_button = Button(scale=.09, text='drag', origin=[-.5,.5], y=-.82,  x=-.5+(3*.09))
+drag_tool_button.on_click = def():
+    tool = 'drag'
+
+select_tool_button = Button(scale=.09, text='sel', origin=[-.5,.5], y=-.82,  x=-.5+(4*.09))
+select_tool_button.on_click = def():
+    tool = 'select'
+
+scale_tool = Button(scale=.09, text='sel', origin=[-.5,.5], x=-.5+(5*.09), y=-.82, draggable=true, sensitivity=.5)
+scale_tool.on_click = def():
+    scale_tool.draggable = selected_entity != null
+
+scale_tool.original_position = scale_tool.position
+scale_tool.drop = def():
+    delta = (scale_tool.x - scale_tool.original_position[0]) * scale_tool.sensitivity
+    print(delta, selected_entity)
+    selected_entity.scale_x += delta
+
+    scale_tool.position = scale_tool.original_position
+
+
+
+
+
+# gizmo = Entity(scale=.1, roundness=.5, color='red', visible_self=true, z=-10, x=1,
+#     draggable=true, min_x=-.5*.9, max_x=.5*.9, min_y=-.5*.9*aspect_ratio, max_y=.5*.9*aspect_ratio)
+# gizmo.on_click = def():
+#     if selected:
+#         selected.on_click = null
+#         org_pos = selected.position
+#         selected.original_scale = selected.scale
+#         selected.parent = gizmo
+#         selected.position = [org_pos[0] * .9, org_pos[1]*.9]
+#         selected.scale = [e*10*.9 for e in selected.original_scale]
+#
+# gizmo.drop = def():
+#     selected.parent = canvas
+#     selected.scale = selected.original_scale
+#     selected.position = [e/.9 for e in gizmo.position]
+#
+# selected = null
+# def set_selected(e):
+#     if not e:
+#         selected = null
+#         gizmo.visible_self = false
+#         return
+#
+#     print('set selected', e)
+#     selected = e
+#     gizmo.visible_self = true
+#     gizmo.position = [e*.9 for e in e.position]
+
+
+
+# e = Entity(origin=[-.5,-.5], scale=.4)
+# e2 = Entity(parent=e, scale=.2, color='red')
+
+
+
+</script>
+<script src="../pokescript_compiler.js"></script>
+</html>
