@@ -54,6 +54,17 @@ right =         [.5, 0]
 function set_window_color(value) {game_window.style.backgroundColor = value}
 function set_background_color(value) {document.body.style.backgroundColor = value}
 
+fullscreen = false
+function set_fullscreen(value) {
+    fullscreen = value
+    if (value) {
+        document.documentElement.requestFullscreen()
+    }
+    else {
+        document.exitFullscreen();
+    }
+}
+
 ASSETS_FOLDER = ''
 
 entities = []
@@ -590,6 +601,9 @@ function onmousemove(event) {
     mouse.position = [mouse.x, mouse.y]
     for (var e of entities) {
         if (e.dragging) {
+            if (e.while_dragging) {
+                e.while_dragging()
+            }
             if (!e.lock_x) {
                 e.x = mouse.x - e.start_offset[0]
                 e.x = clamp(e.x, e.min_x, e.max_x)

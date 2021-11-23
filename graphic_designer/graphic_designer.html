@@ -22,6 +22,8 @@ canvas = Entity(parent=canvas, color='red', scale_y=1/aspect_ratio, visible_self
 # hierarchy = Entity(position=top_right, origin=[.5,.5], scale=.085, visible_self=false)
 # for i in range(10):
 #     Button(parent=hierarchy, scale=1, origin=[.5,.5], y=-i, color='#777')
+fullscreen_button = Button(origin=[.5,.5], position=top_right, scale=.05, color='#333', text='f', on_click=function(){set_fullscreen(not fullscreen)})
+
 
 tool = 'drag'
 tool = 'select'
@@ -34,8 +36,12 @@ for [i, e] in ['▢','△'].entries():
         if e == '▢':
             clone = Entity(parent=canvas, scale=.5, color='gray', draggable=true, lock_x=true, lock_y=true)
             clone.on_click = def():
+                selected_entity = clone
+                clone.el.style.outline = "medium dashed #123";
+
                 clone.lock_x = tool != 'drag'
                 clone.lock_y = tool != 'drag'
+
 
             #     if tool == 'select':
             #         selected_entity = b
@@ -60,13 +66,17 @@ select_tool_button.on_click = def():
 scale_tool = Button(scale=.09, text='sel', origin=[-.5,.5], x=-.5+(5*.09), y=-.82, draggable=true, sensitivity=.5)
 scale_tool.on_click = def():
     scale_tool.draggable = selected_entity != null
+    if selected_entity:
+        start_scale = selected_entity.scale
+
+scale_tool.while_dragging = def():
+    scale_tool.delta = (scale_tool.x - scale_tool.original_position[0]) * scale_tool.sensitivity
+    # print(scale_tool.delta, selected_entity)
+    selected_entity.scale_x = start_scale[0] + scale_tool.delta
+    selected_entity.scale_y = start_scale[1] + scale_tool.delta
 
 scale_tool.original_position = scale_tool.position
 scale_tool.drop = def():
-    delta = (scale_tool.x - scale_tool.original_position[0]) * scale_tool.sensitivity
-    print(delta, selected_entity)
-    selected_entity.scale_x += delta
-
     scale_tool.position = scale_tool.original_position
 
 
