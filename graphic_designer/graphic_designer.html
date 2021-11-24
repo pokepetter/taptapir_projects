@@ -3,7 +3,7 @@
 <head><meta charset="utf-8" /><link rel="stylesheet" href="../taptapir.css">
     <link rel="manifest" href="/manifest.json">
 
-    <meta name="viewport" content="width=device-width; initial-scale=1; viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,8 +13,12 @@
 
     <title>code_editor.js</title>
 </head>
+<script type="text/javascript">
+if ('serviceWorker' in navigator) { // register service worker for PWA (Progressive Web App) to work.
+    navigator.serviceWorker.register('service_worker.js')
+}
+</script>
 <body><div id="game"></div></body>
-
 
 <script src="../taptapir.js"></script>
 <script type='text/pokescript'>
