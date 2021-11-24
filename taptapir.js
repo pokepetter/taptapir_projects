@@ -719,13 +719,13 @@ window.matchMedia(
   '(display-mode: standalone)'
 ).matches
 
-// register service worker for PWA (Progressive Web App) to work.
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service_worker.js', {
-        scope: '.'
-    }).then(function(registration) {
-        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-    }, function(err) {
-        console.log('ServiceWorker registration failed: ', err);
-    });
-}
+// // register service worker for PWA (Progressive Web App) to work.
+// if ('serviceWorker' in navigator) {
+//     navigator.serviceWorker.register('service_worker.js', {
+//         scope: '.'
+//     }).then(function(registration) {
+//         console.log('ServiceWorker registration successful with scope: ', registration.scope);
+//     }, function(err) {
+//         console.log('ServiceWorker registration failed: ', err);
+//     });
+// }
