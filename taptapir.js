@@ -28,10 +28,17 @@ browser_aspect_ratio = width / height
 
 if (format == 'vertical') {
     aspect_ratio = 16/9
-    game_window.style.width = `${height/(16/9)*scale}px`
-    game_window.style.height =  `${height*scale}px`
     scene.style.width = `${100}%`
     scene.style.height = `${(9/16)*100}%`
+
+    if (browser_aspect_ratio >= 9/16) { // if the screen is wider than 16/9, like a pc monitor.
+        game_window.style.width = `${height/(16/9)*scale}px`
+        game_window.style.height =  `${height*scale}px`
+    }
+    else {                              // if the screen is taller than 16/9, like a phone screen.
+        game_window.style.width = `${width*scale}px`
+        game_window.style.height =  `${width*16/9*scale}px`
+    }
 }
 else {
     aspect_ratio = 9/16
