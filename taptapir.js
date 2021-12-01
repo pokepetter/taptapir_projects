@@ -756,4 +756,4 @@ function save_system_save(name, value) {localStorage.setItem(name, value)}
 function save_system_load(name) {return localStorage.getItem(name)}
 function save_system_clear() {localStorage.clear()}
 
-savesystem = {'save':save_system_save, 'load', save_system_load, 'clear':save_system_clear}
+savesystem = {save:save_system_save, load:save_system_load, clear:save_system_clear}
