@@ -26,6 +26,7 @@ body {
     background-color:'#111';
     font-family: Verdana, Arial, sans-serif;
     white-space: pre-wrap;
+    overscroll-behavior-y: contain;
 }
 #loading_text {
     position: absolute;

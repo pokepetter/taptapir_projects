@@ -710,22 +710,50 @@ function Text(options) {
     return new Entity(options)
 }
 
-CLEAR = '#00000000'
+sqrt = Math.sqrt
 
+function distance(a, b) {
+    return sqrt((b[0] - a[0])**2 + (b[1] - a[1])**2)
+}
 
-window.navigator.standalone
-// on Android Chrome
-window.matchMedia(
-  '(display-mode: standalone)'
-).matches
+function sample(population, k){
+    if(!Array.isArray(population))
+        throw new TypeError("Population must be an array.");
+    var n = population.length;
+    if(k < 0 || k > n)
+        throw new RangeError("Sample larger than population or is negative");
 
-// // register service worker for PWA (Progressive Web App) to work.
-// if ('serviceWorker' in navigator) {
-//     navigator.serviceWorker.register('service_worker.js', {
-//         scope: '.'
-//     }).then(function(registration) {
-//         console.log('ServiceWorker registration successful with scope: ', registration.scope);
-//     }, function(err) {
-//         console.log('ServiceWorker registration failed: ', err);
-//     });
-// }
+    var result = new Array(k);
+    var setsize = 21;   // size of a small set minus size of an empty list
+
+    if(k > 5)
+        setsize += Math.pow(4, Math.ceil(Math.log(k * 3) / Math.log(4)))
+
+    if(n <= setsize){
+        // An n-length list is smaller than a k-length set
+        var pool = population.slice();
+        for(var i = 0; i < k; i++){          // invariant:  non-selected at [0,n-i)
+            var j = Math.random() * (n - i) | 0;
+            result[i] = pool[j];
+            pool[j] = pool[n - i - 1];       // move non-selected item into vacancy
+        }
+    }else{
+        var selected = new Set();
+        for(var i = 0; i < k; i++){
+            var j = Math.random() * n | 0;
+            while(selected.has(j)){
+                j = Math.random() * n | 0;
+            }
+            selected.add(j);
+            result[i] = population[j];
+        }
+    }
+
+    return result;
+}
+
+function save_system_save(name, value) {localStorage.setItem(name, value)}
+function save_system_load(name) {return localStorage.getItem(name)}
+function save_system_clear() {localStorage.clear()}
+
+savesystem = {'save':save_system_save, 'load', save_system_load, 'clear':save_system_clear}
