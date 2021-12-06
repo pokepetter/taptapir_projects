@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8" /><link rel="stylesheet" href="../taptapir.css">
+    <!-- <link rel="manifest" href="/manifest.json"> -->
+    <title>lines</title>
+</head>
+<body><div id="game"></div></body>
+
+<script src="../taptapir.js"></script>
+<script type='text/pokescript'>
+
+set_background_color("#111")
+set_window_color("#222")
+// center = Entity(scale=.02, color='red', z=-2)
+// e = Entity(scale=[.3, .3],  color='blue', z=-1)
+// e.rotation = 90
+// Entity(parent=e , scale=.2, color='cyan', y=1)
+
+current_line = null
+end_point = Entity(scale=.01, color='black', draggable=true, enabled=false)
+end_point.while_dragging = def():
+    if current_line:
+        current_line.scale_x = distance(current_line.position, end_point.position)
+        current_line.look_at(end_point.position)
+
+end_point.drop = def():
+    current_line = null
+    end_point.enabled = false
+
+
+bg = Entity(color='gray', z=1)
+bg.on_click = def():
+    current_line = Entity(scale=.01, color='black', origin=[-.5,0], position=mouse.position)
+
+    end_point.enabled = true
+    end_point.position = mouse.position
+    end_point.start_offset = [0,0]
+    end_point.dragging=true
+
+
+
+
+
+
+
+
+</script>
+<script src="../pokescript_compiler.js"></script>
+</html>

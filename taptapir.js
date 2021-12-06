@@ -239,14 +239,12 @@ class Entity {
     set xy(value) {
         this.x = value[0]
         this.y = value[1]
-        true
     }
     get xyz() {return [this._x, this._y, this._z]}
     set xyz(value) {
         this.x = value[0]
         this.y = value[1]
         this.z = value[2]
-        true
     }
     get position() {return this.xyz}
     set position(value) {
@@ -258,6 +256,12 @@ class Entity {
         this.model.style.transform = `translate(${(-value[0]-.5)*100}%, ${(value[1]-.5)*100}%)`
         this._origin = value
     }
+    get rotation() {return this._rotation}
+    set rotation(value) {
+        this._rotation = value
+        this.el.style.transform = `translate(-50%, -50%) rotate(${value}deg)`
+    }
+
     get texture() {return this.model.style.backgroundImage}
     set texture(value) {
         this.model.style.backgroundImage = `url("${ASSETS_FOLDER}${value}")`
@@ -396,6 +400,10 @@ class Entity {
     fit_to_text() {
         this.model.style.width = 'fit-content'
         this.model.style.height = 'fit-content'
+    }
+
+    look_at(target_pos) {
+        this.rotation = -(Math.atan2(target_pos[1] - this.y, target_pos[0] - this.x)) * (180/Math.PI)
     }
 }
 
@@ -715,6 +723,7 @@ sqrt = Math.sqrt
 function distance(a, b) {
     return sqrt((b[0] - a[0])**2 + (b[1] - a[1])**2)
 }
+
 
 function sample(population, k){
     if(!Array.isArray(population))
