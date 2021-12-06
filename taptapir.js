@@ -619,7 +619,7 @@ function update_mouse_position(event) {
 
 function onmousemove(event) {
     update_mouse_position(event)
-    print(mouse.position)
+
     for (var e of entities) {
         if (e.dragging) {
             if (e.while_dragging) {
