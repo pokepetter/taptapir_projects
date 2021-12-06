@@ -346,16 +346,8 @@ class Entity {
     get on_click() {return this._on_click}
     set on_click(value) {
         this._on_click = value
-    //     // this.el.entity = this
         if (value) {
             this.model.style.pointerEvents = 'auto'
-    //         this.el.ontouchstart = e => {
-    //             e.preventDefault();
-    //             this.on_click()
-    //         }
-    //         this.el.addEventListener('mousedown', value)
-    //         this.el.addEventListener("touchstart", value);
-    //
         }
         else {this.model.style.pointerEvents = 'none'}
     }

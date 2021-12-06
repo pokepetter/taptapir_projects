@@ -11,32 +11,72 @@
 
 set_background_color("#111")
 set_window_color("#222")
-// center = Entity(scale=.02, color='red', z=-2)
-// e = Entity(scale=[.3, .3],  color='blue', z=-1)
-// e.rotation = 90
-// Entity(parent=e , scale=.2, color='cyan', y=1)
 
+lines = []
 current_line = null
-end_point = Entity(scale=.01, color='black', draggable=true, enabled=false)
-end_point.while_dragging = def():
-    if current_line:
-        current_line.scale_x = distance(current_line.position, end_point.position)
-        current_line.look_at(end_point.position)
 
-end_point.drop = def():
-    current_line = null
-    end_point.enabled = false
+
+
+mode = 'move'
+def set_mode(value):
+    mode = value
+    if mode == 'new':
+        for line in lines:
+            line.draggable = false
+            line.start_point.draggable = false
+            line.end_point.draggable = false
+    elif mode == 'move':
+        for line in lines:
+            line.draggable = true
+            line.start_point.draggable = true
+            line.end_point.draggable = true
+
+set_mode('new')
+Button(text='new', position=[-.45,-.55], origin=[-.5,.5], scale=.1, on_click=function(){set_mode('new')})
+Button(text='move', position=[-.45+.15,-.55], origin=[-.5,.5], scale=.1, on_click=function(){set_mode('move')})
 
 
 bg = Entity(color='gray', z=1)
 bg.on_click = def():
-    current_line = Entity(scale=.01, color='black', origin=[-.5,0], position=mouse.position)
+    if mode != 'new':
+        return
 
-    end_point.enabled = true
-    end_point.position = mouse.position
-    end_point.start_offset = [0,0]
-    end_point.dragging=true
+    let line = Entity(scale=.01, color='black', origin=[-.5,0], position=mouse.position)
+    line.el.addEventListener('mouseenter', e => {line.color = 'darkgray'})
+    line.el.addEventListener('mouseleave', e => {line.color = 'black'})
+    lines.append(line)
 
+    let start_point = Entity(scale=.01, color='black', draggable=true, roundness=.5, line=line, position=mouse.position, start_offset=[0,0], drop=drop)
+    start_point.el.addEventListener('mouseenter', e => {start_point.color = 'cyan'})
+    start_point.el.addEventListener('mouseleave', e => {start_point.color = 'black'})
+    line.start_point = start_point
+    start_point.while_dragging = def():
+        update_line_position(line)
+
+    start_point.drop = def():
+        drop(line)
+
+    let end_point = Entity(scale=.01, color='black', draggable=true, roundness=.5, line=line, position=mouse.position, start_offset=[0,0])
+    line.end_point = end_point
+    end_point.el.addEventListener('mouseenter', e => {end_point.color = 'magenta'})
+    end_point.el.addEventListener('mouseleave', e => {end_point.color = 'black'})
+    end_point.dragging = true
+    end_point.while_dragging = def():
+        update_line_position(line)
+
+    end_point.drop = def():
+        drop(line)
+
+
+def drop(line):
+    print(mode == 'move')
+    line.start_point.draggable =
+    line.end_point.draggable = mode == 'move'
+
+def update_line_position(line):
+    line.position = line.start_point.position
+    line.scale_x = distance(line.start_point.position, line.end_point.position)
+    line.look_at(line.end_point.position)
 
 
 
