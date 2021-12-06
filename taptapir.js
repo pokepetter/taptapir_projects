@@ -552,10 +552,12 @@ class HealthBar extends Entity {
 mouse = {x:0, y:0, position:[0,0], pressed:false}
 
 document.addEventListener('mousedown', function(e) {
+    update_mouse_position(e)
     e.preventDefault()
     handle_mouse_click(e)
 })
 document.addEventListener('touchstart', function(e) {
+    update_mouse_position(e)
     // e.preventDefault()
     handle_mouse_click(e.touches[0])
 })
@@ -598,8 +600,7 @@ function mouse_up(e) {
         }
     }
 }
-
-function onmousemove(event) {
+function update_mouse_position(event) {
     window_position = game_window.getBoundingClientRect()
 
     if (event.targetTouches !== undefined) {
@@ -614,6 +615,11 @@ function onmousemove(event) {
     mouse.x = ((event_x - window_position.left) / game_window.clientWidth) - .5
     mouse.y = -(((event_y - window_position.top) / game_window.clientHeight ) - .5) / (9/16)
     mouse.position = [mouse.x, mouse.y]
+}
+
+function onmousemove(event) {
+    update_mouse_position(event)
+    print(mouse.position)
     for (var e of entities) {
         if (e.dragging) {
             if (e.while_dragging) {
