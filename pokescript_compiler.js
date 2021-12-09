@@ -7,6 +7,8 @@ var poke_script = document.querySelector('script[type="text/pokescript"]').textC
 poke_script = poke_script.replaceAll(',\n', ',')
 poke_script = poke_script.replaceAll('(\n', '(')
 
+poke_script = poke_script.replaceAll('.index(', '.indexOf(')
+
 var all_lines = poke_script.split('\n');
 var lines = []
 lines.push('\n')

@@ -346,11 +346,20 @@ class Entity {
     get on_click() {return this._on_click}
     set on_click(value) {
         this._on_click = value
-        if (value) {
+        if (value && !this.ignore_collision) {
             this.model.style.pointerEvents = 'auto'
         }
         else {this.model.style.pointerEvents = 'none'}
     }
+    get ignore_collision() {return this._ignore_collision}
+    set ignore_collision(value) {
+        this._ignore_collision = value
+        if (!value) {
+            this.model.style.pointerEvents = 'auto'
+        }
+        else {this.model.style.pointerEvents = 'none'}
+    }
+
     get draggable() {return this._draggable}
     set draggable(value) {
         this._draggable = value
@@ -757,6 +766,10 @@ function sample(population, k){
     }
 
     return result;
+}
+function destroy(entity) {
+    entity.el.remove()
+    delete entity
 }
 
 function save_system_save(name, value) {localStorage.setItem(name, value)}
