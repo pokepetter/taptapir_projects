@@ -88,6 +88,7 @@ class Entity {
         this.el.style.pointerEvents = 'none'
         this.model = document.createElement('div')
         this.model.entity_index = entities.length
+        this.model.id = 'model'
         this.el.appendChild(this.model)
         this.model.className = 'entity'
         this.model.style.opacity = 1
@@ -445,6 +446,14 @@ function Button(options) {
     return new Entity(options)
 }
 
+function Canvas(options) {
+    var e = new Entity(options)
+    var canvas = document.createElement('canvas');
+    e.el.appendChild(canvas)
+
+    return e
+}
+
 
 function StateHandler(states, fade=true) {
     var that = Object.create(StateHandler.prototype)
@@ -649,7 +658,30 @@ document.onmousemove = onmousemove
 document.ontouchmove = onmousemove
 
 
-function range(n) {return Array(n).keys()}
+// function range(n) {return Array(n).keys()}
+function range(start, stop, step) {
+    if (typeof stop == 'undefined') {
+        // one param defined
+        stop = start;
+        start = 0;
+    }
+
+    if (typeof step == 'undefined') {
+        step = 1;
+    }
+
+    if ((step > 0 && start >= stop) || (step < 0 && start <= stop)) {
+        return [];
+    }
+
+    var result = [];
+    for (var i = start; step > 0 ? i < stop : i > stop; i += step) {
+        result.push(i);
+    }
+
+    return result;
+};
+
 function Array_2d(w, h) {
     var tiles = new Array(w)
     for (var i = 0; i < tiles.length; i++) {

@@ -192,24 +192,44 @@ for (var i=0; i<lines.length; i++) {
             continue
         }
         if (lines[i].includes(`${class_name}(`)) {
-            part_after = lines[i].split(`${class_name}(`)[1]
-            // print('aaaa', part_after)
-            arguments = get_inside_brackets(part_after, '(', ')')
-            // print('------args:', lines[i], arguments)
-            js_style_arguments = '{' + arguments.replaceAll('=', ':') + '}'
-            lines[i] = lines[i].replace(arguments, js_style_arguments)
+            lines[i] = convert_arguments(lines[i], class_name)
+
+            // if (func) {
+            //     lines[i] = lines[i].replace('INLINE_FUNC_PLACEHOLDER', func)
+            // }
         }
     }
     if (lines[i].includes('new Entity({')) {
         continue
     }
     if (lines[i].includes('Entity(')) {
-        part_after = lines[i].split('Entity(')[1]
-        arguments = get_inside_brackets(part_after, '(', ')')
-        js_style_arguments = '{' + arguments.replaceAll('=', ':') + '}'
-        lines[i] = lines[i].replace(arguments, js_style_arguments)
+        lines[i] = convert_arguments(lines[i], 'Entity')
         lines[i] = lines[i].replace('Entity(', 'new Entity(')
     }
+}
+
+function convert_arguments(line, class_name) {
+    part_after = line.split(class_name+'(')[1]
+    arguments = get_inside_brackets(part_after, '(', ')')
+    new_arguments = arguments
+    has_inline_function = false
+
+    if (arguments.includes(`def():`)) {
+        has_inline_function = true
+        func_content = arguments.split('def():')[1]
+        lastIndex = arguments.lastIndexOf(')')
+        func_content = func_content.substr(0, lastIndex) + func_content.substr(lastIndex)
+        function_definition = 'def():' + func_content
+        new_arguments = arguments.replace(function_definition, `[INLINE_FUNC_PLACEHOLDER]`)
+    }
+
+    js_style_arguments = '{' + new_arguments.replaceAll('=', ':') + '}'
+
+    if (has_inline_function) {
+        js_style_arguments = js_style_arguments.replace('[INLINE_FUNC_PLACEHOLDER]', 'function(){' + func_content + '}')
+    }
+
+    return line.replace(arguments, js_style_arguments)
 }
 
 var compiled_code = lines.join('\n')
