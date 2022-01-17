@@ -16,6 +16,7 @@ lines.push('\n')
 strings = []
 string_index = 0
 const regexp = '\'(.*?)\'';
+extra_replacements = []
 
 for (var i=0; i<all_lines.length; i++) {
 
@@ -28,6 +29,7 @@ for (var i=0; i<all_lines.length; i++) {
     if (all_lines[i].trimStart().startsWith('#')) {
         continue
     }
+    // if (all_lines[i].trimStart().startsWith('define(')) {}
     // remove text so it doesn't get parsed as code.
     quotes = [...all_lines[i].matchAll(regexp)];
 
@@ -94,6 +96,20 @@ lines.push('}'.repeat(current_indent))
 // print(lines.join('\n'))
 
 for (var i=0; i<lines.length; i++) {
+    if (lines[i].trimStart().startsWith('compiler.define(')) {
+        content = lines[i].slice(16, -1)
+        const [key, ...rest] = content.split(',')
+        const value = rest.join(',')
+        content = [key, value]
+        extra_replacements.push(content)
+        lines[i] = ''
+        i += 1
+    }
+    for (e of extra_replacements) {
+        lines[i] = lines[i].replaceAll(e[0], e[1])
+        print('prepaløce')
+
+    }
     lines[i] = lines[i].replaceAll(' and ', ' && ')
     lines[i] = lines[i].replaceAll(' or ', ' || ')
     lines[i] = lines[i].replaceAll(' not ', ' ! ')

@@ -1,17 +1,9 @@
-<html>
-<head>
-    <meta charset="utf-8" name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no'/>
-    <title>Dreamland Painter</title>
-    <link rel="stylesheet" type="text/css" href="../taptapir.css">
-</head>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <!-- <link rel="manifest" href="/manifest.json"> -->
-
-    <!-- <title>snootboop.js</title> -->
+    <title>dreamland sketcher</title>
     <link rel="stylesheet" href="../taptapir.css">
 </head>
 
@@ -32,17 +24,13 @@
 set_window_color('black')
 
 
-# var canvas = document.getElementById('canvas')
-# var c = Entity()
 var canvas = document.createElement('canvas');
-canvas.style.pointerEvents = 'auto'
+# canvas.style.pointerEvents = 'auto'
 canvas.style.width= '100%'
 canvas.style.height= '100%'
 canvas.style.top= '0%'
 canvas.style.bottom= '10%'
 
-# scaler=Entity(color='clear', scale=1)
-# scaler.el.id = 'scaler'
 c = Entity(color='clear', scale_y=aspect_ratio)
 c.el.id = 'c'
 c.model.appendChild(canvas)
@@ -50,24 +38,13 @@ c.origin = [0,0]
 c.scale_y = .88 * aspect_ratio
 c.scale_x = .88
 c.y = .075
-# c.el.appendChild(canvas)
+
 var w = 1080
 var h = 1920
 # var h = 1080;
 # var w = 1920;
 canvas.width = w
 canvas.height = h
-
-var button_container = document.getElementById('button_container')
-# button_container.style.marginLeft = `${window.innerWidth/2 + canvas.getBoundingClientRect().width/3.5}px`
-# button_container = Entity()
-
-# if canvas.height > canvas.width:
-#     c.scale_y = .88 * aspect_ratio
-#     c.scale_x = c.scale_y * 9/16 * aspect_ratio
-# else:
-#     c.scale_x = .88 * aspect_ratio
-#     c.scale_y = c.scale_x * 9/16 * aspect_ratio
 
 ctx = canvas.getContext('2d')
 ctx.fillStyle = rgb(128/255, 128/255, 128/255, 255/255)
@@ -90,28 +67,14 @@ drawing = false
 using_eyedropper = false
 var prev_pos = null
 
-# cursor = Entity(scale=.02, color='red', alpha=.1, parent=c)
+cursor = Entity(scale=.02, color='red', alpha=.1, parent=c, enabled=false)
 
 smoothing = false
 
-def get_canvas_position(ev):
-    # print('e')
-    # if ev.touches:
-    #     var touch = ev.touches[0] || ev.changedTouches[0]
-    #     var h = canvas.height / canvas_rect.height
-    #     var x = (touch.pageX - canvas_rect.x) * h
-    #     var y = (touch.pageY - canvas_rect.top) * h
-    #
-    # elif typeof(ev) == Touch:
-    #     var touch = ev
-    #     var h = canvas.height / canvas_rect.height
-    #     var x = (touch.pageX - canvas_rect.x) * h
-    #     var y = (touch.pageY - canvas_rect.top) * h
-    # else:
-    # cursor.x = (mouse.x/.88)
-    # cursor.y = (mouse.y / .88 / aspect_ratio) - .05
+def get_canvas_position():
     x = (.5 + (mouse.x / .88)) * w
     y = (.5 -((mouse.y / .88 / aspect_ratio) - .05)) * w*aspect_ratio
+    # cursor.position = [x,y]
 
     return [Math.floor(x), Math.floor(y)]
 
@@ -129,27 +92,15 @@ def update(timestamp):
     dt = (timestamp - lastTimestamp) / perfectFrameTime
     lastTimestamp = timestamp
 
+    if mouse.pressed:
+        paint()
 
 
 def paint(ev):
     if not drawing:
         return
 
-    if ev.touches and ev.touches.length:
-        ev.preventDefault()
-        ev.stopImmediatePropagation()
-        print(ev.touches.length)
-        if ev.touches.length == 2:
-            var start = get_canvas_position(ev.touches[0])
-            var end = get_canvas_position(ev.touches[1])
-            ctx.beginPath()
-            ctx.moveTo(start[0], start[1])
-            ctx.lineTo(end[0], end[1])
-            ctx.stroke()
-            return
-
-
-    var pos = get_canvas_position(ev)
+    pos = get_canvas_position()
     if smoothing and prev_pos:
         pos = [lerp(prev_pos[0], pos[0], dt*.025), lerp(prev_pos[1], pos[1], dt*.025)]
 
@@ -159,9 +110,7 @@ def paint(ev):
     if prev_pos == null:
         ctx.drawImage(img, x-(brush_size/2), y-(brush_size/2), brush_size, brush_size)
         start_position = pos
-        print(start_position)
     else:
-        # print('a', pos)
         if snap_to_hex:
             y = start_position[1] + (x-start_position[0])
 
@@ -179,11 +128,9 @@ def paint(ev):
 
     prev_pos = [x, y]
 
-canvas.addEventListener("mousemove", paint, false)
-canvas.addEventListener("touchmove", paint, false)
 
 def mouse_down(ev):
-    # print('a')
+    print('mouse down')
     brush_canvas.width = brush_size
     brush_canvas.height = brush_size
     var ctx2 = brush_canvas.getContext("2d")
@@ -208,7 +155,7 @@ def mouse_down(ev):
             return
 
     else:
-        pos = get_canvas_position(ev)
+        pos = get_canvas_position()
         rgb_color = ctx.getImageData(pos[0], pos[1], 1, 1).data
         hsb_color = RGBtoHSV(rgb_color[0], rgb_color[1], rgb_color[2])
         hue_slider.value = hsb_color.h*360
@@ -219,7 +166,7 @@ def mouse_down(ev):
 
 
 document.addEventListener("mousedown", mouse_down, false)
-canvas.addEventListener("touchstart", mouse_down, false)
+document.addEventListener("touchstart", mouse_down, false)
 
 def mouse_up(ev):
     if drawing:
@@ -245,22 +192,36 @@ def lerp(a, b, t):
 
 
 # color sliders
-var hue_slider = document.getElementById("hue_slider");
-var saturation_slider = document.getElementById("saturation_slider");
-var value_slider = document.getElementById("value_slider");
-var color_panel = document.getElementById("color_panel");
+# var hue_slider = document.getElementById("hue_slider");
+# var saturation_slider = document.getElementById("saturation_slider");
+# var value_slider = document.getElementById("value_slider");
+# var color_panel = document.getElementById("color_panel");
+# hue_slider =
 #
 def Menubutton(position):
     return Entity(parent=menu_parent, roundness=.5, origin=[-.5,-.5], position=position)
 
 menu_parent = Entity(color='clear', scale=.1, position=window.bottom_left, z=-1)
-for [i, e] in ['eyedropper', 'h', 's', 'v'].entries():
-    b = Entity(parent=menu_parent, roundness=.5, origin=[-.5,-.5], x=i*.75, y=(i+1)%2*.5, text='     '+e, text_size=1)
-    menu_parent[e] = b
+# for [i, e] in ['eyedropper', 'h', 's', 'v'].entries():
+#     b = Entity(parent=menu_parent, roundness=.5, origin=[-.5,-.5], x=i*.75, y=(i+1)%2*.5, text='     '+e, text_size=1)
+#     menu_parent[e] = b
 
-increase_brush_size_button = Entity(parent=menu_parent, roundness=.5, origin=[-.5,-.5], x=4*.75, y=(4+1)%2*.5, z=-1, text='+', text_size=1, on_click=def():brush_size *= 1.5)
-decrease_brush_size_button = Entity(parent=menu_parent, roundness=.5, origin=[-.5,-.5], x=5*.75, y=(5+1)%2*.5, text='-', text_size=1, on_click=def():brush_size *= .75)
-toggle_smooth_button = Entity(parent=menu_parent, roundness=.5, origin=[-.5,-.5], x=6*.75, y=(6+1)%2*.5, text='smooth', text_size=1, on_click=def():smoothing = not smoothing)
+compiler.define(*slider_style, scale=.1, roundness=.5, origin=[0,-.5], z=-1, text_size=1, draggable=true)
+
+hue_slider = Entity(*slider_style, x=-.1, y=(-.5*aspect_ratio)+(1+1)%2*.5, z=-1, color='green', text='h', min_x = -.3)
+saturation_slider = Entity(*slider_style, origin=[0,-.5], x=0, y=(-.5*aspect_ratio)+(1+1)%2*.5, z=-1, color='yellow', text='s', draggable=true)
+value_slider = Entity(*slider_style, origin=[0,-.5], x=.1, y=(-.5*aspect_ratio)+(1+1)%2*.5, z=-1, color='gray', text='v', draggable=true)
+# hue_slider.on_click = def():
+#     print('abbb')
+hue_slider.while_dragging = def():
+    print('drop')
+
+
+# settings = dict(scale=.1, roundness=.5, origin=[0,-.5], x=.1, y=(-.5*aspect_ratio)+(1+1)%2*.5, z=-1, color='gray', text='v', text_size=1, draggable=true)
+
+increase_brush_size_button = Entity(parent=menu_parent, roundness=.5, origin=[-.5,-.5], x=1*.75, y=(4+1)%2*.5, z=-1, text='+', text_size=1, on_click=def():brush_size *= 1.5)
+decrease_brush_size_button = Entity(parent=menu_parent, roundness=.5, origin=[-.5,-.5], x=2*.75, y=(5+1)%2*.5, text='-', text_size=1, on_click=def():brush_size *= .75)
+toggle_smooth_button = Entity(parent=menu_parent, roundness=.5, origin=[-.5,-.5], x=3*.75, y=(6+1)%2*.5, text='smooth', text_size=1, on_click=def():smoothing = not smoothing)
 
 
 

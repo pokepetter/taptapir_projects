@@ -591,15 +591,16 @@ function handle_mouse_click(e) {
     }
 
 }
-document.body.addEventListener('mouseup', function(e) {
+document.addEventListener('mouseup', function(e) {
     e.preventDefault()
-    mouse_up()
+    mouse.pressed = false;
+    _mouse_up()
 })
-document.body.addEventListener('touchend', function(e) {
+document.addEventListener('touchend', function(e) {
     e.preventDefault()
-    mouse_up()
+    _mouse_up()
 })
-function mouse_up(e) {
+function _mouse_up(e) {
     mouse.pressed = false;
     for (var e of entities) {
         if (e.dragging) {
@@ -613,18 +614,20 @@ function mouse_up(e) {
 function update_mouse_position(event) {
     window_position = game_window.getBoundingClientRect()
 
-    if (event.targetTouches !== undefined) {
-        event = event.targetTouches[0]
+    if (event.touches) {
+        touch = event.touches[0] || event.changedTouches[0]
+        event_x = touch.clientX
+        event_y = touch.clientY
+    }
+    else {
         event_x = event.clientX
         event_y = event.clientY
     }
-    else {
-        event_x = event.x
-        event_y = event.y
-    }
     mouse.x = ((event_x - window_position.left) / game_window.clientWidth) - .5
+    // print(mouse.x)
     mouse.y = -(((event_y - window_position.top) / game_window.clientHeight ) - .5) / (9/16)
     mouse.position = [mouse.x, mouse.y]
+    // print('aaaa', mouse.position)
 }
 
 function onmousemove(event) {
