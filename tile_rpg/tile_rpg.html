@@ -1,0 +1,38 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>taptapir</title><link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir.js"></script><script type='text/pokescript'>
+
+set_window_color('rgb(49 72 60)')
+w = 8
+h = 8
+grid = Array_2d(8,8)
+tiles_parent = Entity(scale=1/8, position=[-.5,-.5], visible_self=False)
+for y in range(8):
+    for x in range(8):
+        print(x,y)
+        Entity(parent=tiles_parent, position=[x,y], origin=[-.5,-.5], color=rgb(x*.1,y*.1,1))
+
+// player = Entity(scale=1/8*.75, color='red', shadow=True,origin=[-.5,-.5])
+player = Entity(scale=1/8*.75, texture='nobyl_pixely_big.png', shadow=False, origin=[-.5,-.5], collision=False)
+
+circle = Entity(roundness=.5, scale=.25, color='darkgray', y=-.7)
+inner_circle = Entity(roundness=.5, scale=.125, color=rgb(49, 72, 60), y=-.7)
+e = Entity(roundness=.5, scale=.15, color='black', y=-.7, z=-1, draggable=True, min_x=-.125, max_x=.125, min_y=-.7-.125, max_y=-.7+.125, shadow=True)
+e.update = def():
+    if not e.dragging:
+        return
+    dir = [e.x/.125, (e.y - circle.y)/.125]
+    mag = magnitude(dir)
+    if mag < .125:
+        return
+
+    print(dir)
+    dir = normalize(dir)
+    movement_speed = .005
+    player.x += dir[0] * movement_speed
+    player.y += dir[1] * movement_speed
+    // e.xy = [dir[0]*.125, dir[1]*.125 - .7]
+
+e.drop = def():
+    e.xy = circle.xy
+
+
+</script><script src="../pokescript_compiler.js"></script></html>

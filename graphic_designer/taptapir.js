@@ -545,7 +545,7 @@ document.addEventListener('touchstart', function(e) {
     handle_mouse_click(e.touches[0])
 })
 function handle_mouse_click(e) {
-    mouse.pressed = true
+    mouse.left = true
     element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
     entity = entities[element_hit.entity_index]
     // print(element_hit)
@@ -573,7 +573,7 @@ document.body.addEventListener('touchend', function(e) {
     mouse_up()
 })
 function mouse_up(e) {
-    mouse.pressed = false;
+    mouse.left = false;
     for (var e of entities) {
         if (e.dragging) {
             e.dragging = false

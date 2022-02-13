@@ -1,4 +1,6 @@
 print = console.log
+False = false
+True = true
 // aspect_ratio = 16/9
 scale = 1
 format = 'horizontal'   // orientation
@@ -559,7 +561,7 @@ class HealthBar extends Entity {
     set bar_color(value) {this.bar.color = value}
 }
 
-mouse = {x:0, y:0, position:[0,0], pressed:false}
+mouse = {x:0, y:0, position:[0,0], left:false}
 
 document.addEventListener('mousedown', function(e) {
     update_mouse_position(e)
@@ -572,7 +574,7 @@ document.addEventListener('touchstart', function(e) {
     handle_mouse_click(e.touches[0])
 })
 function handle_mouse_click(e) {
-    mouse.pressed = true
+    mouse.left = true
     element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
     entity = entities[element_hit.entity_index]
     // print(element_hit)
@@ -593,7 +595,7 @@ function handle_mouse_click(e) {
 }
 document.addEventListener('mouseup', function(e) {
     e.preventDefault()
-    mouse.pressed = false;
+    mouse.left = false;
     _mouse_up()
 })
 document.addEventListener('touchend', function(e) {
@@ -601,7 +603,7 @@ document.addEventListener('touchend', function(e) {
     _mouse_up()
 })
 function _mouse_up(e) {
-    mouse.pressed = false;
+    mouse.left = false;
     for (var e of entities) {
         if (e.dragging) {
             e.dragging = false
@@ -697,8 +699,9 @@ String.prototype.count=function(c) {
   for(i;i<this.length;i++)if(this[i]==c)result++;
   return result;
 };
-// min = Math.min
-// max = Math.max
+min = Math.min
+max = Math.max
+abs = Math.abs
 
 function rgb(r, g, b) {return `rgb(${parseInt(r*255)},${parseInt(g*255)},${parseInt(b*255)})`}
 
@@ -766,6 +769,20 @@ function distance(a, b) {
     return sqrt((b[0] - a[0])**2 + (b[1] - a[1])**2)
 }
 
+function magnitude(vec) {
+    const x = vec[0], y = vec[1]
+    const magSq = x * x + y * y
+    return Math.sqrt(magSq)
+}
+
+function normalize(vec) {
+    vec_length = magnitude(vec)
+    if (vec_length == 0) {
+        return vec
+    }
+    return [vec[0] / vec_length, vec[1] / vec_length]
+}
+
 
 function sample(population, k){
     if(!Array.isArray(population))
@@ -812,3 +829,21 @@ function save_system_load(name) {return localStorage.getItem(name)}
 function save_system_clear() {localStorage.clear()}
 
 savesystem = {save:save_system_save, load:save_system_load, clear:save_system_clear}
+
+let start, previousTimeStamp;
+function _step(timestamp) {
+    if (start === undefined) {
+        start = timestamp;
+    }
+
+    const elapsed = timestamp - start;
+    for (var e of entities) {
+        if (e.update) {
+            e.update()
+        }
+    }
+
+    previousTimeStamp = timestamp
+    window.requestAnimationFrame(_step);
+}
+window.requestAnimationFrame(_step)

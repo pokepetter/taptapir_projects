@@ -92,7 +92,7 @@ def update(timestamp):
     dt = (timestamp - lastTimestamp) / perfectFrameTime
     lastTimestamp = timestamp
 
-    if mouse.pressed:
+    if mouse.left:
         paint()
 
 
