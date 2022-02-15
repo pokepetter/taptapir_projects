@@ -24,16 +24,26 @@ tiles_parent = Entity(parent=level_parent, visible_self=False)
 for y in range(9):
     for x in range(w+1):
         // print(x,y)
-        tiles[x][y] = Entity(parent=tiles_parent, position=[x-4-1,y-4-1], origin=[-.5,-.5], color=rgb(x*.1,y*.1,1))
+        tiles[x][y] = Entity(parent=tiles_parent, position=[x-4-1,y-4-1], origin=[-.5,-.5], color=rgb(x*.1,y*.1,1), scale=1.01)
 
 // player = Entity(scale=1/8*.75, color='red', shadow=True,origin=[-.5,-.5])
 player = Entity(scale=1/8*.75, texture='nobyl_pixely_big.png', shadow=False, origin=[-.5,-.5], collision=False)
-grid_x = 32
-grid_y = 32
-prev_grid_x = grid_x
-prev_grid_y = grid_y
-level_parent.xy = [-grid_x/8, -grid_y/8]
-tiles_parent.xy = [grid_x, grid_y]
+
+def set_start_position(x, y):
+    grid_x = x
+    grid_y = y
+    prev_grid_x = x
+    prev_grid_y = y
+    level_parent.xy = [-x/8, -y/8]
+    tiles_parent.xy = [x, y]
+    // update_tiles()
+
+for y in range(64):
+    for x in range(64):
+        col = level_1[y][x]
+        if col[0] == 0 and col[1] == 255 and col[2] == 0:
+            set_start_position(x-5, y-5)
+
 update_tiles()
 
 circle = Entity(roundness=.5, scale=.25, color='darkgray', y=-.7, x=-.3)
@@ -90,9 +100,12 @@ e.drop = def():
 def update_tiles():
     for y in range(9):
         for x in range(9):
-            col = level_1[clamp(grid_x + x, 0, 64-1)][clamp(grid_y + y, 0, 64-1)]
-            // print(grid_x + x, grid_y + y, col)
+            col = level_1[clamp(grid_y + y, 0, 64-1)][clamp(grid_x + x, 0, 64-1)]
+            print(grid_x + x, grid_y + y, col)
             tiles[x][y].color = rgb(col[0], col[1], col[2])
+
+            // if col[0] == 0 and col[1] == 255 and col[2] == 0:
+            //     set_start_position(gridx+x, grid_y+y)
             // if col === [0,0,0]:
             //     tiles[x][y].color = 'black'
             // else:
