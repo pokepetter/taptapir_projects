@@ -1,6 +1,7 @@
 print = console.log
 False = false
 True = true
+None = null
 // aspect_ratio = 16/9
 scale = 1
 format = 'horizontal'   // orientation
@@ -149,7 +150,7 @@ class Entity {
     // }
     get world_x() {return (this.el.getBoundingClientRect().left - scene.getBoundingClientRect().left) / scene.clientWidth}
     get world_y() {return -(this.el.getBoundingClientRect().top - scene.getBoundingClientRect().top) / scene.clientHeight}
-    get world_position() {return [world_x, world_y]}
+    get world_position() {return [this.world_x, this.world_y]}
 
     get world_scale_x() {return this.el.clientWidth / scene.clientWidth}
     get world_scale_y() {return this.el.clientHeight / scene.clientHeight}
@@ -226,6 +227,7 @@ class Entity {
     get x() {return this._x}
     set x(value) {
         this.el.style.left = `${50+(value*100)}%`
+
         this._x = value
     }
     get y() {return this._y}
@@ -414,8 +416,9 @@ class Entity {
 
 
 function lerp(a, b, t) {
-    // return a + (b - a) * t
-    return a * (1-t)+b * t
+    // return (1-t)*a+t*b
+    return a + (b - a) * t
+    // return a * (1-t)+b * t
 }
 function clamp(num, min, max) {
   return num <= min ? min : num >= max ? max : num;
@@ -831,7 +834,7 @@ function save_system_load(name) {return localStorage.getItem(name)}
 function save_system_clear() {localStorage.clear()}
 
 savesystem = {save:save_system_save, load:save_system_load, clear:save_system_clear}
-
+delta_time = 1/60
 let start, previousTimeStamp;
 function _step(timestamp) {
     if (start === undefined) {
@@ -845,7 +848,67 @@ function _step(timestamp) {
         }
     }
 
+    delta_time = (timestamp - previousTimeStamp) / 1000
     previousTimeStamp = timestamp
     window.requestAnimationFrame(_step);
 }
 window.requestAnimationFrame(_step)
+
+
+class Camera{
+  constructor(options=null) {
+      this.el = document.createElement('entity')
+      game_window.appendChild(this.el)
+      this.el.className = 'entity'
+      this.el.style.height = scene.style.height
+      this.el.id = 'camera'
+      this.children = []
+      this._x = 0
+      this._y = 0
+      this.fov = 1
+  }
+
+  get x() {return this._x}
+  set x(value) {
+      this._x = value
+      scene.style.left = `${50+(-value*100/this.fov)}%`
+  }
+  get y() {return this._y}
+  set y(value) {
+      this._y = value
+      scene.style.top = `${50+(value*100/aspect_ratio/this.fov)}%`
+  }
+  // get z() {return this._z}
+  // set z(value) {
+  //     scene.style.zIndex = -value
+  //     this._z = value
+  // }
+  get xy() {return [this._x, this._y]}
+  set xy(value) {
+      this.x = value[0]
+      this.y = value[1]
+  }
+  get xyz() {return [this._x, this._y, this._z]}
+  set xyz(value) {
+      this.x = value[0]
+      this.y = value[1]
+      // this.z = value[2]
+  }
+  get position() {return this.xyz}
+  set position(value) {
+      if (value.length == 2) {this.xy = value}
+      // if (value.length == 3) {this.xyz = value}
+  }
+  get rotation() {return this._rotation}
+  set rotation(value) {
+      this._rotation = value
+      scene.style.transform = `rotate(${-value}deg)`
+  }
+  get fov() {return self._fov}
+  set fov(value) {
+      self._fov = value
+      scene.style.width = `${1/value*100}%`
+      scene.style.height = `${1/value*100/aspect_ratio}%`
+  }
+}
+camera = new Camera({})
