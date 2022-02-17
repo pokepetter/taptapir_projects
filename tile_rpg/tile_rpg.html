@@ -17,16 +17,18 @@ if __name__ == '__main__':
 set_window_color('rgb(49 72 60)')
 width = 8
 height = 11
-tiles = Array_2d(width+2, height+2)
+tiles = Array_2d(width+3, height+3)
+tiles_flat = []
 
 camera.fov = 7.9
 tiles_parent = Entity(visible_self=False)
-for y in range(height+2):
-    for x in range(width+2):
-        tiles[x][y] = Entity(parent=tiles_parent, position=[x-4,y-4], origin=[-.5,-.5], color=rgb(x*.1,y*.1,1), scale=1.02)
+for y in range(height+3):
+    for x in range(width+3):
+        tiles[x][y] = Entity(parent=tiles_parent, position=[x-5,y-5], color=rgb(x*.1,y*.1,1), scale=1.02)
+        tiles_flat.append(tiles[x][y])
 
-// player = Entity(scale=1, texture='nobyl_pixely_big.png', origin=[-.5,-.5], collision=False)
-player = Entity(scale=1, color='cyan', origin=[-.5,-.5], collision=False)
+player = Entity(scale=1, texture='nobyl_pixely_big.png', collision=False)
+// player = Entity(scale=1, color='cyan', collision=False, roundness=.5)
 
 def set_start_position(x, y):
     grid_x = x
@@ -53,6 +55,13 @@ min_x = 0
 max_x = 64
 min_y = 0
 max_y = 64
+// collider_hel
+
+def intersects(point, entity):
+    return point[0] > (entity.world_x - entity.world_scale_x/2) and point[0] < (entity.world_x + entity.world_scale_x/2) and point[1] > (entity.world_y - entity.world_scale_y/2) and point[1] < (entity.world_y + entity.world_scale_y/2)
+helper = Entity(scale=.05, color='green', roundness=.5)
+player.collider = Entity(parent=player, visible_self=False, z=.1)
+
 e.update = def():
     if not e.dragging:
         return
@@ -61,39 +70,38 @@ e.update = def():
     if mag < .125:
         return
 
-    // dir = normalize(dir)
+    norm_dir = normalize(dir)
     movement_speed = 4
     move_amount = [dir[0] * movement_speed * delta_time, dir[1] * movement_speed * delta_time]
 
-    target_pos = [player.x + move_amount[0], player.y + move_amount[1]]
-    // org_pos = player.xy
-    // for e in neighbors:
-    //     // print(distance(e.world_position, target_pos))
-    //     if e.solid and distance(e.world_position, target_pos) < .1:
-    //         return
+    player.collider.xy = move_amount
+
+    min_x = 0
+    max_x = 64
+    min_y = 0
+    max_y = 64
+
+    middle_tile = tiles[5][5]
+    // middle_tile.color = 'red'
+    if tiles[4][5].solid:
+        min_x = middle_tile.world_x - 0
+    if tiles[6][5].solid and player.collider.world_x > middle_tile.world_x:
+        move_amount[0] = 0
+    if tiles[5][4].solid:
+        min_y = middle_tile.world_y +0
+    if tiles[5][6].solid and player.collider.world_y > middle_tile.world_y:
+        move_amount[1] = 0
 
     player.x += move_amount[0]
     player.y += move_amount[1]
-    // left_tile = floor(player.x + move_amount[0])
-    // print(left_tile)
-    // if dir[0] < 0:
-    //     player.x += move_amount[0]
-    // if point_intersects(player.xy, tiles[4][4]):
-    //     print('solid')
-    // else:
-    //     print('air')
     player.x = clamp(player.x, min_x, max_x)
     player.y = clamp(player.y, min_y, max_y)
 
 
-    grid_x = floor(player.x)
+    grid_x = round(player.x)
     grid_x = clamp(grid_x, 0, 64-1)
-    grid_y = floor(player.y)
+    grid_y = round(player.y)
     grid_y = clamp(grid_y, 0, 64-1)
-
-    tiles[4][4].color = 'red'
-    // print(tiles[3][4].color)
-    avoid_grid(dir)
 
     if grid_x != prev_grid_x or grid_y != prev_grid_y:
         tiles_parent.x = grid_x
@@ -102,49 +110,15 @@ e.update = def():
         prev_grid_y = grid_y
         update_tiles()
 
-dir_n = tiles[4][4+1]
-dir_ne = tiles[4+2][4+1]
-dir_e = tiles[4+2][4]
-dir_se = tiles[4+1][4-1]
-dir_s = tiles[4][4-1]
-dir_sw = tiles[4-1][4-1]
-dir_w = tiles[4-1][4]
-dir_nw = tiles[4][4+1]
-neighbors = [dir_n, dir_ne, dir_e, dir_se, dir_s, dir_sw, dir_w, dir_nw]
-def avoid_grid(dir):
-    // for e in neighbors:
-    //     print(e.solid)
-    min_x = 0
-    if dir_w.solid and (player.y >= dir_w.world_y or player.y <= dir_w.world_y+1):
-        dir_w.color = 'orange'
-        min_x = dir_w.x + tiles_parent.x + 1
-    elif dir_nw.solid and (player.y >= dir_nw.world_y or player.y <= dir_nw.world_y+1):
-        min_x = dir_nw.x + tiles_parent.x + 1
-
-    max_x = 64
-    if dir_e.solid and (player.y >= dir_e.world_y or player.y <= dir_e.world_y+1):
-        dir_e.color = 'blue'
-        max_x = dir_e.x + tiles_parent.x - 1.01
-    elif dir_ne.solid and (player.y >= dir_ne.world_y or player.y <= dir_ne.world_y+1):
-        max_x = dir_ne.x + tiles_parent.x - 1.01
 
 
-    min_y = 0
-    // dir_se.color = 'red'
-    if dir_s.solid and (player.x >= dir_s.world_x or player.x <= dir_s.world_x+1):
-        dir_s.color = 'red'
-        min_y = dir_s.y + tiles_parent.y + 1
-    elif dir_se.solid and (player.x >= dir_se.world_x or player.x <= dir_se.world_x+1):
-        min_y = dir_se.y + tiles_parent.y + 1
+def intersects(rect1, rect2):
+    return (rect1.world_x < rect2.world_x + rect2.world_scale_x and rect1.world_x + rect1.world_scale_x > rect2.world_x and rect1.world_y < rect2.world_y + rect2.world_scale_y and rect1.world_scale_y + rect1.world_y > rect2.world_y)
 
-    max_y = 64
-    dir_n.color = 'blue'
-    tiles[4+1][4+1].color = 'violet'
-    if dir_n.solid and (player.x >= dir_n.world_x or player.x < dir_n.world_x+1):
-        max_y = dir_n.y + tiles_parent.y - 1
-    // elif tiles[4+1][4+1].solid and (player.x >= dir_nw.world_x or player.x < dir_nw.world_x+1):
-    //     max_y = dir_nw.y + tiles_parent.y - 1
-
+def point_intersects(point, entity):
+    half_w = entity.world_scale_x / 2
+    half_h = entity.world_scale_y / 2
+    return point[0] > entity.world_x-half_w and point[0] < entity.world_x+half_w and point[1] > entity.world_y-half_h and point[1] < entity.world_y+half_h
 
 
 e.drop = def():
@@ -156,8 +130,8 @@ camera_mover.update = def():
 
 
 def update_tiles():
-    for y in range(height+2):
-        for x in range(width+2):
+    for y in range(height+3):
+        for x in range(width+3):
             col = level_1[clamp(grid_y + y, 0, 64-1)][clamp(grid_x + x, 0, 64-1)]
             tiles[x][y].solid = col[1] == 0
             tiles[x][y].color = rgb(col[0], col[1], col[2])
