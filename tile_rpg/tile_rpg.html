@@ -154,18 +154,18 @@ def update_tiles():
 
 
             if tiles[x][y+1].solid and tiles[x+1][y].solid and tiles[x][y-1].solid and tiles[x-1][y].solid:
-                tiles[x][y].text='u'
+                // tiles[x][y].text='u'
                 continue
 
             if not tiles[x][y+1].solid:
                 if tiles[x-1][y].solid and tiles[x+1][y].solid:
-                    tiles[x][y].text='t'
+                    // tiles[x][y].text='t'
                     continue
                 if not tiles[x-1][y].solid:
-                    tiles[x][y].text='tl'
+                    // tiles[x][y].text='tl'
                     continue
                 else:
-                    tiles[x][y].text='tr'
+                    // tiles[x][y].text='tr'
                     continue
 
             if not tiles[x][y-1].solid:
@@ -182,10 +182,10 @@ def update_tiles():
                     continue
 
             if not tiles[x-1][y].solid:
-                tiles[x][y].text='l'
+                // tiles[x][y].text='l'
                 continue
             else:
-                tiles[x][y].text='r'
+                // tiles[x][y].text='r'
                 continue
 
 
