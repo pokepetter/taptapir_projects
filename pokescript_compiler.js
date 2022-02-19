@@ -107,7 +107,7 @@ for (var i=0; i<lines.length; i++) {
     }
     for (e of extra_replacements) {
         lines[i] = lines[i].replaceAll(e[0], e[1])
-        print('prepaløce')
+        // print('prepaløce')
 
     }
     lines[i] = lines[i].replaceAll(' and ', ' && ')

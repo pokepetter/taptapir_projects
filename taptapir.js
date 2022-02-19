@@ -705,6 +705,7 @@ max = Math.max
 abs = Math.abs
 floor = Math.floor
 ceil = Math.ceil
+int = parseInt
 
 function rgb(r, g, b) {return `rgb(${parseInt(r*255)},${parseInt(g*255)},${parseInt(b*255)})`}
 
