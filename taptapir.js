@@ -295,11 +295,9 @@ class Entity {
         this.model.style.backgroundSize = `${value[0]*100}% ${value[1]*100}%`
     }
     get tile_coordiante() {return this._tile}
-    set tile_coordiante(value) {
+    set tile_coordiante(value) {        // [0,0] is in lower left
         this._tile = value
-        // print('----', `${self._tileset_size[0]}-1) * ${value[0]} * 100)}% ${0/16}%`)
-        var x_val = (16-1)*value[0]*100
-        this.model.style.backgroundPosition = `${(16-1)*value[0]*100}% ${(16-1)*value[1]*100}%`
+        this.model.style.backgroundPosition = `${(this.tileset_size[0]-1)*value[0]*100}% ${(this.tileset_size[1]-1)*(this.tileset_size[1]-1-value[1])*100}%`
     }
 
     get roundness() {return this._roundness}
