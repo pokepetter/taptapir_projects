@@ -150,9 +150,8 @@ def update_tiles(diff):
             if tile_coord[1] == 0:
                 tiles[x][y].solid = False
 
-            tiles[x][y].tile_coordiante = tile_coord
+            // tiles[x][y].tile_coordiante = tile_coord
 
-            tiles[x][y].color = rgb(tile_coord[0]/255, tile_coord[1]/255, tile_coord[2]/255)
             if tiles[x][y].solid:
                 tiles[x][y].z = -1
             else:
