@@ -31,7 +31,7 @@ for (const x of range(4)) {
         new Entity({parent:color_menu, origin:[-.5,.5], scale:1/4, x:-.5+(x/4), y:.5-(y/4),
             texture:'Hack_square_64x64',
             tileset_size:[16,16],
-            tile_coordiante:[8, 15],
+            tile_coordinate:[8, 15],
             color:palette[(y*4)+x],
             on_click: function() {
                 selected_color=(y*4)+x
@@ -52,7 +52,7 @@ for (const x of range(size)) {
         new Entity({parent:tile_menu, origin:[-.5,.5], scale:1/size, x:-.5+(x/size), y:.5-(y/size),
             texture:'Hack_square_64x64',
             tileset_size:[16,16],
-            tile_coordiante:[x, y],
+            tile_coordinate:[x, y],
             // color:palette[(y*4)+x],
             on_click: function() {
                 selected_tile=[x,y]
@@ -71,11 +71,11 @@ tool_functions = [
     function() {
         if (colorize_target == 'fg') {
             colorize_target = 'bg'
-            tools[0].tile_coordiante = [1, 15]
+            tools[0].tile_coordinate = [1, 15]
         }
         else {
             colorize_target = 'fg'
-            tools[0].tile_coordiante = [0, 15]
+            tools[0].tile_coordinate = [0, 15]
         }
         // print('change color target')
     },
@@ -88,7 +88,7 @@ tool_functions = [
         print('select scene')
     },
     function() {
-        print('select tile_coordiante')
+        print('select tile_coordinate')
         current_tool = 'place_tile'
         tile_menu.enabled = !tile_menu.enabled
     },
@@ -107,7 +107,7 @@ for (let x = 0; x < tools.length; x++) {
     tools[x] = new Entity({x:-.5 + (x/7), y:(.5*aspect_ratio) - (h/w), origin:[-.5,.5], scale:[1/7*1.0,1/7*1.02],
         texture:'Hack_square_64x64',
         tileset_size:[16,16],
-        tile_coordiante:[x+1, 15],
+        tile_coordinate:[x+1, 15],
         on_click: tool_functions[x]
     })
 }
@@ -124,8 +124,8 @@ for (const x of range(w)) {
             parent:e,
             texture:'Hack_square_64x64',
             tileset_size:[16,16],
-            // tile_coordiante:[random_int(0,14), random_int(0,14)],
-            tile_coordiante:[0,0],
+            // tile_coordinate:[random_int(0,14), random_int(0,14)],
+            tile_coordinate:[0,0],
             on_click : function() {
                 if (current_tool == 'colorize' && colorize_target == 'fg') {
                     this.tint = selected_color
@@ -134,7 +134,7 @@ for (const x of range(w)) {
                     e.color = palette[selected_color]
                 }
                 else if (current_tool == 'place_tile') {
-                    this.tile_coordiante = selected_tile
+                    this.tile_coordinate = selected_tile
                 }
                 skip = false
             }
@@ -167,13 +167,13 @@ function on_mouse_moved(event) {
 // tiles[w-1][h-1].on_click = function randomize() {
 //     for (const x of range(w)) {
 //         for (const y of range(h)) {
-//             tiles[x][y].tile_coordiante = [random_int(0,16), random_int(0,16)]
+//             tiles[x][y].tile_coordinate = [random_int(0,16), random_int(0,16)]
 //         }
 //     }
 // }
 
 
 
-// e = new Tile({scale:.5, x:-.25, texture:'Hack_square_64x64', tint:1, tileset_size:[16,16], tile_coordiante:[4, 0],})
-// e = new Tile({scale:.5, x:.25, texture:'Hack_square_64x64', tint:9, tileset_size:[16,16], tile_coordiante:[2, 0],})
+// e = new Tile({scale:.5, x:-.25, texture:'Hack_square_64x64', tint:1, tileset_size:[16,16], tile_coordinate:[4, 0],})
+// e = new Tile({scale:.5, x:.25, texture:'Hack_square_64x64', tint:9, tileset_size:[16,16], tile_coordinate:[2, 0],})
 // e = new Entity({scale:.5, x:.25, z:1, color:'#FFA300',})

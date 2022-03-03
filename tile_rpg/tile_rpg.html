@@ -3,17 +3,17 @@
 <script type='text/pokescript'>
 
 set_window_color('rgb(49 72 60)')
-set_background_color('rgb(49 72 60)')
-width = 8
-height = 11
-tiles = Array_2d(width+5, height+5)
+set_background_color('rgb(9 9 1)')
+width = 11
+height = 15
+tiles = Array_2d(width, height)
 tiles_flat = []
 
-camera.fov = 8.9
-tiles_parent = Entity(visible_self=False)
-for y in range(height+5):
-    for x in range(width+5):
-        tiles[x][y] = Entity(parent=tiles_parent, position=[x-6,y-6], color=rgb(x*.1,y*.1,1), scale=1.02, tileset_size=[4,4], texture='tileset.png')
+camera.fov = 10
+tiles_parent = Entity(visible_self=False, xy=[-5,-5])
+for y in range(height):
+    for x in range(width):
+        tiles[x][y] = Entity(parent=tiles_parent, position=[x,y], color=rgb(x*.1,y*.1,1), scale=1.02, tileset_size=[4,4], texture='tileset.png')
         tiles_flat.append(tiles[x][y])
 
 player = Entity(scale=1, texture='nobyl_pixely_big.png', collision=False, origin=[0,-.5])
@@ -23,14 +23,20 @@ grid_x = 0
 grid_y = 0
 prev_grid_x = 0
 prev_grid_y = 0
+
+_x = 0
+_y = 0
 def set_start_position(x, y):
     grid_x = x
     grid_y = y
     prev_grid_x = x
     prev_grid_y = y
     player.xy = [x, y]
-    tiles_parent.xy = player.xy
+    // tiles_parent.xy = player.xy
     camera.xy = player.xy
+    // _x = x
+    // _y = y
+
     // print('-----------', player.xy)
 
 
@@ -39,9 +45,9 @@ for y in range(64):
         col = level_1[y][x]
         if col[0] == 0 and col[1] == 255 and col[2] == 0:
             set_start_position(x-6, y-6)
-set_start_position(26, 10)
+// set_start_position(26, 10)
 // set_start_position(level_1_start_position[0], level_1_start_position[1])
-update_tiles([0,0])
+update_tiles()
 
 ui_bg = Entity(parent=camera, origin=[0,.5], color='#123', z=1, scale=1.1, y=-.49, shadow=True)
 circle = Entity(parent=camera, roundness=.5, scale=.25, color='darkgray', y=-.7, x=-.3)
@@ -60,7 +66,7 @@ e.update = def():
     norm_dir = normalize(dir)
     movement_speed = 4
     move_amount = [dir[0] * movement_speed * delta_time, dir[1] * movement_speed * delta_time]
-    min_x = 0
+    min_x = -100
     max_x = 64
     min_y = 0
     max_y = 64
@@ -97,13 +103,52 @@ e.update = def():
     grid_y = round(player.y)
     grid_y = clamp(grid_y, 0, 64-1)
 
-    if grid_x != prev_grid_x or grid_y != prev_grid_y:
-        tiles_parent.x = grid_x
-        tiles_parent.y = grid_y
-        diff = [grid_x-prev_grid_x, grid_y-prev_grid_y]
+    if grid_x > prev_grid_x:
+        tiles_to_move = [e for e in tiles_flat if e.x < grid_x-1]
+        for t in tiles_to_move:
+            t.x += width
+            // t.tile_coordinate = level_1[_y+int(e.y)][_x+width]
+            // print(t.x, t.y)
+            t.tile_coordinate = level_1[int(t.y)+5][int(t.x)-6]
+            // t.solid = t.tile_coordinate[1] == 0
+        _x += 1
         prev_grid_x = grid_x
-        prev_grid_y = grid_y
-        update_tiles(diff)
+
+    elif grid_x < prev_grid_x:
+        tiles_to_move = [e for e in tiles_flat if e.x > grid_x+5]
+        for t in tiles_to_move:
+            // t = tiles[_x%width][y]
+            t.x -= width
+            t.tile_coordinate = level_1[_y+int(e.y)][_x]
+            // t.solid = t.tile_coordinate[1] == 0
+            // print(grid_x)
+
+        _x -= 1
+        prev_grid_x = grid_x
+    //
+    // if grid_y > prev_grid_y:
+    //     for x in range(width):
+    //         t = tiles[x][_y%height]
+    //         t.y += height
+    //         t.tile_coordinate = level_1[_y+height][_x+x]
+    //         // t.solid = t.tile_coordinate[1] == 0
+    //         // print(grid_x, grid_y, t.tile_coordinate)
+    //
+    //     _y += 1
+    //     prev_grid_y = grid_y
+    //
+    // elif grid_y < prev_grid_y:
+    //     for x in range(width):
+    //         t = tiles[x][_y%height -1]
+    //         t.y -= height
+    //         t.tile_coordinate = level_1[_y][_x+x]
+    //         // t.solid = t.tile_coordinate[1] == 0
+    //         // print(grid_x)
+    //
+    //     _y -= 1
+    //     prev_grid_y = grid_y
+
+
 
 
 
@@ -130,27 +175,16 @@ def update_tile(tile):
 
 
 
-def update_tiles(diff):
-    // print(diff)
-    // if diff[0] == -1:
-    //     return
-    //     // for e in tiles_flat:
-    //     //     print(e.x)
-    //     tiles_to_move = [e for e in tiles_flat if e.world_x > grid_x+6]
-    //     for e in tiles_to_move:
-    //         // print(e)
-    //         e.x -= width+5
-
-    // else:
-    for y in range(height+5):
-        for x in range(width+5):
-            tile_coord = level_1[clamp(grid_y + y, 0, 64-1)][clamp(grid_x + x, 0, 64-1)]
+def update_tiles():
+    for y in range(height):
+        for x in range(width):
+            tile_coord = level_1[clamp(_y + y, 0, 64-1)][clamp(_x + x, 0, 64-1)]
             // print(tile_coord)
-            tiles[x][y].solid = True
+            // tiles[x][y].solid = True
             if tile_coord[1] == 0:
                 tiles[x][y].solid = False
 
-            tiles[x][y].tile_coordiante = tile_coord
+            tiles[x][y].tile_coordinate = tile_coord
 
 
             if tiles[x][y].solid:
@@ -159,5 +193,5 @@ def update_tiles(diff):
                 tiles[x][y].z = 0
 
 
-update_tiles([0,0])
+update_tiles()
 </script><script src="../pokescript_compiler.js"></script></html>

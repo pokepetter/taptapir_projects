@@ -234,8 +234,8 @@ class Entity {
         this._tileset_size = value
         this.el.style.backgroundSize = `${value[0]*100}% ${value[1]*100}%`
     }
-    get tile_coordiante() {return this._tile}
-    set tile_coordiante(value) {
+    get tile_coordinate() {return this._tile}
+    set tile_coordinate(value) {
         this._tile = value
         // print('----', `${self._tileset_size[0]}-1) * ${value[0]} * 100)}% ${0/16}%`)
         var x_val = (16-1)*value[0]*100
