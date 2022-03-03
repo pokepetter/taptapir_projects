@@ -4,9 +4,6 @@ True = true
 None = null
 // aspect_ratio = 16/9
 scale = 1
-format = 'horizontal'   // orientation
-format = 'vertical'
-print('format:', format)
 
 var loading_text = document.getElementById('loading_text')
 if (loading_text) {
@@ -29,27 +26,31 @@ var height = browser_size.height;
 browser_aspect_ratio = width / height
 // print('browser aspect_ratio:', browser_aspect_ratio)
 
-if (format == 'vertical') {
-    aspect_ratio = 16/9
-    scene.style.width = `${100}%`
-    scene.style.height = `${(9/16)*100}%`
+function set_orientation(format) {
+    if (format == 'vertical') {
+        aspect_ratio = 16/9
+        scene.style.width = `${100}%`
+        scene.style.height = `${(9/16)*100}%`
 
-    if (browser_aspect_ratio >= 9/16) { // if the screen is wider than 16/9, like a pc monitor.
-        game_window.style.width = `${height/(16/9)*scale}px`
-        game_window.style.height =  `${height*scale}px`
+        if (browser_aspect_ratio >= 9/16) { // if the screen is wider than 16/9, like a pc monitor.
+            game_window.style.width = `${height/(16/9)*scale}px`
+            game_window.style.height =  `${height*scale}px`
+        }
+        else {                              // if the screen is taller than 16/9, like a phone screen.
+            game_window.style.width = `${width*scale}px`
+            game_window.style.height =  `${width*16/9*scale}px`
+        }
     }
-    else {                              // if the screen is taller than 16/9, like a phone screen.
-        game_window.style.width = `${width*scale}px`
-        game_window.style.height =  `${width*16/9*scale}px`
+    else {
+        aspect_ratio = 9/16
+        game_window.style.height = `${width/(16/9)*scale}px`
+        game_window.style.width =  `${width*scale}px`
+        scene.style.height = `${100}%`
+        scene.style.width = `${(9/16)*100}%`
     }
 }
-else {
-    aspect_ratio = 9/16
-    game_window.style.height = `${width/(16/9)*scale}px`
-    game_window.style.width =  `${width*scale}px`
-    scene.style.height = `${100}%`
-    scene.style.width = `${(9/16)*100}%`
-}
+
+set_orientation('vertical')
 
 
 top_left =      [-.5, .5*aspect_ratio]
