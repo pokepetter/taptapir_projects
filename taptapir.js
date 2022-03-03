@@ -294,8 +294,8 @@ class Entity {
         this._tileset_size = value
         this.model.style.backgroundSize = `${value[0]*100}% ${value[1]*100}%`
     }
-    get tile_coordiante() {return this._tile}
-    set tile_coordiante(value) {        // [0,0] is in lower left
+    get tile_coordinate() {return this._tile}
+    set tile_coordinate(value) {        // [0,0] is in lower left
         this._tile = value
         this.model.style.backgroundPosition = `${(this.tileset_size[0]-1)*value[0]*100}% ${(this.tileset_size[1]-1)*(this.tileset_size[1]-1-value[1])*100}%`
     }
