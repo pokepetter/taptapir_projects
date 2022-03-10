@@ -37,47 +37,32 @@ bg_color = 'rgb(49 72 60)'
 set_window_color(bg_color)
 set_background_color('black')
 
-note_view_parent = Entity(visible_self=false)
-composer_view =    Entity(visible_self=false)
-// text = Entity(text='music', text_size=7, color='#00000000', text_color='white')
-cursor = Button(parent=note_view_parent, scale=1/8,  origin=[-.5,.5], color='magenta', alpha=.5, z=1, roundness=.5)
-current_block = null
-blocks = Array_2d(8, 5)
+note_view_parent = Entity(xy=[-.7,-.25], color='black', origin=[0,-.5], scale=.085)
+notes = Array_2d(16, 8)
+for y in range(8):
+    for x in range(16):
+        let e = Entity(parent=note_view_parent, xy=[x,y], on=False, scale=.95, roundness=.1)
+        e.on_click = def():
+            e.on = not e.on
+            if e.on:
+                e.color = 'cyan'
+            else:
+                e.color = 'white'
 
+# sidebar for playing notes
+for y in range(8):
+    Entity(parent=note_view_parent, xy=[-1.2,y], color='cyan', roundness=.25)
 
-bg = Entity(y=.2, color='black', origin=[0,-.5])
-w = 8
-for i in range(12):
-    Entity(parent=bg, scale_y=.005, y=i*.05)
+Entity(parent=note_view_parent, xy=[-1.2,8], color='orange', roundness=.25, text='^')
+Entity(parent=note_view_parent, xy=[-1.2,-1], color='orange', roundness=.25, text='v')
 
-
-# for i in range(16):
-#     Entity(parent=bg, scale_x=.0025, x=-.5+(i*.25/4), origin=[0,-.5], color='#222')
-# vertical lines
-for i in range(8):
-    Entity(parent=bg, scale_x=.0025, x=-.5+(i*1/8), origin=[0,-.5], color='#555')
-for i in range(1):
-    Entity(parent=bg, scale_x=.0025, x=i*.05, origin=[0,-.5])
-
-sixteenth_width = 1/32
-whole_note_width = .5
-
-notes = []
-
-for i in range(8):
-    let note = Button(parent=bg, draggable=true, scale=whole_note_width/8, roundness=.5, color='teal', shadow=1, snap_y=.025, snap_x=sixteenth_width, origin=[-.0,0], max_x=.5-sixteenth_width,
-                        x=-.5+i*whole_note_width/4, y=.025*i, length=1/16)
-    notes.push(note)
-    # note.handle = Button(parent=bg, draggable=true, scale=sixteenth_width*.5, roundness=.1, color='orange', lock_y=true, snap_x=sixteenth_width, origin=[-.5,0], max_x=.5-sixteenth_width, x=-.5+i*sixteenth_width*2)
-
-    convert_y_to_note(note.y)
-
-    # b.on_click = def():
-    #     b.handle.parent = b
-
-    # note.drop = def():
-    #     note.handle.y = note.y
-    #     note.handle.x = note.x + (note.length * sixteenth_width)
+# top toolbar
+Entity(parent=note_view_parent, xy=[.5,8.1], color='gray', roundness=.25, scale_x=1.9, text='copy')
+Entity(parent=note_view_parent, xy=[2.5,8.1], color='gray', roundness=.25, scale_x=1.9, text='paste')
+# set speed
+for i in range(6):
+    let e = Entity(parent=note_view_parent, xy=[i+4,8.1], color='gray', roundness=.25, scale_x=.95, text='a')
+    e.text = ['.25', '.5', '1', '2', '4', '8'][i]
 
 
 def convert_y_to_note(y):
@@ -101,27 +86,8 @@ def play():
         , delay=note.x*2)
 
 
-
-
-
-
-
-
 current_time = 0
 play_button = Button(text='▶️', color='orange', scale=1/7, y=-.025, shadow=true)
-
-composer_view.enabled = false
-note_view_parent.enabled = true
-
-toggle_note_view_button = Button(text='~', color='orange', scale=1/7, y=-.025, shadow=true, x=-.4, on_click=toggle_note_view, text_size=2.5)
-def toggle_note_view():
-    note_view_parent.enabled = not note_view_parent.enabled
-    composer_view.enabled = not composer_view.enabled
-    if note_view_parent.enabled:
-        toggle_note_view_button.text = '<-ovrview'
-    else:
-        toggle_note_view_button.text = '->notes'
-
 
 
 # def play():
@@ -139,12 +105,6 @@ def toggle_note_view():
 
 play_button.on_click = play
 
-erase_button = Button(text='x', color=bg_color, scale=1/7, y=-.025, shadow=true, x=-.2)
-erase_button.on_click = def():
-    if current_block:
-        current_block.set_note(null)
-
-
 def play_note(n):
     print('a', n)
     octave = Math.floor(n / 12)
@@ -156,55 +116,46 @@ def play_note(n):
     audio.playbackRate = 2 ** ((n - (0 + 12*octave)) / 12)
     audio.play()
 
-w = 7
-keyboard = Array_2d(w, 5)
+// w = 7
+// keyboard = Array_2d(w, 5)
+//
+// for y in range(5):
+//     for x in range(w):
+//         offset = 0
+//         // offset = y%2 * .05
+//         let b = Button(x=-.5 + (x*1/w) + offset, y=-.7+(y*1/w), scale=1/w,  origin=[-.5,.5], color=rgb(x/3,x/7,y/7), shadow=1)
+//         keyboard[x][y] = b
+//         b.text_size = 2
+//         b.n = 12 + y*12 + [2,3,5,7,9,10,12][x]
+//         // b.n = 12 + y*12 + x
+//         b.text = b.n
+//         b.text_color = 'white'
+//         // b.text_size = 2
+//         // b.text = symbols[y]
+//         // b.original_color = b.color
+//         b.roundness = .5
+//         // b.el.style.boxShadow = "10px 20px 30px rgb(19 12 10)"
+//         // b.el.style.textAlign =  'center'
+//
+//         b.on_click = def():
+//             // b.color = 'gold'
+//             // invoke(def reset():
+//             //     b.color = b.original_color
+//             // , .1)
+//             // n = 12 + y*12 + [2,3,5,7,9,10,12][x]
+//             play_note(b.n)
+//
+//             // b.text = b.n
+//             // b.text_color = 'white'
+//
+//
+//             if current_block:
+//                 current_block.color = b.color
+//                 current_block.text = b.text
+//                 current_block.set_note(b.n)
+//                 print(current_block.n)
 
-for y in range(5):
-    for x in range(w):
-        offset = 0
-        // offset = y%2 * .05
-        let b = Button(x=-.5 + (x*1/w) + offset, y=-.7+(y*1/w), scale=1/w,  origin=[-.5,.5], color=rgb(x/3,x/7,y/7), shadow=1)
-        keyboard[x][y] = b
-        b.text_size = 2
-        b.n = 12 + y*12 + [2,3,5,7,9,10,12][x]
-        // b.n = 12 + y*12 + x
-        b.text = b.n
-        b.text_color = 'white'
-        // b.text_size = 2
-        // b.text = symbols[y]
-        // b.original_color = b.color
-        b.roundness = .5
-        // b.el.style.boxShadow = "10px 20px 30px rgb(19 12 10)"
-        // b.el.style.textAlign =  'center'
-
-        b.on_click = def():
-            // b.color = 'gold'
-            // invoke(def reset():
-            //     b.color = b.original_color
-            // , .1)
-            // n = 12 + y*12 + [2,3,5,7,9,10,12][x]
-            play_note(b.n)
-
-            // b.text = b.n
-            // b.text_color = 'white'
-
-
-            if current_block:
-                current_block.color = b.color
-                current_block.text = b.text
-                current_block.set_note(b.n)
-                print(current_block.n)
-
-
-// blocks[0][0].on_click()
-// keyboard[0][0].on_click()
-// blocks[0][0].()
-// for i in range(4)
-//     blocks[(i*2)][0].set_note(14)
-//     blocks[(i*2)+1][0].set_note(22)
 
 </script>
-
 <script src="../pokescript_compiler.js"></script>
-
 </html>
