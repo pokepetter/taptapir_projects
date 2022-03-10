@@ -25,12 +25,15 @@ var width = browser_size.width;
 var height = browser_size.height;
 browser_aspect_ratio = width / height
 // print('browser aspect_ratio:', browser_aspect_ratio)
-
+var format = null
 function set_orientation(format) {
     if (format == 'vertical') {
         aspect_ratio = 16/9
         scene.style.width = `${100}%`
         scene.style.height = `${(9/16)*100}%`
+        // used for setting correct draggable limits
+        asp_x = 1
+        asp_y = aspect_ratio
 
         if (browser_aspect_ratio >= 9/16) { // if the screen is wider than 16/9, like a pc monitor.
             game_window.style.width = `${height/(16/9)*scale}px`
@@ -47,6 +50,9 @@ function set_orientation(format) {
         game_window.style.width =  `${width*scale}px`
         scene.style.height = `${100}%`
         scene.style.width = `${(9/16)*100}%`
+        // used for setting correct draggable limits
+        asp_x = aspect_ratio
+        asp_y = 1
     }
 }
 
@@ -111,11 +117,13 @@ class Entity {
         this.dragging = false
         this.lock_x = false
         this.lock_y = false
-        this.min_x = -.5
-        this.max_x = .5
-        this.min_y = -.5 * aspect_ratio
-        this.max_y = .5 * aspect_ratio
-        this.snap_x = 0
+
+        this.min_x = -.5 / asp_x
+        this.max_x = .5 / asp_x
+        this.min_y = -.5 / asp_y
+        this.max_y = .5 / asp_y
+
+       this.snap_x = 0
         this.snap_y = 0
         this.text_size = 3
 
@@ -140,15 +148,15 @@ class Entity {
             e.parent = this
         }
     }
-    // get world_parent() {return this.parent}
-    // set world_parent(value) {
-    //     wpos = this.world_position
-    //     wscale = this.world_scale
-    //     this.parent = value
-    //
-    //     this.world_position = wpos
-    //     this.world_scale = wscale
-    // }
+    get world_parent() {return this.parent}
+    set world_parent(value) {
+        wpos = this.world_position
+        wscale = this.world_scale
+        this.parent = value
+
+        this.world_position = wpos
+        this.world_scale = wscale
+    }
     get world_x() {return (this.el.getBoundingClientRect().left - scene.getBoundingClientRect().left) / scene.clientWidth}
     get world_y() {return -(this.el.getBoundingClientRect().top - scene.getBoundingClientRect().top) / scene.clientHeight}
     get world_position() {return [this.world_x, this.world_y]}
@@ -587,8 +595,8 @@ function handle_mouse_click(e) {
         if (entity.draggable) {
             window_position = game_window.getBoundingClientRect()
             entity.start_offset = [
-                ((e.clientX - window_position.left) / game_window.clientWidth) - .5 - entity.x,
-                (-(((e.clientY - window_position.top) / game_window.clientHeight ) - .5) / (9/16)) - entity.y
+                ((((e.clientX - window_position.left) / game_window.clientWidth) - .5) / asp_x) - entity.x,
+                (-(((e.clientY - window_position.top) / game_window.clientHeight ) - .5) / asp_y) - entity.y
                 ]
             entity.dragging = true
         }
@@ -627,9 +635,9 @@ function update_mouse_position(event) {
         event_x = event.clientX
         event_y = event.clientY
     }
-    mouse.x = ((event_x - window_position.left) / game_window.clientWidth) - .5
+    mouse.x = (((event_x - window_position.left) / game_window.clientWidth) - .5) / asp_x
     // print(mouse.x)
-    mouse.y = -(((event_y - window_position.top) / game_window.clientHeight ) - .5) / (9/16)
+    mouse.y = -(((event_y - window_position.top) / game_window.clientHeight ) - .5) / asp_y
     mouse.position = [mouse.x, mouse.y]
     // print('aaaa', mouse.position)
 }
@@ -707,6 +715,9 @@ abs = Math.abs
 floor = Math.floor
 ceil = Math.ceil
 int = parseInt
+function enumerate(list) {
+    return list.entries()
+}
 
 function rgb(r, g, b) {return `rgb(${parseInt(r*255)},${parseInt(g*255)},${parseInt(b*255)})`}
 
@@ -750,8 +761,16 @@ function hex_to_rgb(hex) {
 //     }
 //
 // }
+timeout_id = 0
+function invoke(func, delay) {
+    timeout_id = setTimeout(func, delay*1000)
+}
+function stop_all_invokes() {
+    for (let i = timeout_id; i >= 0; i--) {
+        window.clearInterval(i);
+    }
+}
 
-function invoke(func, delay) {setTimeout(func, delay*1000)}
 round = Math.round
 
 function Text(options) {
