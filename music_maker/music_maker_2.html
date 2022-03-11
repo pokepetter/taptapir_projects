@@ -36,7 +36,7 @@ for e in sample_names:
 bg_color = 'rgb(49 72 60)'
 bg_color = 'black'
 set_window_color(bg_color)
-set_background_color('black')
+set_background_color('#222')
 on_color = '#85B112'
 
 note_view_parent = Entity(xy=[-.75,-.25], color='black', origin=[0,-.5], scale=.075, visible_self=False)
@@ -130,12 +130,12 @@ def convert_y_to_note(y):
 
 
 
-
 current_time = 0
 play_button = Button(text='play', color='orange', scale=1/7, y=-.025, shadow=true, xy=[.6,-.35])
 playing = False
 
-def play():
+def play(loop=False):
+    print('play')
     playing = True
     stop_all_invokes()
     for x in range(max_x):
@@ -145,9 +145,20 @@ def play():
                     play_note(note_offset + y)
                 , delay=x*1/4 / speed)
 
+    if loop:
+        invoke(def():
+            play(True)
+        , delay = max_x*1/4 / speed)
 
 
 play_button.on_click = play
+def stop():
+    print('stop')
+    playing = False
+    stop_all_invokes()
+
+play_while_holding = Button(text='>', color='orange', scale=1/8, origin=[-.5,-.5], x=.5, y=note_view_parent.y,
+    draggable=True, on_click=function(){play(True)}, drop=stop, lock_x=True, lock_y=True)
 
 def play_note(n):
     print('play note', n)
