@@ -39,6 +39,13 @@ set_window_color(bg_color)
 set_background_color('#222')
 on_color = '#85B112'
 
+splash_screen = Entity(scale=2, color='black', z=-1)
+Text(parent=splash_screen, text='launch', color='#00000000', text_color='white', z=-2, scale=.05, text_origin='center')
+splash_screen.on_click = def():
+    set_fullscreen(True)
+    splash_screen.enabled = False
+
+
 note_view_parent = Entity(xy=[-.75,-.25], color='black', origin=[0,-.5], scale=.075, visible_self=False)
 notes = Array_2d(16, 8)
 for y in range(8):
@@ -131,7 +138,7 @@ def convert_y_to_note(y):
 
 
 current_time = 0
-play_button = Button(text='play', color='orange', scale=1/7, y=-.025, shadow=true, xy=[.6,-.35])
+play_all_button = Button(text='play all', color='orange', scale=1/8, origin=[-.5,.5], shadow=true, xy=[.65,note_view_parent.y])
 playing = False
 
 def play(loop=False):
@@ -151,13 +158,13 @@ def play(loop=False):
         , delay = max_x*1/4 / speed)
 
 
-play_button.on_click = play
+play_all_button.on_click = play
 def stop():
     print('stop')
     playing = False
     stop_all_invokes()
 
-play_while_holding = Button(text='>', color='orange', scale=1/8, origin=[-.5,-.5], x=.5, y=note_view_parent.y,
+play_while_holding = Button(text='>', color='orange', scale=1/8, origin=[-.5,.5], x=.5, y=note_view_parent.y,
     draggable=True, on_click=function(){play(True)}, drop=stop, lock_x=True, lock_y=True)
 
 def play_note(n):
@@ -170,6 +177,13 @@ def play_note(n):
     audio.preservesPitch = false
     audio.playbackRate = 2 ** ((n - (0 + 12*octave)) / 12)
     audio.play()
+
+note_section_parent = Entity(scale=note_view_parent.scale, xy=[.5,-.2], visible_self=False)
+for y in range(8):
+    for x in range(5):
+        Entity(parent=note_section_parent, text=`${x},${y}`, xy=[x,y], text_size=1, scale=.9, color='#444')
+
+
 
 
 </script>
