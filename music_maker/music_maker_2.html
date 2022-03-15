@@ -178,10 +178,25 @@ def play_note(n):
     audio.playbackRate = 2 ** ((n - (0 + 12*octave)) / 12)
     audio.play()
 
+
+note_section_buttons = Array_2d(5,8)
 note_section_parent = Entity(scale=note_view_parent.scale, xy=[.5,-.2], visible_self=False)
 for y in range(8):
     for x in range(5):
-        Entity(parent=note_section_parent, text=`${x},${y}`, xy=[x,y], text_size=1, scale=.9, color='#444')
+        e = Entity(parent=note_section_parent, text=`${x},${y}`, xy=[x,y], text_size=1, scale=.9, color='#444')
+        note_section_buttons[x][y] = e
+        e.on_click = def():
+            goto_note_section(x,y)
+            # current_note_sections_coord = [x,y]
+            # render_
+
+def goto_note_section(x, y):
+    current_note_section = note_sections[x][y]
+
+    for note_y in range(len(notes)):
+        for note_x in range(len(notes[0])):
+            notes[x][y] =
+
 
 
 
