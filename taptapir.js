@@ -950,6 +950,7 @@ gl_canvas.id = "game"
 gl_canvas.width = 1920 / 2
 gl_canvas.height = 1080 / 2
 gl_canvas.style.zIndex = -1
+game_window.appendChild(gl_canvas)
 
 main();
 
@@ -999,6 +1000,7 @@ function main() {
   const buffers = initBuffers(gl);
   // Draw the scene
   drawScene(gl, programInfo, buffers);
+  print("init 3d")
 }
 // initBuffers
 //
@@ -1025,6 +1027,14 @@ function initBuffers(gl) {
   gl.bufferData(gl.ARRAY_BUFFER,
                 new Float32Array(positions),
                 gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER,
+                new Float32Array([
+                   3.0,  1.0,
+                   2.0,  1.0,
+                   3.0, -1.0,
+                   2.0, -1.0,
+                ]),
+                gl.STATIC_DRAW);
   return {
     position: positionBuffer,
   };
@@ -1034,7 +1044,7 @@ function initBuffers(gl) {
 // Draw the scene.
 //
 function drawScene(gl, programInfo, buffers) {
-  gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
+  gl.clearColor(1.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
   gl.clearDepth(1.0);                 // Clear everything
   gl.enable(gl.DEPTH_TEST);           // Enable depth testing
   gl.depthFunc(gl.LEQUAL);            // Near things obscure far things
@@ -1050,7 +1060,9 @@ function drawScene(gl, programInfo, buffers) {
   // and 100 units away from the camera.
 
   const fieldOfView = 45 * Math.PI / 180;   // in radians
-  const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+  // const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+  const aspect = 16/9;
+  print('--------', aspect)
   const zNear = 0.1;
   const zFar = 100.0;
   const projectionMatrix = glMatrix.mat4.create();
