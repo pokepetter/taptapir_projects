@@ -25,12 +25,15 @@ var width = browser_size.width;
 var height = browser_size.height;
 browser_aspect_ratio = width / height
 // print('browser aspect_ratio:', browser_aspect_ratio)
-
+var format = null
 function set_orientation(format) {
     if (format == 'vertical') {
         aspect_ratio = 16/9
         scene.style.width = `${100}%`
         scene.style.height = `${(9/16)*100}%`
+        // used for setting correct draggable limits
+        asp_x = 1
+        asp_y = aspect_ratio
 
         if (browser_aspect_ratio >= 9/16) { // if the screen is wider than 16/9, like a pc monitor.
             game_window.style.width = `${height/(16/9)*scale}px`
@@ -47,6 +50,9 @@ function set_orientation(format) {
         game_window.style.width =  `${width*scale}px`
         scene.style.height = `${100}%`
         scene.style.width = `${(9/16)*100}%`
+        // used for setting correct draggable limits
+        asp_x = aspect_ratio
+        asp_y = 1
     }
 }
 
@@ -111,11 +117,13 @@ class Entity {
         this.dragging = false
         this.lock_x = false
         this.lock_y = false
-        this.min_x = -.5
-        this.max_x = .5
-        this.min_y = -.5 * aspect_ratio
-        this.max_y = .5 * aspect_ratio
-        this.snap_x = 0
+
+        this.min_x = -.5 / asp_x
+        this.max_x = .5 / asp_x
+        this.min_y = -.5 / asp_y
+        this.max_y = .5 / asp_y
+
+       this.snap_x = 0
         this.snap_y = 0
         this.text_size = 3
 
@@ -140,15 +148,15 @@ class Entity {
             e.parent = this
         }
     }
-    // get world_parent() {return this.parent}
-    // set world_parent(value) {
-    //     wpos = this.world_position
-    //     wscale = this.world_scale
-    //     this.parent = value
-    //
-    //     this.world_position = wpos
-    //     this.world_scale = wscale
-    // }
+    get world_parent() {return this.parent}
+    set world_parent(value) {
+        wpos = this.world_position
+        wscale = this.world_scale
+        this.parent = value
+
+        this.world_position = wpos
+        this.world_scale = wscale
+    }
     get world_x() {return (this.el.getBoundingClientRect().left - scene.getBoundingClientRect().left) / scene.clientWidth}
     get world_y() {return -(this.el.getBoundingClientRect().top - scene.getBoundingClientRect().top) / scene.clientHeight}
     get world_position() {return [this.world_x, this.world_y]}
@@ -587,8 +595,8 @@ function handle_mouse_click(e) {
         if (entity.draggable) {
             window_position = game_window.getBoundingClientRect()
             entity.start_offset = [
-                ((e.clientX - window_position.left) / game_window.clientWidth) - .5 - entity.x,
-                (-(((e.clientY - window_position.top) / game_window.clientHeight ) - .5) / (9/16)) - entity.y
+                ((((e.clientX - window_position.left) / game_window.clientWidth) - .5) / asp_x) - entity.x,
+                (-(((e.clientY - window_position.top) / game_window.clientHeight ) - .5) / asp_y) - entity.y
                 ]
             entity.dragging = true
         }
@@ -627,9 +635,9 @@ function update_mouse_position(event) {
         event_x = event.clientX
         event_y = event.clientY
     }
-    mouse.x = ((event_x - window_position.left) / game_window.clientWidth) - .5
+    mouse.x = (((event_x - window_position.left) / game_window.clientWidth) - .5) / asp_x
     // print(mouse.x)
-    mouse.y = -(((event_y - window_position.top) / game_window.clientHeight ) - .5) / (9/16)
+    mouse.y = -(((event_y - window_position.top) / game_window.clientHeight ) - .5) / asp_y
     mouse.position = [mouse.x, mouse.y]
     // print('aaaa', mouse.position)
 }
@@ -696,6 +704,7 @@ function Array_2d(w, h) {
     }
     return tiles
 }
+
 String.prototype.count=function(c) {
   var result = 0, i = 0;
   for(i;i<this.length;i++)if(this[i]==c)result++;
@@ -707,6 +716,9 @@ abs = Math.abs
 floor = Math.floor
 ceil = Math.ceil
 int = parseInt
+function enumerate(list) {
+    return list.entries()
+}
 
 function rgb(r, g, b) {return `rgb(${parseInt(r*255)},${parseInt(g*255)},${parseInt(b*255)})`}
 
@@ -718,42 +730,73 @@ function hex_to_rgb(hex) {
     b: parseInt(result[3], 16)
   } : null;
 }
-palette = [
-    '#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8',
-    '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA'
-    ]
-let filter_code = ''
-for (i = 0; i < palette.length; i++) {
-    let rgb = hex_to_rgb(palette[i])
-    let r = rgb.r/255
-    let g = rgb.g/255
-    let b = rgb.b/255
-    let redToBlue = `${r**2.4} 0 0 0 0  ${g**2.4} 0 0 0 0  ${b**2.4} 0 0 0 0  0 0 0 1 0`;
-    filter_code += `
-        <svg xmlns="http://www.w3.org/2000/svg">
-            <filter id="tint_filter_${i}">
-                <feColorMatrix type="matrix" values="${redToBlue}" />
-            </filter>
-        </svg>
-    `
+// from: https://stackoverflow.com/questions/17242144/javascript-convert-hsb-hsv-color-to-rgb-accurately
+function hsv(h, s, v) {
+    h /= 360;
+    var r, g, b, i, f, p, q, t;
+    if (arguments.length === 1) {
+        s = h.s, v = h.v, h = h.h;
+    }
+    i = Math.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    // return {r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255)};
+    return rgb(r, g, b);
 }
-filters = document.createElement('div')
-game_window.appendChild(filters)
-filters.innerHTML = filter_code
+// palette = [
+//     '#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8',
+//     '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA'
+//     ]
+// let filter_code = ''
+// for (i = 0; i < palette.length; i++) {
+//     let rgb = hex_to_rgb(palette[i])
+//     let r = rgb.r/255
+//     let g = rgb.g/255
+//     let b = rgb.b/255
+//     let redToBlue = `${r**2.4} 0 0 0 0  ${g**2.4} 0 0 0 0  ${b**2.4} 0 0 0 0  0 0 0 1 0`;
+//     filter_code += `
+//         <svg xmlns="http://www.w3.org/2000/svg">
+//             <filter id="tint_filter_${i}">
+//                 <feColorMatrix type="matrix" values="${redToBlue}" />
+//             </filter>
+//         </svg>
+//     `
+// }
+// filters = document.createElement('div')
+// game_window.appendChild(filters)
+// filters.innerHTML = filter_code
+// class TintableTile extends Entity {
+//     get tint() {return this._tint}
+//     set tint(value) {
+//         this._tint = value
+//         if (value < 16) {
+//             this.el.model.style.filter = `url(#tint_filter_${value})`
+//         }
+//     }
+//
+// }
+timeout_id = 0
+function invoke(func, delay) {
+    timeout_id = setTimeout(func, delay*1000)
+}
+function stop_all_invokes() {
+    for (let i = timeout_id; i >= 0; i--) {
+        window.clearInterval(i);
+    }
+}
 
-function invoke(func, delay) {setTimeout(func, delay*1000)}
 round = Math.round
 
-class TintableTile extends Entity {
-    get tint() {return this._tint}
-    set tint(value) {
-        this._tint = value
-        if (value < 16) {
-            this.el.model.style.filter = `url(#tint_filter_${value})`
-        }
-    }
-
-}
 function Text(options) {
     if (!('scale' in options && !'scale_x' in options)) {
         options['scale_x'] = .8
@@ -920,3 +963,218 @@ class Camera{
   }
 }
 camera = new Camera({})
+
+
+
+// 3D
+function load_3d() {
+  gl_canvas = document.createElement('canvas')
+  gl_canvas.name = "gl_canvas"
+  gl_canvas.id = "game"
+  gl_canvas.width = 1920 / 2
+  gl_canvas.height = 1080 / 2
+  gl_canvas.style.zIndex = -1
+  game_window.appendChild(gl_canvas)
+
+  main();
+
+  //
+  // Start here
+  //
+  function main() {
+    const gl = gl_canvas.getContext('webgl');
+    // If we don't have a GL context, give up now
+    if (!gl) {
+      alert('Unable to initialize WebGL. Your browser or machine may not support it.');
+      return;
+    }
+    // Vertex shader program
+    const vsSource = `
+      attribute vec4 aVertexPosition;
+      uniform mat4 uModelViewMatrix;
+      uniform mat4 uProjectionMatrix;
+      void main() {
+        gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+      }
+    `;
+    // Fragment shader program
+    const fsSource = `
+      void main() {
+        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+      }
+    `;
+    // Initialize a shader program; this is where all the lighting
+    // for the vertices and so forth is established.
+    const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
+    // Collect all the info needed to use the shader program.
+    // Look up which attribute our shader program is using
+    // for aVertexPosition and look up uniform locations.
+    const programInfo = {
+      program: shaderProgram,
+      attribLocations: {
+        vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+      },
+      uniformLocations: {
+        projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
+        modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+      },
+    };
+    // Here's where we call the routine that builds all the
+    // objects we'll be drawing.
+    const buffers = initBuffers(gl);
+    // Draw the scene
+    drawScene(gl, programInfo, buffers);
+    print("init 3d")
+  }
+  // initBuffers
+  //
+  // Initialize the buffers we'll need. For this demo, we just
+  // have one object -- a simple two-dimensional square.
+  function initBuffers(gl) {
+    // Create a buffer for the square's positions.
+    const positionBuffer = gl.createBuffer();
+    // Select the positionBuffer as the one to apply buffer
+    // operations to from here out.
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    // Now create an array of positions for the square.
+    const positions = [
+       1.0,  1.0,
+      -1.0,  1.0,
+       1.0, -1.0,
+      -1.0, -1.0,
+    ];
+
+    // Now pass the list of positions into WebGL to build the
+    // shape. We do this by creating a Float32Array from the
+    // JavaScript array, then use it to fill the current buffer.
+
+    gl.bufferData(gl.ARRAY_BUFFER,
+                  new Float32Array(positions),
+                  gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER,
+                  new Float32Array([
+                     3.0,  1.0,
+                     2.0,  1.0,
+                     3.0, -1.0,
+                     2.0, -1.0,
+                  ]),
+                  gl.STATIC_DRAW);
+    return {
+      position: positionBuffer,
+    };
+  }
+
+  //
+  // Draw the scene.
+  //
+  function drawScene(gl, programInfo, buffers) {
+    gl.clearColor(1.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
+    gl.clearDepth(1.0);                 // Clear everything
+    gl.enable(gl.DEPTH_TEST);           // Enable depth testing
+    gl.depthFunc(gl.LEQUAL);            // Near things obscure far things
+
+    // Clear the canvas before we start drawing on it.
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    // Create a perspective matrix, a special matrix that is
+    // used to simulate the distortion of perspective in a camera.
+    // Our field of view is 45 degrees, with a width/height
+    // ratio that matches the display size of the canvas
+    // and we only want to see objects between 0.1 units
+    // and 100 units away from the camera.
+
+    const fieldOfView = 45 * Math.PI / 180;   // in radians
+    // const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+    const aspect = 16/9;
+    print('--------', aspect)
+    const zNear = 0.1;
+    const zFar = 100.0;
+    const projectionMatrix = glMatrix.mat4.create();
+
+    // note: glmatrix.js always has the first argument
+    // as the destination to receive the result.
+    glMatrix.mat4.perspective(projectionMatrix,
+                     fieldOfView,
+                     aspect,
+                     zNear,
+                     zFar);
+
+    // Set the drawing position to the "identity" point, which is
+    // the center of the scene.
+    const modelViewMatrix = glMatrix.mat4.create();
+
+    // Now move the drawing position a bit to where we want to
+    // start drawing the square.
+    glMatrix.mat4.translate(modelViewMatrix,     // destination matrix
+                   modelViewMatrix,     // matrix to translate
+                   [-0.0, 0.0, -6.0]);  // amount to translate
+    // Tell WebGL how to pull out the positions from the position
+    // buffer into the vertexPosition attribute.
+    {
+      const numComponents = 2;
+      const type = gl.FLOAT;
+      const normalize = false;
+      const stride = 0;
+      const offset = 0;
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
+      gl.vertexAttribPointer(
+          programInfo.attribLocations.vertexPosition,
+          numComponents,
+          type,
+          normalize,
+          stride,
+          offset);
+      gl.enableVertexAttribArray(
+          programInfo.attribLocations.vertexPosition);
+    }
+    // Tell WebGL to use our program when drawing
+    gl.useProgram(programInfo.program);
+    // Set the shader uniforms
+    gl.uniformMatrix4fv(
+        programInfo.uniformLocations.projectionMatrix,
+        false,
+        projectionMatrix);
+    gl.uniformMatrix4fv(
+        programInfo.uniformLocations.modelViewMatrix,
+        false,
+        modelViewMatrix);
+    {
+      const offset = 0;
+      const vertexCount = 4;
+      gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
+    }
+  }
+
+  // Initialize a shader program, so WebGL knows how to draw our data
+  function initShaderProgram(gl, vsSource, fsSource) {
+    const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
+    const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+    // Create the shader program
+    const shaderProgram = gl.createProgram();
+    gl.attachShader(shaderProgram, vertexShader);
+    gl.attachShader(shaderProgram, fragmentShader);
+    gl.linkProgram(shaderProgram);
+    // If creating the shader program failed, alert
+    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+      alert('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+      return null;
+    }
+    return shaderProgram;
+  }
+  // creates a shader of the given type, uploads the source and
+  // compiles it.
+  function loadShader(gl, type, source) {
+    const shader = gl.createShader(type);
+    // Send the source to the shader object
+    gl.shaderSource(shader, source);
+    // Compile the shader program
+    gl.compileShader(shader);
+    // See if it compiled successfully
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      alert('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+      gl.deleteShader(shader);
+      return null;
+    }
+    return shader;
+  }
+}

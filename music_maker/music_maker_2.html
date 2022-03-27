@@ -26,6 +26,10 @@
 set_orientation('horizontal')   // orientation
 ASSETS_FOLDER = 'assets/'
 
+note_sections = Array_2d(5, 100)
+for y in range(100):
+    for x in range(5):
+        note_sections[x][y] = {'notes':Array_2d(16, 8), 'length':16}
 
 symbols = ['☀️','🌙','🌟','🪐','🌠']
 sample_names = ['UoIowaPiano_n24.wav','UoIowaPiano_n36.wav','UoIowaPiano_n48.wav','UoIowaPiano_n60.wav','UoIowaPiano_n72.wav']
@@ -34,51 +38,103 @@ for e in sample_names:
 
 
 bg_color = 'rgb(49 72 60)'
+bg_color = 'black'
 set_window_color(bg_color)
-set_background_color('black')
+set_background_color('#222')
+on_color = '#85B112'
 
-note_view_parent = Entity(visible_self=false)
-composer_view =    Entity(visible_self=false)
-// text = Entity(text='music', text_size=7, color='#00000000', text_color='white')
-cursor = Button(parent=note_view_parent, scale=1/8,  origin=[-.5,.5], color='magenta', alpha=.5, z=1, roundness=.5)
-current_block = null
-blocks = Array_2d(8, 5)
-
-
-bg = Entity(y=.2, color='black', origin=[0,-.5])
-w = 8
-for i in range(12):
-    Entity(parent=bg, scale_y=.005, y=i*.05)
+# splash_screen = Entity(scale=2, color='black', z=-1)
+# Text(parent=splash_screen, text='launch', color='#00000000', text_color='white', z=-2, scale=.05, text_origin='center')
+# splash_screen.on_click = def():
+#     set_fullscreen(True)
+#     splash_screen.enabled = False
 
 
-# for i in range(16):
-#     Entity(parent=bg, scale_x=.0025, x=-.5+(i*.25/4), origin=[0,-.5], color='#222')
-# vertical lines
-for i in range(8):
-    Entity(parent=bg, scale_x=.0025, x=-.5+(i*1/8), origin=[0,-.5], color='#555')
-for i in range(1):
-    Entity(parent=bg, scale_x=.0025, x=i*.05, origin=[0,-.5])
+note_view_parent = Entity(xy=[-.75,-.25], color='black', origin=[0,-.5], scale=.075, visible_self=False)
+note_entities = Array_2d(16, 8)
+for y in range(8):
+    for x in range(16):
+        let e = Entity(parent=note_view_parent, origin=[-.5,-.5], xy=[x,y], on=False, scale=.95, roundness=.1, color='#111')
+        note_entities[x][y] = e
+        if x%4 == 0:
+            e.color = '#222'
+        e.original_color = e.color
+        e.on_click = def():
+            current_note_section.notes[x][y] = not current_note_section.notes[x][y]
+            render_notes()
 
-sixteenth_width = 1/32
-whole_note_width = .5
 
-notes = []
 
-for i in range(8):
-    let note = Button(parent=bg, draggable=true, scale=whole_note_width/8, roundness=.5, color='teal', shadow=1, snap_y=.025, snap_x=sixteenth_width, origin=[-.0,0], max_x=.5-sixteenth_width,
-                        x=-.5+i*whole_note_width/4, y=.025*i, length=1/16)
-    notes.push(note)
-    # note.handle = Button(parent=bg, draggable=true, scale=sixteenth_width*.5, roundness=.1, color='orange', lock_y=true, snap_x=sixteenth_width, origin=[-.5,0], max_x=.5-sixteenth_width, x=-.5+i*sixteenth_width*2)
+def render_notes():
+    for y in range(8):
+        for x in range(16):
+            note_entity = note_entities[x][y]
+            if current_note_section.notes[x][y]:
+                note_entity.color = on_color
+            else:
+                note_entity.color = note_entity.original_color
 
-    convert_y_to_note(note.y)
 
-    # b.on_click = def():
-    #     b.handle.parent = b
+# sidebar for playing notes
+side_notes = [Entity(parent=note_view_parent, origin=[-.5,-.5], xy=[-1.15,y], color='#333', roundness=.25) for y in range(8)]
 
-    # note.drop = def():
-    #     note.handle.y = note.y
-    #     note.handle.x = note.x + (note.length * sixteenth_width)
+scale_pattern = [1,2,2,1,2,1]
+note_offset = 24
 
+def set_note_offset(value):
+    note_offset = value
+
+    for i, e in enumerate(side_notes):
+        print(e)
+        e.text = `${note_offset + i}`
+        e.on_click = def():
+            play_note(note_offset + i)
+
+set_note_offset(note_offset)
+
+
+move_up = Entity(parent=note_view_parent, origin=[-.5,-.5], xy=[-1.2,8], color='#222', roundness=.25, text='^')
+move_up.on_click = def():
+    set_note_offset(note_offset+1)
+
+move_down = Entity(parent=note_view_parent, origin=[-.5,-.5], xy=[-1.2,-1], color='#222', roundness=.25, text='v')
+move_down.on_click = def():
+    set_note_offset(note_offset-1)
+
+# top toolbar
+Entity(parent=note_view_parent, origin=[-.5,-.5], xy=[0,8.1], color='#333', roundness=.25, scale_x=1.9, text='copy')
+Entity(parent=note_view_parent, origin=[-.5,-.5], xy=[2,8.1], color='#333', roundness=.25, scale_x=1.9, text='paste')
+# set speed
+speed = 1
+speed_multipliers = [.25, .5, 1, 2, 4, 8]
+for i in range(6):
+    let e = Entity(parent=note_view_parent, origin=[-.5,-.5], xy=[i+4,8.1], color='#333', roundness=.25, scale_x=.95, text='a')
+    e.text = `${speed_multipliers[i]}`
+    e.on_click = def():
+        speed = speed_multipliers[i]
+
+
+
+limiter = Entity(
+    scale_x=.05, scale_y=.075,
+    xy=[note_view_parent.x+(note_view_parent.scale_x*16), note_view_parent.y-note_view_parent.scale_y-.01], origin=[0,-.5],
+    min_x=note_view_parent.x+note_view_parent.scale_x, max_x=note_view_parent.x+note_view_parent.scale_x*16,
+    color='#333', draggable=True, lock_y=True, snap_x=note_view_parent.scale_x, roundness=.5, text='∞')
+limiter.shadower = Entity(parent=note_view_parent, scale=1, color='black', alpha=.75, origin=[-.5,-.5], scale=[0,8])
+
+max_x = 16
+limiter.drop = def():
+    # limiter.world_parent = note_view_parent
+    max_x = int((limiter.x - note_view_parent.x) / note_view_parent.scale_x)
+    print(max_x)
+    limiter.shadower.x = max_x-.05
+    limiter.shadower.scale_x = 16-max_x
+
+    if playing:
+        play()
+# limiter.while_dragging = def():
+#     print(limiter.x)
+    # limiter.x =
 
 def convert_y_to_note(y):
     y = round(y*40)
@@ -94,61 +150,40 @@ def convert_y_to_note(y):
 
 
 
-def play():
-    for note in notes:
-        invoke(def anon():
-            play_note(convert_y_to_note(note.y))
-        , delay=note.x*2)
-
-
-
-
-
-
-
-
 current_time = 0
-play_button = Button(text='▶️', color='orange', scale=1/7, y=-.025, shadow=true)
+play_all_button = Button(text='play all', color='orange', scale=1/8, origin=[-.5,.5], shadow=true, xy=[.65,note_view_parent.y])
+playing = False
 
-composer_view.enabled = false
-note_view_parent.enabled = true
+def play_all(loop=False):
+    print('play')
+    playing = True
+    stop_all_invokes()
+    for x in range(max_x):
+        for y in range(8):
+            if note_entities[x][y].color == on_color:
+                invoke(def anon():
+                    play_note(note_offset + y)
+                , delay=x*1/4 / speed)
 
-toggle_note_view_button = Button(text='~', color='orange', scale=1/7, y=-.025, shadow=true, x=-.4, on_click=toggle_note_view, text_size=2.5)
-def toggle_note_view():
-    note_view_parent.enabled = not note_view_parent.enabled
-    composer_view.enabled = not composer_view.enabled
-    if note_view_parent.enabled:
-        toggle_note_view_button.text = '<-ovrview'
-    else:
-        toggle_note_view_button.text = '->notes'
+    if loop:
+        invoke(def():
+            play(True)
+        , delay = max_x*1/4 / speed)
 
 
+play_all_button.on_click = play_all
+def stop():
+    print('stop')
+    playing = False
+    stop_all_invokes()
 
-# def play():
-#     for y in range(5):
-#         for x in range(8):
-#             // invoke()
-#             b = blocks[x][y]
-#             if b.n:
-#                 // let octave = Math.floor(b.n / 12)
-#                 invoke(def test():
-#                     play_note(blocks[x][y].n)
-#                 , delay=x*.25)
-#                 print('play note', blocks[x][y].n)
-#                 // print(octave)
-
-play_button.on_click = play
-
-erase_button = Button(text='x', color=bg_color, scale=1/7, y=-.025, shadow=true, x=-.2)
-erase_button.on_click = def():
-    if current_block:
-        current_block.set_note(null)
-
+play_while_holding = Button(text='>', color='orange', scale=1/8, origin=[-.5,.5], x=.5, y=note_view_parent.y,
+    draggable=True, on_click=function(){play(True)}, drop=stop, lock_x=True, lock_y=True)
 
 def play_note(n):
-    print('a', n)
-    octave = Math.floor(n / 12)
-    // print('octave:', octave)
+    print('play note', n)
+    octave = floor(n / 12)
+    print('octave:', octave)
     var audio = new Audio(sample_names[octave])
     audio.volume = .5
     audio.mozPreservesPitch = false
@@ -156,55 +191,62 @@ def play_note(n):
     audio.playbackRate = 2 ** ((n - (0 + 12*octave)) / 12)
     audio.play()
 
-w = 7
-keyboard = Array_2d(w, 5)
 
-for y in range(5):
-    for x in range(w):
-        offset = 0
-        // offset = y%2 * .05
-        let b = Button(x=-.5 + (x*1/w) + offset, y=-.7+(y*1/w), scale=1/w,  origin=[-.5,.5], color=rgb(x/3,x/7,y/7), shadow=1)
-        keyboard[x][y] = b
-        b.text_size = 2
-        b.n = 12 + y*12 + [2,3,5,7,9,10,12][x]
-        // b.n = 12 + y*12 + x
-        b.text = b.n
-        b.text_color = 'white'
-        // b.text_size = 2
-        // b.text = symbols[y]
-        // b.original_color = b.color
-        b.roundness = .5
-        // b.el.style.boxShadow = "10px 20px 30px rgb(19 12 10)"
-        // b.el.style.textAlign =  'center'
+note_section_buttons = Array_2d(5,8)
+note_section_parent = Entity(scale=note_view_parent.scale, xy=[.5,.35], visible_self=False)
+time_indicator = Entity(parent=note_section_parent, origin=[-.5,.5], scale_x=5, z=-1, color='cyan', alpha=.2, enabled=False)
+page = 0
 
-        b.on_click = def():
-            // b.color = 'gold'
-            // invoke(def reset():
-            //     b.color = b.original_color
-            // , .1)
-            // n = 12 + y*12 + [2,3,5,7,9,10,12][x]
-            play_note(b.n)
+for y in range(8):
+    for x in range(5):
+        let e = Entity(parent=note_section_parent, xy=[x,-y], origin=[-.5,.5], text_size=1, scale=.9, color='#444', roundness=.15)
+        # e.text=`${x},${y}`
+        note_section_buttons[x][y] = e
+        e.on_click = def():
+            goto_note_section(x, y+(page*8))
 
-            // b.text = b.n
-            // b.text_color = 'white'
+            # current_note_sections_coord = [x,y]
+            # render_
 
 
-            if current_block:
-                current_block.color = b.color
-                current_block.text = b.text
-                current_block.set_note(b.n)
-                print(current_block.n)
+def goto_note_section(x, y):
+    for _y in range(8):
+        for _x in range(5):
+            notes = note_sections[_x][_y+(page*8)].notes
+            found_on_note = False
+            for __y in range(8):
+                if found_on_note:
+                    break
+                for __x in range(16):
+                    if notes[__x][__y]:
+                        found_on_note = True
+                        break
+            if found_on_note:
+                note_section_buttons[_x][_y].color = hsv(30+(_x*40), 1, .4)
+            else:
+                note_section_buttons[_x][_y].color = '#444'
 
 
-// blocks[0][0].on_click()
-// keyboard[0][0].on_click()
-// blocks[0][0].()
-// for i in range(4)
-//     blocks[(i*2)][0].set_note(14)
-//     blocks[(i*2)+1][0].set_note(22)
+    current_note_section = note_sections[x][y]
+    note_section_buttons[x][y%8].color = 'magenta'
+    # TODO: move limiter
+    # limiter.x = current_note_section.length
+    render_notes()
+
+goto_note_section(0, 0)
+note_section_buttons[0][0].color = 'magenta'
+
+
+
+def flat(array_2d):
+    height = len(array_2d)
+    width = len(array_2d[0])
+    arr = []
+    for y in range(height):
+        for w in range(width):
+            arr.append(array_2d[x][y])
+    return arr
 
 </script>
-
 <script src="../pokescript_compiler.js"></script>
-
 </html>
