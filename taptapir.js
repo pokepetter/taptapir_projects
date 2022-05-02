@@ -571,7 +571,7 @@ class HealthBar extends Entity {
     set bar_color(value) {this.bar.color = value}
 }
 
-mouse = {x:0, y:0, position:[0,0], left:false}
+mouse = {x:0, y:0, position:[0,0], left:false, hovered_entity:null}
 
 document.addEventListener('mousedown', function(e) {
     update_mouse_position(e)
@@ -587,6 +587,7 @@ function handle_mouse_click(e) {
     mouse.left = true
     element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
     entity = entities[element_hit.entity_index]
+
     // print(element_hit)
     if (element_hit && entity) {
         if (entity.on_click) {
@@ -601,7 +602,6 @@ function handle_mouse_click(e) {
             entity.dragging = true
         }
     }
-
 }
 document.addEventListener('mouseup', function(e) {
     e.preventDefault()
@@ -641,9 +641,43 @@ function update_mouse_position(event) {
     mouse.position = [mouse.x, mouse.y]
     // print('aaaa', mouse.position)
 }
+//
+// function get_mouse_point() {
+//     var rect = e.target.getBoundingClientRect();
+//     var x = e.clientX - rect.left; //x position within the element.
+//     var y = e.clientY - rect.top;  //y position within the element.
+//     print('------------hovered entity', mouse.hovered_entity)
+//     // y = 0
+//     // console.log("Left? : " + x + " ; Top? : " + y + ".");
+//     mouse.point = [x, y]
+//     print('mouse point:', mouse.point)
+// }
 
-function onmousemove(event) {
+function onmousemove(e) {
     update_mouse_position(event)
+    if (mouse.left) {
+        if (!mouse.hovered_entity) {
+            mouse.point = null
+        }
+        else {
+            var rect = e.target.getBoundingClientRect();
+            var x = e.clientX - rect.left; //x position within the element.
+            var y = e.clientY - rect.top;  //y position within the element.
+            print('------------hovered entity', mouse.hovered_entity)
+            // y = 0
+            // console.log("Left? : " + x + " ; Top? : " + y + ".");
+            mouse.point = [(x/rect.width)-.5, .5-(y/rect.height)]
+            print('mouse point:', mouse.point)
+        }
+    }
+    element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
+    entity = entities[element_hit.entity_index]
+    if (entity) {
+        mouse.hovered_entity = entity
+    }
+    else {
+        mouse.hovered_entity = null
+    }
 
     for (var e of entities) {
         if (e.dragging) {
@@ -963,6 +997,17 @@ class Camera{
   }
 }
 camera = new Camera({})
+
+
+function enable_keyboard_input(event) {
+  for (var e of entities) {
+      if (e.input) {
+          e.input(event.key)
+      }
+  }
+}
+document.addEventListener('keydown', function() {enable_keyboard_input(event)})
+
 
 
 

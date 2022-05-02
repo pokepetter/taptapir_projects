@@ -30,14 +30,15 @@ canvas.style.width= '100%'
 canvas.style.height= '100%'
 canvas.style.top= '0%'
 canvas.style.bottom= '10%'
+canvas.style.pointerEvents = 'none'
 
-c = Entity(color='clear', scale_y=aspect_ratio)
-c.el.id = 'c'
-c.model.appendChild(canvas)
-c.origin = [0,0]
-c.scale_y = .88 * aspect_ratio
-c.scale_x = .88
-c.y = .075
+canvas_entity = Entity(color='green', scale_y=aspect_ratio, draggable=True, lock_x=True, lock_y=True)
+canvas_entity.el.id = 'canvas_entity'
+canvas_entity.model.appendChild(canvas)
+canvas_entity.origin = [0,0]
+canvas_entity.scale_y = .88 * aspect_ratio
+canvas_entity.scale_x = .88
+canvas_entity.y = .075
 
 var w = 1080
 var h = 1920
@@ -60,31 +61,31 @@ brush.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hA
 img = new Image()
 
 brush_size = 4
-var brush_canvas = document.createElement('canvas')
+brush_canvas = document.createElement('canvas')
 
 current_color = [32, 32, 32, 255]
-drawing = false
-using_eyedropper = false
-var prev_pos = null
+drawing = False
+using_eyedropper = False
+prev_pos = null
 
-cursor = Entity(scale=.02, color='red', alpha=.1, parent=c, enabled=false)
-
+cursor = Entity(scale=.02, color='red', alpha=.1, parent=canvas_entity, enabled=false)
 smoothing = false
 
-def get_canvas_position():
-    x = (.5 + (mouse.x / .88)) * w
-    y = (.5 -((mouse.y / .88 / aspect_ratio) - .05)) * w*aspect_ratio
-    # cursor.position = [x,y]
+// def get_canvas_position():
+//     x = (.5 + (mouse.x / .88)) * w
+//     // y = (.5 -((mouse.y / .88 / aspect_ratio) - .05)) * w*aspect_ratio
+//     y = (.5 -((mouse.y / .88 / aspect_ratio))) * w * aspect_ratio * 2
+//     # cursor.position = [x,y]
+//
+//     return [Math.floor(x), Math.floor(y)]
 
-    return [Math.floor(x), Math.floor(y)]
 
-
-var start_position = null
-var snap_to_hex = false
+start_position = null
+snap_to_hex = false
 
 const perfectFrameTime = 1000 / 60
-let dt = 0
-let lastTimestamp = 0
+dt = 0
+lastTimestamp = 0
 requestAnimationFrame(update)
 
 def update(timestamp):
@@ -92,20 +93,55 @@ def update(timestamp):
     dt = (timestamp - lastTimestamp) / perfectFrameTime
     lastTimestamp = timestamp
 
-    if mouse.left:
-        paint()
+    # if mouse.left:
+    #     paint()
+canvas_entity.on_click = def():
+    print('mouse down')
+    brush_canvas.width = brush_size
+    brush_canvas.height = brush_size
+    var ctx2 = brush_canvas.getContext("2d")
+    ctx2.drawImage(brush, 0, 0, brush_size, brush_size)
+    var imgData = ctx2.getImageData(0, 0, brush_size, brush_size)
+    var i = 0
+    for i in range(0, imgData.data.length, 4):
+        imgData.data[i] = current_color[0]
+        imgData.data[i+1] = current_color[1]
+        imgData.data[i+2] = current_color[2]
+        imgData.data[i+3] = imgData.data[i+3]
 
+    ctx2.putImageData(imgData, 0, 0)
+    img.src = brush_canvas.toDataURL()
+    if not using_eyedropper:
+        drawing = True
+        try:
+            paint(ev)
+        catch:
+            return
 
-def paint(ev):
+    else:
+        # pos = get_canvas_position()
+        pos = mouse.point
+        rgb_color = ctx.getImageData(pos[0], pos[1], 1, 1).data
+        hsb_color = RGBtoHSV(rgb_color[0], rgb_color[1], rgb_color[2])
+        # hue_slider.value = hsb_color.h*360
+        # saturation_slider.value = hsb_color.s*100
+        # value_slider.value = hsb_color.v*100
+        # update_color()
+        using_eyedropper = False
+
+def paint():
     if not drawing:
         return
+    if mouse.hovered_entity != canvas_entity:
+        return
 
-    pos = get_canvas_position()
+    # pos = get_canvas_position()
+    pos = mouse.point
     if smoothing and prev_pos:
         pos = [lerp(prev_pos[0], pos[0], dt*.025), lerp(prev_pos[1], pos[1], dt*.025)]
 
-    var x = pos[0]
-    var y = pos[1]
+    var x = (pos[0]+.5) * w
+    var y = (pos[1]-.5) * -h
 
     if prev_pos == null:
         ctx.drawImage(img, x-(brush_size/2), y-(brush_size/2), brush_size, brush_size)
@@ -128,45 +164,47 @@ def paint(ev):
 
     prev_pos = [x, y]
 
+canvas_entity.while_dragging = paint
 
-def mouse_down():
-    print('mouse down')
-    brush_canvas.width = brush_size
-    brush_canvas.height = brush_size
-    var ctx2 = brush_canvas.getContext("2d")
-    ctx2.drawImage(brush, 0, 0, brush_size, brush_size)
-    var imgData = ctx2.getImageData(0, 0, brush_size, brush_size)
-    var i = 0
-    for i in range(0, imgData.data.length, 4):
-        imgData.data[i] = current_color[0]
-        imgData.data[i+1] = current_color[1]
-        imgData.data[i+2] = current_color[2]
-        imgData.data[i+3] = imgData.data[i+3]
-
-
-    ctx2.putImageData(imgData, 0, 0)
-    img.src = brush_canvas.toDataURL()
-
-    if not using_eyedropper:
-        drawing = true
-        try:
-            paint(ev)
-        catch:
-            return
-
-    else:
-        pos = get_canvas_position()
-        rgb_color = ctx.getImageData(pos[0], pos[1], 1, 1).data
-        hsb_color = RGBtoHSV(rgb_color[0], rgb_color[1], rgb_color[2])
-        # hue_slider.value = hsb_color.h*360
-        # saturation_slider.value = hsb_color.s*100
-        # value_slider.value = hsb_color.v*100
-        # update_color()
-        using_eyedropper = false
-
-
-document.addEventListener("mousedown", mouse_down, false)
-document.addEventListener("touchstart", mouse_down, false)
+# def mouse_down():
+#     print('mouse down')
+#     brush_canvas.width = brush_size
+#     brush_canvas.height = brush_size
+#     var ctx2 = brush_canvas.getContext("2d")
+#     ctx2.drawImage(brush, 0, 0, brush_size, brush_size)
+#     var imgData = ctx2.getImageData(0, 0, brush_size, brush_size)
+#     var i = 0
+#     for i in range(0, imgData.data.length, 4):
+#         imgData.data[i] = current_color[0]
+#         imgData.data[i+1] = current_color[1]
+#         imgData.data[i+2] = current_color[2]
+#         imgData.data[i+3] = imgData.data[i+3]
+#
+#
+#     ctx2.putImageData(imgData, 0, 0)
+#     img.src = brush_canvas.toDataURL()
+#
+#     if not using_eyedropper:
+#         drawing = true
+#         # try:
+#         #     paint(ev)
+#         # catch:
+#         #     return
+#
+#     else:
+#         # pos = get_canvas_position()
+#         pos = mouse.point
+#         rgb_color = ctx.getImageData(pos[0], pos[1], 1, 1).data
+#         hsb_color = RGBtoHSV(rgb_color[0], rgb_color[1], rgb_color[2])
+#         # hue_slider.value = hsb_color.h*360
+#         # saturation_slider.value = hsb_color.s*100
+#         # value_slider.value = hsb_color.v*100
+#         # update_color()
+#         using_eyedropper = false
+#
+#
+# document.addEventListener("mousedown", mouse_down, false)
+# document.addEventListener("touchstart", mouse_down, false)
 
 def mouse_up(ev):
     if drawing:
@@ -219,7 +257,7 @@ next_button = Entity(*button_style, x=7*.75, y=(6+1)%2*.5, text='>', on_click=de
 
 document.onkeydown = def onkeydown(event):
     if event.altKey:
-        using_eyedropper = true
+        using_eyedropper = True
 
     if event.ctrlKey and event.key === 'z':
         undo()
@@ -227,12 +265,18 @@ document.onkeydown = def onkeydown(event):
     if event.ctrlKey and event.key === 'y':
         redo()
 
+    if event.key == 'd':
+        brush_size *= 1.5
+
+    if event.key == 'x':
+        brush_size /= 1.5
+
     if event.key == 'h':
         print(event)
-        snap_to_hex = true
+        snap_to_hex = True
 
 document.onkeyup = def onkeyup(ev):
-    using_eyedropper = false
+    using_eyedropper = False
 
 
 def update_color():

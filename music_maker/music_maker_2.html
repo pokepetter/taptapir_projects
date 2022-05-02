@@ -32,9 +32,9 @@ for y in range(100):
         note_sections[x][y] = {'notes':Array_2d(16, 8), 'length':16}
 
 symbols = ['☀️','🌙','🌟','🪐','🌠']
-sample_names = ['UoIowaPiano_n24.wav','UoIowaPiano_n36.wav','UoIowaPiano_n48.wav','UoIowaPiano_n60.wav','UoIowaPiano_n72.wav']
-for e in sample_names:
-    var audio = new Audio(e)
+// sample_names = ['UoIowaPiano_n24.wav','UoIowaPiano_n36.wav','UoIowaPiano_n48.wav','UoIowaPiano_n60.wav','UoIowaPiano_n72.wav']
+// for e in sample_names:
+//     var audio = new Audio(e)
 
 
 bg_color = 'rgb(49 72 60)'
@@ -78,7 +78,7 @@ def render_notes():
 # sidebar for playing notes
 side_notes = [Entity(parent=note_view_parent, origin=[-.5,-.5], xy=[-1.15,y], color='#333', roundness=.25) for y in range(8)]
 
-scale_pattern = [1,2,2,1,2,1]
+scale_pattern = [0,2,3,5,7,9,10,12]
 note_offset = 24
 
 def set_note_offset(value):
@@ -86,20 +86,20 @@ def set_note_offset(value):
 
     for i, e in enumerate(side_notes):
         print(e)
-        e.text = `${note_offset + i}`
+        e.text = `${note_offset + scale_pattern[i]}`
         e.on_click = def():
-            play_note(note_offset + i)
+            play_note(note_offset + scale_pattern[i])
 
 set_note_offset(note_offset)
 
 
 move_up = Entity(parent=note_view_parent, origin=[-.5,-.5], xy=[-1.2,8], color='#222', roundness=.25, text='^')
 move_up.on_click = def():
-    set_note_offset(note_offset+1)
+    set_note_offset(note_offset+12)
 
 move_down = Entity(parent=note_view_parent, origin=[-.5,-.5], xy=[-1.2,-1], color='#222', roundness=.25, text='v')
 move_down.on_click = def():
-    set_note_offset(note_offset-1)
+    set_note_offset(note_offset-12)
 
 # top toolbar
 Entity(parent=note_view_parent, origin=[-.5,-.5], xy=[0,8.1], color='#333', roundness=.25, scale_x=1.9, text='copy')
@@ -162,7 +162,7 @@ def play_all(loop=False):
         for y in range(8):
             if note_entities[x][y].color == on_color:
                 invoke(def anon():
-                    play_note(note_offset + y)
+                    play_note(note_offset + scale_pattern[y])
                 , delay=x*1/4 / speed)
 
     if loop:
@@ -182,9 +182,11 @@ play_while_holding = Button(text='>', color='orange', scale=1/8, origin=[-.5,.5]
 
 def play_note(n):
     print('play note', n)
-    octave = floor(n / 12)
-    print('octave:', octave)
-    var audio = new Audio(sample_names[octave])
+    // octave = floor(n / 12)
+    octave = 1
+    // print('octave:', octave)
+    // var audio = new Audio(sample_names[octave])
+    var audio = new Audio('UoIowaPiano_n24.wav')
     audio.volume = .5
     audio.mozPreservesPitch = false
     audio.preservesPitch = false
@@ -207,6 +209,16 @@ for y in range(8):
 
             # current_note_sections_coord = [x,y]
             # render_
+
+enable_keyboard_input()
+def input(key):
+    print('pressed:', key)
+    keys = ['a','s','d','f','q','w','e','r']
+    for i, e in enumerate(keys):
+        if key == e:
+            play_note(note_offset + scale_pattern[i])
+
+keybaord = Entity(input=input, visible_self=False)
 
 
 def goto_note_section(x, y):
