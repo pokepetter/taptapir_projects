@@ -115,12 +115,15 @@ for i in range(6):
 
 
 
-limiter = Entity(
-    scale_x=.05, scale_y=.075,
-    xy=[note_view_parent.x+(note_view_parent.scale_x*16), note_view_parent.y-note_view_parent.scale_y-.01], origin=[0,-.5],
-    min_x=note_view_parent.x+note_view_parent.scale_x, max_x=note_view_parent.x+note_view_parent.scale_x*16,
-    color='#333', draggable=True, lock_y=True, snap_x=note_view_parent.scale_x, roundness=.5, text='∞')
-limiter.shadower = Entity(parent=note_view_parent, scale=1, color='black', alpha=.75, origin=[-.5,-.5], scale=[0,8])
+limiter_parent = Entity(parent=note_view_parent, origin=[-.5,.5], scale=[16,.75], color=hsv(0,0,.03), z=.1)
+for x in range(16):
+    let e = Entity(parent=note_view_parent, origin=[-.5,.5], scale=[1,.75], color=hsv(0,0,.03), z=.1, x=x)
+    e.on_click = def():
+        limiter.x = x+1
+        current_note_section.length = x+1
+
+limiter = Entity(parent=note_view_parent, scale_x=1, scale_y=.75, origin=[-.5,.5], color='#333', roundness=.5, text='∞')
+limiter.shadower = Entity(parent=limiter, color='black', alpha=.75, origin=[-.5,-.5], scale=[16,8/.75])
 
 max_x = 16
 limiter.drop = def():
@@ -151,34 +154,60 @@ def convert_y_to_note(y):
 
 
 current_time = 0
-play_all_button = Button(text='play all', color='orange', scale=1/8, origin=[-.5,.5], shadow=true, xy=[.65,note_view_parent.y])
 playing = False
 
-def play_all(loop=False):
-    print('play')
+def play_note_section(note_section):
     playing = True
-    stop_all_invokes()
-    for x in range(max_x):
+    # stop_all_invokes()
+    print('play note section', note_section.notes[0])
+    for x in range(note_section.length):
         for y in range(8):
-            if note_entities[x][y].color == on_color:
+            if note_section.notes[x][y]:
+                print('play')
                 invoke(def anon():
                     play_note(note_offset + y)
                 , delay=x*1/4 / speed)
 
-    if loop:
-        invoke(def():
-            play(True)
-        , delay = max_x*1/4 / speed)
+
+play_single_button = Button(text='play single', color='orange', scale=1/8, origin=[-.5,.5], x=.5, y=note_view_parent.y, draggable=True, drop=stop, lock_x=True, lock_y=True)
+play_single_button.on_click = def():
+    if not playing:
+        # print('wait:', 1*current_note_section.length / 4 / speed)
+        stop_all_invokes()
+        # print('-------', current_note_section.length)
+        for i in range(100):
+
+            invoke(def():
+                play_note_section(current_note_section)
+            , delay=i*current_note_section.length / 4 / speed)
+    else:
+        stop()
+
+play_all_button = Button(text='play all', color='orange', scale=1/8, origin=[-.5,.5], shadow=true, xy=[.65,note_view_parent.y])
+play_all_button.on_click = def():
+    print('play all')
+    if not playing:
+        play_all(loop=True)
+    else:
+        stop()
+
+def play_all():
+    print('wait:', 1 * 16 / 4 / speed)
+    for _y in range(8):
+        for _x in range(5):
+            ns = note_sections[_x][_y]
+            invoke(def():
+                play_note_section(ns)
+            , delay=_y * 16 / 4 / speed)
 
 
-play_all_button.on_click = play_all
+
+
 def stop():
     print('stop')
     playing = False
     stop_all_invokes()
 
-play_while_holding = Button(text='>', color='orange', scale=1/8, origin=[-.5,.5], x=.5, y=note_view_parent.y,
-    draggable=True, on_click=function(){play(True)}, drop=stop, lock_x=True, lock_y=True)
 
 def play_note(n):
     print('play note', n)
@@ -229,8 +258,7 @@ def goto_note_section(x, y):
 
     current_note_section = note_sections[x][y]
     note_section_buttons[x][y%8].color = 'magenta'
-    # TODO: move limiter
-    # limiter.x = current_note_section.length
+    limiter.x = current_note_section.length + 1
     render_notes()
 
 goto_note_section(0, 0)
