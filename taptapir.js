@@ -518,14 +518,6 @@ StateHandler.prototype =  {
                 entity.enabled = false}
             }
 
-        // print('........', this.states[this.state])
-        // for (var e of entities) {
-        //     print(this.states[this.state])
-        //     // if (this.states[this.state].el.contains(e.el) ) {
-        //     //     print(e)
-        //     // }
-        // }
-
         this._state = value
     }
 }
@@ -636,40 +628,23 @@ function update_mouse_position(event) {
         event_y = event.clientY
     }
     mouse.x = (((event_x - window_position.left) / game_window.clientWidth) - .5) / asp_x
-    // print(mouse.x)
     mouse.y = -(((event_y - window_position.top) / game_window.clientHeight ) - .5) / asp_y
     mouse.position = [mouse.x, mouse.y]
-    // print('aaaa', mouse.position)
 }
-//
-// function get_mouse_point() {
-//     var rect = e.target.getBoundingClientRect();
-//     var x = e.clientX - rect.left; //x position within the element.
-//     var y = e.clientY - rect.top;  //y position within the element.
-//     print('------------hovered entity', mouse.hovered_entity)
-//     // y = 0
-//     // console.log("Left? : " + x + " ; Top? : " + y + ".");
-//     mouse.point = [x, y]
-//     print('mouse point:', mouse.point)
-// }
 
 function onmousemove(e) {
-    update_mouse_position(event)
-    if (mouse.left) {
-        if (!mouse.hovered_entity) {
-            mouse.point = null
-        }
-        else {
-            var rect = e.target.getBoundingClientRect();
-            var x = e.clientX - rect.left; //x position within the element.
-            var y = e.clientY - rect.top;  //y position within the element.
-            print('------------hovered entity', mouse.hovered_entity)
-            // y = 0
-            // console.log("Left? : " + x + " ; Top? : " + y + ".");
-            mouse.point = [(x/rect.width)-.5, .5-(y/rect.height)]
-            print('mouse point:', mouse.point)
-        }
+    // update_mouse_position(event)
+    // if (mouse.left) {
+    if (!mouse.hovered_entity) {
+        mouse.point = null
     }
+    else {
+        var rect = e.target.getBoundingClientRect();
+        var x = e.clientX - rect.left; //x position within the element.
+        var y = e.clientY - rect.top;  //y position within the element.
+        mouse.point = [(x/rect.width)-.5, .5-(y/rect.height)]
+    }
+    // }
     element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
     entity = entities[element_hit.entity_index]
     if (entity) {
