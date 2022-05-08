@@ -724,6 +724,7 @@ max = Math.max
 abs = Math.abs
 floor = Math.floor
 ceil = Math.ceil
+math = Math
 int = parseInt
 function enumerate(list) {
     return list.entries()
