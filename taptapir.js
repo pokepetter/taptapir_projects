@@ -975,14 +975,17 @@ class Camera{
 camera = new Camera({})
 
 
-function enable_keyboard_input(event) {
-  for (var e of entities) {
-      if (e.input) {
-          e.input(event.key)
-      }
-  }
+function _input(event) {
+    for (var e of entities) {
+        if (e.input) {
+            e.input(event.key)
+        }
+    }
+    if (input) {
+        input(event.key)
+    }
 }
-document.addEventListener('keydown', function() {enable_keyboard_input(event)})
+document.addEventListener('keydown', _input)
 
 
 
