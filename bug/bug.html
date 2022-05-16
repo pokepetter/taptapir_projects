@@ -26,12 +26,12 @@
 
 set_window_color('rgb(49 72 60)')
 
-for i in range(4):
-    print(i)
+e = Entity(scale=.2, color='red', shadow=1)
+def update():
+    e.x += (held_keys['d'] - held_keys['a']) *.01
 
-for i in range(0, 100, 4):
-    print(i)
-
+// def input(key):
+//     print('key:', key)
 
 </script>
 

@@ -55,8 +55,8 @@ function set_orientation(format) {
         asp_y = 1
     }
 }
-
 set_orientation('vertical')
+print('spect', aspect_ratio, asp_y)
 
 
 top_left =      [-.5, .5*aspect_ratio]
@@ -118,10 +118,10 @@ class Entity {
         this.lock_x = false
         this.lock_y = false
 
-        this.min_x = -.5 / asp_x
-        this.max_x = .5 / asp_x
-        this.min_y = -.5 / asp_y
-        this.max_y = .5 / asp_y
+        this.min_x = -.5 * asp_x
+        this.max_x = .5 * asp_x
+        this.min_y = -.5 * asp_y
+        this.max_y = .5 * asp_y
 
        this.snap_x = 0
         this.snap_y = 0
@@ -571,7 +571,7 @@ document.addEventListener('mousedown', function(e) {
     handle_mouse_click(e)
 })
 document.addEventListener('touchstart', function(e) {
-    update_mouse_position(e)
+    update_mouse_position(e.touches[0])
     // e.preventDefault()
     handle_mouse_click(e.touches[0])
 })
@@ -588,16 +588,17 @@ function handle_mouse_click(e) {
         if (entity.draggable) {
             window_position = game_window.getBoundingClientRect()
             entity.start_offset = [
-                ((((e.clientX - window_position.left) / game_window.clientWidth) - .5) / asp_x) - entity.x,
-                (-(((e.clientY - window_position.top) / game_window.clientHeight ) - .5) / asp_y) - entity.y
+                ((((e.clientX - window_position.left) / game_window.clientWidth) - .5) * asp_x) - entity.x,
+                (-(((e.clientY - window_position.top) / game_window.clientHeight ) - .5) * asp_y) - entity.y
                 ]
+            print(entity.start_offset)
+
             entity.dragging = true
         }
     }
 }
 document.addEventListener('mouseup', function(e) {
     e.preventDefault()
-    mouse.left = false;
     _mouse_up()
 })
 document.addEventListener('touchend', function(e) {
@@ -627,25 +628,27 @@ function update_mouse_position(event) {
         event_x = event.clientX
         event_y = event.clientY
     }
-    mouse.x = (((event_x - window_position.left) / game_window.clientWidth) - .5) / asp_x
-    mouse.y = -(((event_y - window_position.top) / game_window.clientHeight ) - .5) / asp_y
+    mouse.x = (((event_x - window_position.left) / game_window.clientWidth) - .5) * asp_x
+    mouse.y = -(((event_y - window_position.top) / game_window.clientHeight ) - .5) * asp_y
     mouse.position = [mouse.x, mouse.y]
 }
 
-function onmousemove(e) {
-    // update_mouse_position(event)
-    // if (mouse.left) {
+function onmousemove(event) {
+    update_mouse_position(event)
+    if (event.touches) {
+        event = event.touches[0] || event.changedTouches[0]
+    }
+
     if (!mouse.hovered_entity) {
         mouse.point = null
     }
     else {
-        var rect = e.target.getBoundingClientRect();
-        var x = e.clientX - rect.left; //x position within the element.
-        var y = e.clientY - rect.top;  //y position within the element.
+        var rect = event.target.getBoundingClientRect();
+        var x = event.clientX - rect.left; //x position within the element.
+        var y = event.clientY - rect.top;  //y position within the element.
         mouse.point = [(x/rect.width)-.5, .5-(y/rect.height)]
     }
-    // }
-    element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
+    element_hit = document.elementFromPoint(event.pageX - window.pageXOffset, event.pageY - window.pageYOffset);
     entity = entities[element_hit.entity_index]
     if (entity) {
         mouse.hovered_entity = entity
@@ -656,10 +659,8 @@ function onmousemove(e) {
 
     for (var e of entities) {
         if (e.dragging) {
-            if (e.while_dragging) {
-                e.while_dragging()
-            }
             if (!e.lock_x) {
+                // print(mouse.x, e.start_offset[0])
                 e.x = mouse.x - e.start_offset[0]
                 e.x = clamp(e.x, e.min_x, e.max_x)
                 if (e.snap_x) {
@@ -674,6 +675,10 @@ function onmousemove(e) {
                     hor_step = 1 / e.snap_y
                     e.y = round(e.y * hor_step) / hor_step
                 }
+            }
+            if (e.while_dragging) {
+                print('d', mouse.position, mouse.point)
+                e.while_dragging()
             }
         }
     }
@@ -897,12 +902,16 @@ function save_system_clear() {localStorage.clear()}
 savesystem = {save:save_system_save, load:save_system_load, clear:save_system_clear}
 delta_time = 1/60
 let start, previousTimeStamp;
+update = null
 function _step(timestamp) {
     if (start === undefined) {
         start = timestamp;
     }
-
     const elapsed = timestamp - start;
+    if (update) {
+        update()
+    }
+
     for (var e of entities) {
         if (e.update) {
             e.update()
@@ -974,18 +983,33 @@ class Camera{
 }
 camera = new Camera({})
 
-
+held_keys = {}
+all_keys = `<zxcvbnm,.-asdfghjkløæ'qwertyuiopå¨1234567890+`
+for (var i = 0; i < all_keys.length; i++) {
+    held_keys[all_keys[i]] = 0
+}
+input = null
 function _input(event) {
+    key = event.key
+    if (event.type == "keyup") {
+        key = key + ' up'
+        held_keys[event.key] = 0
+    }
+    else {
+        held_keys[event.key] = 1
+    }
+
     for (var e of entities) {
         if (e.input) {
-            e.input(event.key)
+            e.input(key)
         }
     }
     if (input) {
-        input(event.key)
+        input(key)
     }
 }
 document.addEventListener('keydown', _input)
+document.addEventListener('keyup', _input)
 
 
 

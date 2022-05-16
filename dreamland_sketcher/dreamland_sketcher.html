@@ -32,18 +32,20 @@ canvas.style.top= '0%'
 canvas.style.bottom= '10%'
 canvas.style.pointerEvents = 'none'
 
+set_orientation('horizontal')
+var w = 1080
+var h = 1920
+var h = 1080;
+var w = 1920;
 canvas_entity = Entity(color='green', scale_y=aspect_ratio, draggable=True, lock_x=True, lock_y=True)
 canvas_entity.el.id = 'canvas_entity'
 canvas_entity.model.appendChild(canvas)
 canvas_entity.origin = [0,0]
-canvas_entity.scale_y = .88 * aspect_ratio
-canvas_entity.scale_x = .88
+canvas_entity.scale_y = 1.88 * aspect_ratio
+canvas_entity.scale_x = 1.88
 canvas_entity.y = .075
+set_fullscreen(True)
 
-var w = 1080
-var h = 1920
-# var h = 1080;
-# var w = 1920;
 canvas.width = w
 canvas.height = h
 
@@ -73,7 +75,8 @@ img = new Image()
 
 # brush_size = [128, 128]
 brush_size = [178, 400]
-SPACING = .5
+// SPACING = .5
+SPACING = .05
 brush_canvases = [document.createElement('canvas') for i in range(brush_tips.length)]
 
 current_color = [128, 128, 128, 255]
