@@ -73,6 +73,7 @@ function get_inside_brackets(str, open_bracket, closing_bracket) {
 }
 // print('LINES:', lines.join('\n'))
 
+// add brackets based on indentation
 current_indent = 0
 
 for (var i=0; i<lines.length; i++) {
