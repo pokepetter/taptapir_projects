@@ -1,0 +1,95 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>tile rpg</title><link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir.js"></script>
+<script type='text/pokescript'>
+
+set_window_color('rgb(49 72 60)')
+set_background_color('rgb(9 9 1)')
+width = 6
+height = 9
+tiles = Array_2d(width, height)
+tiles_flat = []
+num_blocks = 3
+
+camera.fov = width
+tiles_parent = Entity(visible_self=False, xy=[-width/2,-height/2])
+for y in range(height):
+    for x in range(width):
+        tiles[x][y] = Entity(parent=tiles_parent, position=[x,y], scale=1, texture='black_rock.png', origin=[-.5,-.5])
+        tiles_flat.append(tiles[x][y])
+
+player = Entity(parent=tiles_parent, scale=1, visible_self=False, collision=False, origin=[-.5,-.5], position=[1,1], name='player')
+player_graphics = Entity(parent=tiles_parent, scale=1, texture='nobyl_pixely_big.png', collision=False, origin=[-.5,-.5], position=player.position)
+
+
+level = `
+oooooo
+o    o
+o    o
+o    o
+o    o
+o    o
+o    o
+o    o
+oooooo
+`.trim()
+# print('aaaaaaaaaaa')
+# print('eeeeeeeee', level.split('\n'))
+for y, line in enumerate(level.split('\n')):
+    for x, char in enumerate(line.split('')):
+        print(x, y, char)
+        if char == ' ':
+            tiles[x][y].enabled = False
+        else:
+            tiles[x][y].enabled = True
+
+left = Entity(parent=player, origin=[-.5,-.5], alpha=.1, x=-1, text='<')
+left.on_click = def move_left():
+    player.x -= 1
+    update_arrows()
+left.input = def input(key):
+    if key == 'a':
+        left.on_click()
+
+right = Entity(parent=player, origin=[-.5,-.5], alpha=.1, x=1, text='>')
+right.on_click = def move_right():
+    player.x += 1
+    update_arrows()
+right.input = def input(key):
+    if key == 'd':
+        right.on_click()
+
+up = Entity(parent=player, origin=[-.5,-.5], alpha=.1, y=1, text='^')
+up.on_click = def build():
+    tiles[player.x][player.y].enabled = True
+    num_blocks -= 1
+    player.y += 1
+    update_arrows()
+up.input = def input(key):
+    if key == 'w':
+        up.on_click()
+
+down = Entity(parent=player, origin=[-.5,-.5], alpha=.1, y=-1, text='v')
+down.on_click = def dig():
+    tiles[player.x][player.y-1].enabled = False
+    num_blocks += 1
+    player.y -= 1
+    update_arrows()
+down.input = def input(key):
+    if key == 's':
+        down.on_click()
+
+def update_arrows():
+    left.enabled = not tiles[player.x-1][player.y].enabled and tiles[player.x-1][player.y-1].enabled
+    right.enabled = not tiles[player.x+1][player.y].enabled and tiles[player.x+1][player.y-1].enabled
+    up.enabled = not tiles[player.x][player.y+1].enabled and num_blocks > 0
+    down.enabled = tiles[player.x][player.y-1].enabled
+
+def update():
+    player_graphics.x = lerp(player_graphics.x, player.x, .2)
+    player_graphics.y = lerp(player_graphics.y, player.y, .2)
+
+# def try_building():
+#     if num_blocks > 0 and tiles[player.x][player.y+1].is_air
+
+
+
+</script><script src="../pokescript_compiler.js"></script></html>

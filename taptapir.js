@@ -131,6 +131,11 @@ class Entity {
             this[key] = value
         }
     }
+    get name() {return this._name}
+    set name(value) {
+        this._name = value
+        this.el.id = value
+    }
 
     get parent() {return this._parent}
     set parent(value) {
@@ -1000,7 +1005,7 @@ function _input(event) {
     }
 
     for (var e of entities) {
-        if (e.input) {
+        if (e.input && e.enabled) {
             e.input(key)
         }
     }

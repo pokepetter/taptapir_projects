@@ -165,6 +165,8 @@ for (var i=0; i<lines.length; i++) {
 
     lines[i] = lines[i].replace(': {', ' {')
     lines[i] = lines[i].replaceAll('for i, e in enumerate(', 'for [i, e] in enumerate(')
+    lines[i] = lines[i].replaceAll('for y, line in enumerate(', 'for [y, line] in enumerate(')
+    lines[i] = lines[i].replaceAll('for x, char in enumerate(', 'for [x, char] in enumerate(')
 
     // ifs
     if (lines[i].trim().startsWith('if ') && lines[i].trim().endsWith(' {')) {
