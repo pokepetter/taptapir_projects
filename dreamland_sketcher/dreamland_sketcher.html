@@ -35,8 +35,8 @@ canvas.style.pointerEvents = 'none'
 set_orientation('horizontal')
 var w = 1080
 var h = 1920
-var h = 1080;
-var w = 1920;
+# var h = 1080;
+# var w = 1920;
 canvas_entity = Entity(color='green', scale_y=aspect_ratio, draggable=True, lock_x=True, lock_y=True)
 canvas_entity.el.id = 'canvas_entity'
 canvas_entity.model.appendChild(canvas)
@@ -162,7 +162,7 @@ canvas_entity.on_click = def():
             #     imgData.data[i+1] = imgData.data[i+1]*2 * (current_color[1]/255)
             #     imgData.data[i+2] = imgData.data[i+2]*2 * (current_color[2]/255)
 
-            imgData.data[i+3] = imgData.data[i+3]
+            imgData.data[i+3] = imgData.data[i+3] * current_color[3]/255
 
         brush_canvas_context.putImageData(imgData, 0, 0)
 
@@ -180,17 +180,13 @@ rotate_brush = True
 using_painterly_brush = True
 prev_brush_tip = -1
 
+opacity_keys = '|1234567890'.split('')
+
 def input(key):
-    print(key)
-    if key == '1':
-        current_color = [0,0,0,255]
-    if key == '2':
-        current_color = [128,128,128,255]
-    if key == '3':
-        current_color = [192,192,192,255]
-    if key == '4':
-        current_color = [255,255,255,255]
-    print(current_color)
+    for i, e in enumerate(opacity_keys):
+        if key == e:
+            current_color[3] = int(255/10 * i)
+            print(current_color)
 
 
 def paint():
@@ -300,11 +296,23 @@ menu_parent = Entity(color='clear', scale=.1, position=window.bottom_left, z=-1)
 # hue_slider = Entity(*slider_style, x=-.1, y=(-.5*aspect_ratio)+(1+1)%2*.5, z=-1, color='green', text='h', min_x = -.3)
 # saturation_slider = Entity(*slider_style, origin=[0,-.5], x=0, y=(-.5*aspect_ratio)+(1+1)%2*.5, z=-1, color='yellow', text='s', draggable=true)
 # value_slider = Entity(*slider_style, origin=[0,-.5], x=.1, y=(-.5*aspect_ratio)+(1+1)%2*.5, z=-1, color='gray', text='v', draggable=true)
+
+color_menu = Entity()
+color_menu.menu = Entity(parent=color_menu, enabled=False)
+
+def coolor_menu_input(key):
+    if key == 'c':
+        color_menu.menu.enabled = not color_menu.enabled
+color_menu.input =
+
+h = Entity(parent=color_menu.menu, scale_y=.1, color=color.red)
+
+
 #
 # hue_slider.while_dragging = def():
 #     print('drag')
-compiler.define(*button_style, parent=menu_parent, roundness=.5, origin=[-.5,-.5], z=-1, text_size=1)
 
+compiler.define(*button_style, parent=menu_parent, roundness=.5, origin=[-.5,-.5], z=-1, text_size=1)
 
 increase_brush_size_button = Entity(*button_style, x=1*.75, y=(4+1)%2*.5, z=-1, text='+', text_size=1, on_click=def():brush_size *= 1.5)
 decrease_brush_size_button = Entity(*button_style, x=2*.75, y=(5+1)%2*.5, text='-', text_size=1, on_click=def():brush_size *= .75)
