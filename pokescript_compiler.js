@@ -122,7 +122,7 @@ for (var i=0; i<lines.length; i++) {
     lines[i] = lines[i].replaceAll('.sum()', '.reduce((a, b) => a + b, 0)')
 
 
-    if (lines[i].includes('[') && lines[i].includes(']') && lines[i].includes(' for ') && lines[i].includes(' in ')) {
+    if (lines[i].includes('[') && lines[i].includes(']') && lines[i].includes(' for ') && lines[i].includes(' in ') &&  !lines[i].includes(' enumerate(')) {
         // remove part before list comprehension
         if (lines[i].includes(' = [')) {
             code_before_list_comprehension = lines[i].split(' = [')[0] + ' = '
