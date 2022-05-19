@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>tile rpg</title><link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir.js"></script>
 <script type='text/pokescript'>
 
-set_window_color('rgb(49 72 60)')
+set_window_color('rgb(50 50 50)')
 set_background_color('rgb(9 9 1)')
 width = 6
 height = 9
@@ -13,7 +13,7 @@ camera.fov = width
 tiles_parent = Entity(visible_self=False, xy=[-width/2,-height/2])
 for y in range(height):
     for x in range(width):
-        tiles[x][y] = Entity(parent=tiles_parent, position=[x,y], scale=1, texture='black_rock.png', origin=[-.5,-.5], dig_level=0, text_color='white')
+        tiles[x][y] = Entity(parent=tiles_parent, position=[x,y], scale=1, texture='dirt_block.png', origin=[-.5,-.5], dig_level=0, text_color='white')
         tiles_flat.append(tiles[x][y])
 
 player = Entity(parent=tiles_parent, scale=1, visible_self=False, collision=False, origin=[-.5,-.5], position=[1,1], name='player')
@@ -38,9 +38,9 @@ oooooo
 level_1 = `
 oooooo
 oooooo
+ooeeeo
 oooooo
-oooooo
-oo...o
+o+...o
 oo....
 oo....
 ..1..o
@@ -63,6 +63,15 @@ def goto_level(level):
                 tiles[x][y].enabled = True
                 tiles[x][y].dig_level = 1
                 tiles[x][y].text = '1'
+                tiles[x][y].texture = 'soft_block.png'
+            elif char == 'e':
+                tiles[x][y].enabled = True
+                tiles[x][y].dig_level = 1
+                tiles[x][y].texture = 'arrow_block.png'
+            elif char == '+':
+                tiles[x][y].enabled = True
+                tiles[x][y].dig_level = 1
+                tiles[x][y].texture = 'health_block.png'
 
 goto_level(level_1)
 
