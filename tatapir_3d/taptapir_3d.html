@@ -21,8 +21,16 @@
 
 set_orientation('horizontal')
 # Entity(color='yellow')
+load_3d()
+// Button(text='lol')
 
-Button(text='lol')
+
+def input(key):
+    if key == 'd':
+        glMatrix.mat4.rotateX(engine_3d.modelViewMatrix, engine_3d.modelViewMatrix, .05);
+        # glMatrix.mat4.translate(engine_3d.modelViewMatrix, engine_3d.modelViewMatrix, [-1.0, 0.0, 0.0]);
+        engine_3d.render()
+
 
 
 </script>

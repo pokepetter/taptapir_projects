@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>tile rpg</title><link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir.js"></script>
+<script type='text/pokescript'>
+
+set_window_color('rgb(50 50 50)')
+set_background_color('rgb(9 9 1)')
+set_orientation('landscape')
+player = Entity(scale=.2, color='orange', origin_y=-.5)
+camera.fov = 3
+brush = new Image()
+brush.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAANUlEQVQokWPYvHnzf1zg6dOn/5kkJSUZcAEpKSkGJpyyUDAYFLA8f/6c4ezZs1glnz9/zgAAx+wnKdc1c+QAAAAASUVORK5CYII="
+ground = Entity(scale=[10,.2], origin_y=.5, y=-.5, texture=brush.src, tileset_size=[.02,1], z=1)
+
+def update():
+    player.y -= .01
+    player.y = max(player.y, ground.y+ground.scale_y)
+    # if player.y > ground.y:
+    #     print('aa')
+    #     player.y = max(player.y, ground.y)
+    player_bot = player.y-(player.scale_y/2)
+    ground_top = ground.y+(ground.scale_y/2)
+    # if player_bot > ground.y and player_bot < ground_top:
+    #     player.y = max(player_bot, ground_top)
+    print((held_keys['d'] - held_keys['a']))
+    player.x += (held_keys['d'] - held_keys['a']) * .02
+    camera.x = lerp(camera.x, player.x, .05)
+    # camera.x += (held_keys['d'] - held_keys['a']) * .01
+
+</script><script src="../pokescript_compiler.js"></script></html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>tile rpg</title><link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir.js"></script>
+<script type='text/pokescript'>
+
+set_window_color('rgb(50 50 50)')
+set_background_color('rgb(9 9 1)')
+
+
+camera.fov = 3.25
+camera.position = [1, 1]
+i = 0
+origins = [[-.5,-.5], [0,-.5], [.5,-.5], [-.5,0], [0,0], [.5,0], [-.5,.5], [0,.5], [.5,.5]]
+
+for y in range(3):
+    for x in range(3):
+        let b = Button(text=`this is\ntext`, text_size=2, scale=1, position=[x,y], roundness=.02, text_origin=origins[i], original_origin=origins[i])
+        i += 1
+        b.on_click = def():
+            if b.text_origin[0] == b.original_origin[0] and b.text_origin[1] == b.original_origin[1]:
+                b.text_origin = [-.5,.5]
+            else:
+                b.text_origin = b.original_origin
+
+</script><script src="../pokescript_compiler.js"></script></html>
