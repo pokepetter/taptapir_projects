@@ -688,7 +688,7 @@ function onmousemove(event) {
                 }
             }
             if (e.while_dragging) {
-                print('d', mouse.position, mouse.point)
+                // print('d', mouse.position, mouse.point)
                 e.while_dragging()
             }
         }
@@ -1001,13 +1001,13 @@ for (var i = 0; i < all_keys.length; i++) {
 }
 input = null
 function _input(event) {
-    key = event.key
+    key = event.key.toLowerCase()
     if (event.type == "keyup") {
+        held_keys[key] = 0
         key = key + ' up'
-        held_keys[event.key] = 0
     }
     else {
-        held_keys[event.key] = 1
+        held_keys[key] = 1
     }
 
     for (var e of entities) {

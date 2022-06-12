@@ -35,8 +35,8 @@ canvas.style.pointerEvents = 'none'
 set_orientation('horizontal')
 var w = 1080
 var h = 1920
-# var h = 1080;
-# var w = 1920;
+var h = 1080;
+var w = 1920;
 canvas_entity = Entity(color='green', scale_y=aspect_ratio, draggable=True, lock_x=True, lock_y=True)
 canvas_entity.el.id = 'canvas_entity'
 canvas_entity.model.appendChild(canvas)
@@ -123,7 +123,7 @@ canvas_entity.on_click = def():
     light = c+contrast
     # light = clamp(light, 0, 255)
     # dark = clamp(dark, 0, 255)
-    print(dark, light)
+    # print(dark, light)
 
 
     for j in range(brush_tips.length):
@@ -187,6 +187,32 @@ def input(key):
         if key == e:
             current_color[3] = int(255/10 * i)
             print(current_color)
+
+    if key == 'alt':
+        using_eyedropper = True
+
+    if key == 'alt up':
+        using_eyedropper = False
+
+    print(key, held_keys['control'])
+    if held_keys['control'] and key == 'z':
+        undo()
+
+    if held_keys['control'] and key == 'y':
+        redo()
+
+    if key == 'd':
+        # brush_size *= 1.5
+        brush_size = [e * 1.5 for e in brush_size]
+
+    if key == 'x':
+        # brush_size /= 1.5
+        brush_size = [e / 1.5 for e in brush_size]
+
+    if key == 'h':
+        print(event)
+        snap_to_hex = True
+
 
 
 def paint():
@@ -297,16 +323,43 @@ menu_parent = Entity(color='clear', scale=.1, position=window.bottom_left, z=-1)
 # saturation_slider = Entity(*slider_style, origin=[0,-.5], x=0, y=(-.5*aspect_ratio)+(1+1)%2*.5, z=-1, color='yellow', text='s', draggable=true)
 # value_slider = Entity(*slider_style, origin=[0,-.5], x=.1, y=(-.5*aspect_ratio)+(1+1)%2*.5, z=-1, color='gray', text='v', draggable=true)
 
-color_menu = Entity()
-color_menu.menu = Entity(parent=color_menu, enabled=False)
+color_menu = Entity(visible_self=False)
+color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=True, scale=.5)
 
-def coolor_menu_input(key):
+def color_menu_input(key):
     if key == 'c':
-        color_menu.menu.enabled = not color_menu.enabled
-color_menu.input =
+        color_menu.menu.enabled = not color_menu.menu.enabled
+color_menu.input = color_menu_input
 
-h = Entity(parent=color_menu.menu, scale_y=.1, color=color.red)
+slider_height = .075
+bg = Entity(parent=color_menu.menu, x=.15, scale=[1.05+.3, (slider_height*1.1*3)+.05], color='black', alpha=.8, roundness=.05, z=2)
+color_preview = Entity(parent=color_menu.menu, scale=slider_height*3*1.1, x=.55, origin=[-.5,0], roundness=.5)
 
+hue = Entity(parent=color_menu.menu, scale_y=slider_height, color='white', y=slider_height*1.1, texture='rainbow.png')
+# hue.on_click = def():
+#     print('aaaaa', mouse.hovered_entity)
+#     _curr_color = RGBtoHSV(current_color)
+#     value = (mouse.point[0]+.5) * 360
+#     current_color = hsv(value, _curr_color[1], _curr_color[2])
+#     set_color(current_color)
+#     print('set hue:', value)
+#
+sat = Entity(parent=color_menu.menu, scale_y=slider_height, color='white', y=0, texture='horizontal_gradient.png')
+sat.bg = Entity(parent=color_menu.menu, scale_y=slider_height, color='white', y=0, z=1, alpha=0)
+sat.on_click = def():
+    print('aaaaa', current_color[0], current_color[1], current_color[2])
+    _curr_color = RGBtoHSV(current_color)
+    print('-----', _curr_color)
+    value = (mouse.point[0]+.5)
+    # current_color = hsv(_curr_color[0], value, _curr_color[2])
+    sat.bg.color = current_color
+    print('set sat:', value, current_color)
+val = Entity(parent=color_menu.menu, scale_y=slider_height, color='white', y=-slider_height*1.1)
+
+def set_color(value):
+    current_color = value
+    color_preview.color = value
+    sat.color = value[1]
 
 #
 # hue_slider.while_dragging = def():
@@ -327,33 +380,6 @@ next_button = Entity(*button_style, x=7*.75, y=(6+1)%2*.5, text='>', on_click=de
 # color_panel =       Menubutton([0,0])
 # eyedropper_button = Menubutton([1,0])
 
-
-document.onkeydown = def onkeydown(event):
-    if event.altKey:
-        print(event)
-        using_eyedropper = True
-
-    if event.ctrlKey and event.key === 'z':
-        undo()
-
-    if event.ctrlKey and event.key === 'y':
-        redo()
-
-    if event.key == 'd':
-        # brush_size *= 1.5
-        brush_size = [e * 1.5 for e in brush_size]
-
-    if event.key == 'x':
-        # brush_size /= 1.5
-        brush_size = [e / 1.5 for e in brush_size]
-
-    if event.key == 'h':
-        print(event)
-        snap_to_hex = True
-
-document.onkeyup = def onkeyup(event):
-    if event.key == 'Alt':
-        using_eyedropper = False
 window.onfocus = def():
     using_eyedropper = False
 
