@@ -222,6 +222,9 @@ class Entity {
     }
     get color() {return this._color}
     set color(value) {
+        if (!value instanceof String) {
+            value = `rgba(${value[0]},${value[1]},${value[2]},${value[3]})`
+        }
         this.model.style.backgroundColor = value
         this._color = value
     }
@@ -777,7 +780,28 @@ function hsv(h, s, v) {
         case 5: r = v, g = p, b = q; break;
     }
     // return {r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255)};
-    return rgb(r, g, b);
+    return [parseInt(r*255), parseInt(g*255), parseInt(b*255)];
+}
+
+function rgb_to_hsv(r, g, b) {
+    if (arguments.length === 1) {
+        g = r[0], b = r[1], r = r[2];
+    }
+    var max = Math.max(r, g, b)
+    var min = Math.min(r, g, b)
+    var d = max - min
+    var h = 0
+    var s = (max === 0 ? 0 : d / max)
+    var v = max / 255
+
+    switch (max) {
+        case min: h = 0; break;
+        case r: h = (g - b) + d * (g < b ? 6: 0); h /= 6 * d; break;
+        case g: h = (b - r) + d * 2; h /= 6 * d; break;
+        case b: h = (r - g) + d * 4; h /= 6 * d; break;
+    }
+
+    return [h, s, v]
 }
 // palette = [
 //     '#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8',
