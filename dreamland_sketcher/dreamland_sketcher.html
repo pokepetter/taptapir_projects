@@ -141,7 +141,7 @@ canvas_entity.on_click = def():
         c = (current_color[0] + current_color[1] + current_color[2])/3
         # print('------------', c)
         sat = color_as_hsv[1]
-        contrast = 32 + 16
+        contrast = 64
         # dark = c-contrast
         # light = c+contrast
         # adjust contrast and brighten based on saturation
@@ -244,7 +244,13 @@ def paint():
         rgb_color = ctx.getImageData(x, y, 1, 1).data
         # print('------', rgb_color)
         if using_painterly_brush:
-            rgb_color = [e*1/.85 for e in rgb_color]
+            color_as_hsv = rgb_to_hsv(rgb_color)
+            new_color = [e*1/.85 for e in rgb_color]
+            sat = color_as_hsv[1]
+            print('æ,,,,,,,,,,', new_color)
+            # new_color = hsv(new_color[0], new_color[1], new_color[2]+sat)
+            rgb_color = new_color
+
         current_color = rgb_color
         // hsb_color = RGBtoHSV(rgb_color[0], rgb_color[1], rgb_color[2])
         return
@@ -346,8 +352,8 @@ slider_height = .075
 bg = Entity(parent=color_menu.menu, x=.15, scale=[1.05+.3, (slider_height*1.1*3)+.05], color='black', alpha=.8, roundness=.05, z=2)
 color_preview = Entity(parent=color_menu.menu, scale=slider_height*3*1.1, x=.55, origin=[-.5,0], roundness=.5)
 
-hue = Entity(parent=color_menu.menu, scale_y=slider_height, color='white', y=slider_height*1.1, texture='rainbow.png')
-hue.on_click = def():
+hue_slider = Entity(parent=color_menu.menu, scale_y=slider_height, color='white', y=slider_height*1.1, texture='rainbow.png', draggable=True, lock_x=True, lock_y=True)
+hue_slider.while_dragging = def():
     print('aaaaa', mouse.hovered_entity)
     _curr_color = rgb_to_hsv(current_color)
     value = (mouse.point[0]+.5) * 360
