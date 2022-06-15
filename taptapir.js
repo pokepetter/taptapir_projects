@@ -26,7 +26,8 @@ var height = browser_size.height;
 browser_aspect_ratio = width / height
 // print('browser aspect_ratio:', browser_aspect_ratio)
 var format = null
-function set_orientation(format) {
+function set_orientation(value) {
+    format = value
     if (format == 'vertical') {
         aspect_ratio = 16/9
         scene.style.width = `${100}%`
@@ -70,6 +71,10 @@ right =         [.5, 0]
 
 function set_window_color(value) {game_window.style.backgroundColor = value}
 function set_background_color(value) {document.body.style.backgroundColor = value}
+function set_scale(value) {
+    scale = value
+    set_orientation(format)
+}
 
 fullscreen = false
 function set_fullscreen(value) {
@@ -783,16 +788,20 @@ function hsv(h, s, v) {
     return [parseInt(r*255), parseInt(g*255), parseInt(b*255)];
 }
 
-function rgb_to_hsv(r, g, b) {
-    if (arguments.length === 1) {
-        g = r[0], b = r[1], r = r[2];
-    }
+function rgb_to_hsv(rgb_color) {
+    r = rgb_color[0]
+    g = rgb_color[1]
+    b = rgb_color[2]
+    // It converts [0,255] format, to [0,1]
+    r = (r === 255) ? 1 : (r % 255 / parseFloat(255))
+    g = (g === 255) ? 1 : (g % 255 / parseFloat(255))
+    b = (b === 255) ? 1 : (b % 255 / parseFloat(255))
     var max = Math.max(r, g, b)
     var min = Math.min(r, g, b)
+    var h, s, v = max
     var d = max - min
-    var h = 0
-    var s = (max === 0 ? 0 : d / max)
-    var v = max / 255
+    s = max === 0 ? 0 : d / max
+
 
     switch (max) {
         case min: h = 0; break;
@@ -800,8 +809,7 @@ function rgb_to_hsv(r, g, b) {
         case g: h = (b - r) + d * 2; h /= 6 * d; break;
         case b: h = (r - g) + d * 4; h /= 6 * d; break;
     }
-
-    return [h, s, v]
+    return [parseInt(h*360), s, v]
 }
 // palette = [
 //     '#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8',
