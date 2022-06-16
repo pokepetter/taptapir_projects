@@ -80,14 +80,14 @@ img = new Image()
 
 # brush_size = [128, 128]
 // SPACING = .5
-SPACING = .05
+SPACING = 1
 brush_canvases = [document.createElement('canvas') for i in range(brush_tips.length)]
 
 current_color = [255, 0, 128, 255]
 # current_color = [0, 0, 0, 255]
 drawing = False
 using_eyedropper = False
-prev_pos = null
+prev_pos = None
 
 cursor = Entity(scale=.02, color='red', alpha=.1, parent=canvas_entity, enabled=false)
 smoothing = false
@@ -104,21 +104,7 @@ smoothing = false
 start_position = null
 snap_to_hex = false
 
-const perfectFrameTime = 1000 / 60
-dt = 0
-lastTimestamp = 0
-requestAnimationFrame(update)
-
-def update(timestamp):
-    requestAnimationFrame(update)
-    dt = (timestamp - lastTimestamp) / perfectFrameTime
-    lastTimestamp = timestamp
-    # print('eydropper:', using_eyedropper)
-
-    # if mouse.left:
-    #     paint()
 canvas_entity.on_click = def():
-
     if not using_painterly_brush:
         for j in range(brush_tips.length):
             brush_canvas = brush_canvases[j]
@@ -144,8 +130,8 @@ canvas_entity.on_click = def():
         # print('------------', c)
         sat = color_as_hsv[1]
         contrast = 64
-        # dark = c-contrast
-        # light = c+contrast
+        dark = c-contrast
+        light = c+contrast
         # adjust contrast and brighten based on saturation
         dark = c-contrast + (sat*contrast*1.2)
         light = c+contrast + contrast + (sat*contrast*1.2)
@@ -162,9 +148,12 @@ canvas_entity.on_click = def():
             imgData = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
 
             for i in range(0, imgData.data.length, 4):
-                imgData.data[i] = lerp(dark, light, imgData.data[i]/255) * lerp(1, current_color[0]/255, sat)
-                imgData.data[i+1] = lerp(dark, light, imgData.data[i+1]/255) * lerp(1, current_color[1]/255, sat)
-                imgData.data[i+2] = lerp(dark, light, imgData.data[i+2]/255) * lerp(1, current_color[2]/255, sat)
+                # imgData.data[i] = lerp(dark, light, imgData.data[i]/255) * lerp(1, current_color[0]/255, sat)
+                # imgData.data[i+1] = lerp(dark, light, imgData.data[i+1]/255) * lerp(1, current_color[1]/255, sat)
+                # imgData.data[i+2] = lerp(dark, light, imgData.data[i+2]/255) * lerp(1, current_color[2]/255, sat)
+                imgData.data[i] = lerp(dark, light, imgData.data[i]/255) * current_color[0]/255
+                imgData.data[i+1] = lerp(dark, light, imgData.data[i+1]/255) * current_color[1]/255
+                imgData.data[i+2] = lerp(dark, light, imgData.data[i+2]/255) * current_color[2]/255
                 imgData.data[i+3] = imgData.data[i+3] * current_color[3]/255
 
             brush_canvas_context.putImageData(imgData, 0, 0)
@@ -227,6 +216,11 @@ def input(key):
         brush_size = [128, 128]
         using_painterly_brush = False
 
+    if key == 's':
+        smoothing = True
+    elif key == 's up':
+        smoothing = False
+
 def paint():
     if not drawing and not using_eyedropper:
         return
@@ -235,78 +229,89 @@ def paint():
 
     # pos = get_canvas_position()
     pos = mouse.point
-    if smoothing and prev_pos:
-        pos = [lerp(prev_pos[0], pos[0], dt*.025), lerp(prev_pos[1], pos[1], dt*.025)]
 
     # print('PAINT', mouse.point)
     var x = (pos[0]+.5) * w
     var y = (pos[1]-.5) * -h
+    if smoothing and prev_pos:
+        x = lerp(prev_pos[0], x, .025)
+        y = lerp(prev_pos[1], y, .025)
 
     if using_eyedropper:
         current_color = ctx.getImageData(x, y, 1, 1).data
+        set_color(current_color)
         return
 
-    if prev_pos == null:
-        if draw_on_click:
-            prev_brush_tip += 1
-            if prev_brush_tip >= brush_tips.length:
-                prev_brush_tip = 0
-            img.src = brush_canvases[prev_brush_tip].toDataURL()
+    # print('--------------', prev_pos)
+    if prev_pos == None and draw_on_click:
+        prev_brush_tip += 1
+        if prev_brush_tip >= brush_tips.length:
+            prev_brush_tip = 0
+        img.src = brush_canvases[prev_brush_tip].toDataURL()
 
+        # print('prev_brush_tip', prev_brush_tip, x ,y)
+        # ctx.drawImage(img, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+        invoke(def anon():
             ctx.drawImage(img, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
-            # print('prev_brush_tip', prev_brush_tip)
+        , delay=0)
         start_position = pos
         prev_draw_pos = pos
-        brush_distance = 0
-    else:
-        if snap_to_hex:
-            y = start_position[1] + (x-start_position[0])
+        prev_pos = [x,y]
+        pixels_traveled = 0
+        return
 
-        distance_since_last_frame = distanceApprox(prev_pos, [x,y])
-        brush_distance += Math.floor(distance_since_last_frame)
-        _spacing = brush_size[1]*SPACING
+    if snap_to_hex:
+        y = start_position[1] + (x-start_position[0])
 
-        if brush_distance >= _spacing and using_painterly_brush:
-            brush_distance = 0
-            prev_brush_tip += 1
-            if prev_brush_tip >= brush_tips.length:
-                prev_brush_tip = 0
+    distance_since_last_frame = distanceApprox(prev_pos, [x,y])
+    pixels_traveled += distance_since_last_frame
+    spacing_in_pixels = brush_size[1]*SPACING
+    steps = floor(pixels_traveled / spacing_in_pixels)
 
-            img.src = brush_canvases[prev_brush_tip].toDataURL()
+    delta_pos = [x - prev_pos[0], y - prev_pos[1]]
+    radians = -math.atan2(delta_pos[0], delta_pos[1])
+    if steps:
+        print('--------------', steps, spacing_in_pixels, pixels_traveled)
 
-            if not rotate_brush:
-                ctx.drawImage(img, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
-            else:
-                delta_pos = [x - prev_draw_pos[0], y - prev_draw_pos[1]]
-                radians = -math.atan2(delta_pos[0], delta_pos[1])
-                ctx.translate(x, y)
+    for i in range(0, steps):
+        prev_brush_tip += 1
+        if prev_brush_tip >= brush_tips.length:
+            prev_brush_tip = 0
+
+        t = i / steps
+        let _x = lerp(prev_pos[0], x, t)
+        let _y = lerp(prev_pos[1], y, t)
+
+        img.src = brush_canvases[prev_brush_tip].toDataURL()
+
+        if not rotate_brush:
+            ctx.drawImage(img, _x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
+
+        else:
+            invoke(def anon():
+                ctx.translate(_x, _y)
                 ctx.rotate(radians)
                 ctx.drawImage(img, -brush_size[0]/2, -brush_size[1]/2)
                 ctx.rotate(-radians)
-                ctx.translate(-x, -y)
+                ctx.translate(-_x, -_y)
+            , delay=0)
 
-        elif not using_painterly_brush:
-            # draw line between points
-            for i in range(0, distance_since_last_frame, _spacing):
-                t = i/distance_since_last_frame
-                _x = lerp(prev_pos[0], x, t)
-                _y = lerp(prev_pos[1], y, t)
-                ctx.drawImage(img, _x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
+        prev_draw_pos = [_x, _y]
 
-        prev_draw_pos = [x, y]
+    pixels_traveled -= steps * spacing_in_pixels
     prev_pos = [x, y]
+    # if not held_keys['shift']:
 
 canvas_entity.while_dragging = paint
 
-# document.addEventListener("mousedown", mouse_down, false)
-# document.addEventListener("touchstart", mouse_down, false)
 
 def mouse_up(ev):
     if drawing:
         record_undo()
 
     drawing = false
-    prev_pos = null
+    if not held_keys['shift']:
+        prev_pos = None
 
 
 document.addEventListener("mouseup", mouse_up, false)
@@ -325,14 +330,13 @@ def lerp(a, b, t):
 
 
 menu_parent = Entity(color='clear', scale=.1, position=window.bottom_left, z=-1)
-# compiler.define(*slider_style, scale=.1, roundness=.5, origin=[0,-.5], z=-1, text_size=1, draggable=true)
 #
 # hue_slider = Entity(*slider_style, x=-.1, y=(-.5*aspect_ratio)+(1+1)%2*.5, z=-1, color='green', text='h', min_x = -.3)
 # saturation_slider = Entity(*slider_style, origin=[0,-.5], x=0, y=(-.5*aspect_ratio)+(1+1)%2*.5, z=-1, color='yellow', text='s', draggable=true)
 # value_slider = Entity(*slider_style, origin=[0,-.5], x=.1, y=(-.5*aspect_ratio)+(1+1)%2*.5, z=-1, color='gray', text='v', draggable=true)
 
 color_menu = Entity(visible_self=False)
-color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=True, scale=.5)
+color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=False, scale=.5)
 
 def color_menu_input(key):
     if key == 'c':
@@ -343,42 +347,52 @@ slider_height = .075
 bg = Entity(parent=color_menu.menu, x=.15, scale=[1.05+.3, (slider_height*1.1*3)+.05], color='black', alpha=.8, roundness=.05, z=2)
 color_preview = Entity(parent=color_menu.menu, scale=slider_height*3*1.1, x=.55, origin=[-.5,0], roundness=.5)
 
-hue_slider = Entity(parent=color_menu.menu, scale_y=slider_height, color='white', y=slider_height*1.1, texture='rainbow.png', draggable=True, lock_x=True, lock_y=True)
+compiler.define(*slider_style, scale_y=.075, roundness=.15, draggable=True, lock_x=True, lock_y=True)
+
+hue_slider = Entity(*slider_style, parent=color_menu.menu, y=slider_height*1.1, texture='rainbow.png')
+hue_slider.indicator = Entity(parent=hue_slider, scale_x=.01, color='black')
 hue_slider.on_click = def():
     _curr_color = rgb_to_hsv(current_color)
     value = (mouse.point[0]+.5) * 360
+
     color_as_rgb = hsv(value, _curr_color[1], _curr_color[2])
     current_color[0] = color_as_rgb[0]
     current_color[1] = color_as_rgb[1]
     current_color[2] = color_as_rgb[2]
-    print('----------------', current_color)
+    # print('----------------', current_color)
     set_color(current_color)
     # print('set hue:', value)
 hue_slider.while_dragging = hue_slider.on_click
 
-sat_slider = Entity(parent=color_menu.menu, scale_y=slider_height, color='white', y=0)
-sat_slider.overlay = Entity(parent=sat_slider, texture='horizontal_gradient.png', y=0, z=-1)
+sat_slider = Entity(*slider_style, parent=color_menu.menu, y=0)
+sat_slider.overlay = Entity(parent=sat_slider, texture='horizontal_gradient.png', y=0, z=-1, roundness=.15)
+sat_slider.indicator = Entity(parent=sat_slider, scale_x=.01, color='black')
 sat_slider.on_click = def():
     _curr_color = rgb_to_hsv(current_color)
     value = (mouse.point[0]+.5)
+    # sat_slider.indicator.x = value
     color_as_rgb = hsv(_curr_color[0], value, _curr_color[2])
 
     current_color[0] = color_as_rgb[0]
     current_color[1] = color_as_rgb[1]
     current_color[2] = color_as_rgb[2]
     set_color(current_color)
+sat_slider.while_dragging = sat_slider.on_click
     # print('set sat:', value, current_color)
-val_slider = Entity(parent=color_menu.menu, scale_y=slider_height, color='white', texture='horizontal_gradient.png', y=-slider_height*1.1)
+val_slider = Entity(*slider_style, parent=color_menu.menu, texture='horizontal_gradient.png', y=-slider_height*1.1)
+val_slider.indicator = Entity(parent=val_slider, scale_x=.01, color='black')
 val_slider.on_click = def():
     # print('aaaaa', mouse.hovered_entity)
-    _curr_color = rgb_to_hsv(current_color)
+    color_as_hsv = rgb_to_hsv(current_color)
     value = (mouse.point[0]+.5)
-    color_as_rgb = hsv(_curr_color[0], _curr_color[1], value)
+    # val_slider.indicator.x = value
+    color_as_rgb = hsv(color_as_hsv[0], color_as_hsv[1], value)
     current_color[0] = color_as_rgb[0]
     current_color[1] = color_as_rgb[1]
     current_color[2] = color_as_rgb[2]
     set_color(current_color)
     # print('set value:', value)
+val_slider.while_dragging = val_slider.on_click
 
 def set_color(value):
     current_color = value
@@ -391,6 +405,9 @@ def set_color(value):
     sat_slider.color = rgb(color_saturated[0]/255, color_saturated[1]/255, color_saturated[2]/255)
     # sat.overlay.color = rgb(color_desaturated[0]/255, color_desaturated[1]/255, color_desaturated[2]/255)
     # sat.overlay.alpha = current_color[3]/255
+    hue_slider.indicator.x = -.5 + color_as_hsv[0]/360
+    sat_slider.indicator.x = -.5 + color_as_hsv[1]
+    val_slider.indicator.x = -.5 + color_as_hsv[2]
 
 
 #
@@ -474,115 +491,6 @@ def record_undo():
     undo_data.push(canvas.toDataURL())
     # print('record undo')
     undo_index += 1
-
-
-
-
-
-# #  GAMEPAD
-# window.addEventListener("gamepadconnected", function(e) {
-#   const gamepad = e.gamepad;
-#   console.log(`Gamepad connected at index ${gamepad.index}: ${gamepad.id}.
-#               ${gamepad.buttons.length} buttons, ${gamepad.axes.length} axes.`);
-# });
-#
-# let interval;
-# if (!('ongamepadconnected' in window)) {
-#   # No gamepad events available, poll instead.
-#   interval = setInterval(pollGamepads, 100);
-# }
-#
-# function pollGamepads() {
-#     let gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-#     let gamepadArray = [];
-#     for(let i = 0; i < gamepads.length; i++) {
-#         if (gamepads[i]) {
-#             gamepadArray.push(gamepads[i]);
-#         }
-#     }
-#     if (gamepadArray.length == 0) {
-#         return;
-#     }
-#     print('poll', gamepadArray.length, gamepadArray)
-#     let orderedGamepads = [];
-#     orderedGamepads.push(gamepadArray.find(g => g.id.indexOf('Joy-Con (R)') > -1));
-#     orderedGamepads.push(gamepadArray.find(g => g.id.indexOf('Joy-Con (L)') > -1));
-#     let pressed = [];
-#
-#     for (let g = 0; g < orderedGamepads.length; g++) {
-#         const gp = orderedGamepads[g];
-#         if (!!gp) {
-#             for(let i = 0; i < gp.buttons.length; i++) {
-#                 if(gp.buttons[i].pressed) {
-#                     const id = (g * 15) + i + g;
-#                     const button = buttonMapping[id] || id;
-#                     pressed.push(button);
-#                 }
-#             }
-#         }
-#     }
-#     if (pressed.length === 0) {
-#         input.innerHTML = 'No button pressed at the moment...';
-#     } else {
-#         input.innerHTML = pressed.join(' + ');
-#     }
-# }
-# document.onpaste = function(event){
-#     var items = (event.clipboardData || event.originalEvent.clipboardData).items;
-#     # console.log(JSON.stringify(items)); # will give you the mime types
-#     for (const item of items) {
-#         # var item = items[index];
-#         print(item.kind, item)
-#         if (item.kind === 'file') {
-#             var blob = item.getAsFile();
-#             var reader = new FileReader();
-#             reader.onload = function(event) {
-#                 img = event.target.result
-#                 print(img)
-#                 load_image_to_canvas(img)
-#             }; # data url!
-#             reader.readAsDataURL(blob);
-#         }
-#     }
-# }
-
-# # TEXT
-# var text_layer = document.createElement('canvas');
-# text_layer.id = 'text_layer';
-# text_layer.width = w;
-# text_layer.height = h;
-# text_layer.style.position = 'absolute';
-# text_layer.style.left = '1%';
-# text_layer.style.pointerEvents = 'none';
-# if (h > w) {text_layer.style.height = '88%'; text_layer.style.width = text_layer.style.height * 9/16;}
-# else {text_layer.style.width = '88%'; text_layer.style.height = text_layer.style.width * 9/16;}
-# document.body.appendChild(text_layer);
-#
-# var tl_ctx = text_layer.getContext('2d');
-# print(tl_ctx);
-# text_size = 90
-# tl_ctx.font = text_size + "px Arial";
-# tl_ctx.textAlign = "center";
-# var text =  'Hello World!\n'+
-#             'Whats up?';
-#
-# var text_pos = {'x':w/2, 'y':h/2};
-#
-# # tl_ctx.fillStyle = 'red';
-# # # draw background
-# # var width = tl_ctx.measureText(text).width;
-# # print(tl_ctx.measureText(text));
-# # tl_ctx.fillRect(text_pos.x - (width/2), text_pos.y - (text_size), width, text_size);
-# tl_ctx.fillStyle = 'black';
-# var lines = text.split('\n');
-# for (var i = 0; i<lines.length; i++) {
-#     tl_ctx.fillText(lines[i], text_pos.x, text_pos.y + (i*text_size));
-# }
-#
-#
-# # tl_ctx.fillText(text, text_pos.x, text_pos.y);
-
-
 
 
 </script>

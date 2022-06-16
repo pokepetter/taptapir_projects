@@ -610,7 +610,7 @@ function handle_mouse_click(e) {
                 ((((e.clientX - window_position.left) / game_window.clientWidth) - .5) * asp_x) - entity.x,
                 (-(((e.clientY - window_position.top) / game_window.clientHeight ) - .5) * asp_y) - entity.y
                 ]
-            print(entity.start_offset)
+            // prinkt(entity.start_offset)
 
             entity.dragging = true
         }
@@ -736,6 +736,10 @@ function Array_2d(w, h) {
         tiles[i] = new Array(h);
     }
     return tiles
+}
+
+function len(arr) {
+    return arr.length
 }
 
 String.prototype.count=function(c) {
