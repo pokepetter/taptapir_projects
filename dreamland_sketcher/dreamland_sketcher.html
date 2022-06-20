@@ -167,7 +167,7 @@ canvas_entity.on_click = def():
         return
 
 brush_distance = 0
-draw_on_click = True
+draw_on_click = False
 rotate_brush = True
 using_painterly_brush = True
 prev_brush_tip = -1
@@ -211,9 +211,13 @@ def input(key):
         set_brush(painterly_brush_tips)
         brush_size = [178, 400]
         using_painterly_brush = True
+        SPACING = .5
+        draw_on_click = False
     if key == 'b':
         set_brush(round_brush_tips)
         brush_size = [128, 128]
+        SPACING = .1
+        draw_on_click = True
         using_painterly_brush = False
 
     if key == 's':
