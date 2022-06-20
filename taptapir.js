@@ -29,7 +29,7 @@ var format = null
 function set_orientation(value) {
     format = value
     if (format == 'vertical') {
-        aspect_ratio = 16/9
+        aspect_ratio = 9/16
         scene.style.width = `${100}%`
         scene.style.height = `${(9/16)*100}%`
         // used for setting correct draggable limits
@@ -46,7 +46,7 @@ function set_orientation(value) {
         }
     }
     else {
-        aspect_ratio = 9/16
+        aspect_ratio = 16/9
         game_window.style.height = `${width/(16/9)*scale}px`
         game_window.style.width =  `${width*scale}px`
         scene.style.height = `${100}%`
@@ -456,6 +456,9 @@ function random_int(min, max) {
 }
 
 function Button(options) {
+    if (!('parent' in options)) {
+        options['parent'] = camera.ui
+    }
     if (!('scale' in options)) {
         options['scale'] = [.2,.2]
     }
@@ -1029,6 +1032,7 @@ class Camera{
   }
 }
 camera = new Camera({})
+camera.ui = new Entity({name:'ui', scale:[1,1], visible_self:false, z:-100})
 
 held_keys = {}
 all_keys = `<zxcvbnm,.-asdfghjkløæ'qwertyuiopå¨1234567890+`
