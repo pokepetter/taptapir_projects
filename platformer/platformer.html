@@ -3,16 +3,17 @@
 
 set_window_color('rgb(50 50 50)')
 set_background_color('rgb(9 9 1)')
-set_orientation('landscape')
-player = Entity(scale=.2, color='orange', origin_y=-.5)
-camera.fov = 3
+# set_orientation('landscape')
+player = Entity(scale=.1, color='orange', origin_y=-.5)
+camera.fov = 1
 brush = new Image()
 brush.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAANUlEQVQokWPYvHnzf1zg6dOn/5kkJSUZcAEpKSkGJpyyUDAYFLA8f/6c4ezZs1glnz9/zgAAx+wnKdc1c+QAAAAASUVORK5CYII="
 ground = Entity(scale=[10,.2], origin_y=.5, y=-.5, texture=brush.src, tileset_size=[.02,1], z=1)
 bg = Entity(texture='bg.png', scale=5, origin=[-.5,-.5], z=1)
-
+# set_scale(.5)
 
 def update():
+    # print(mouse.position)
     # player.y -= .01
     # player.y = max(player.y, ground.y+ground.scale_y)
     # if player.y > ground.y:
@@ -25,10 +26,14 @@ def update():
     # print((held_keys['d'] - held_keys['a']))
     player.x += (held_keys['d'] - held_keys['a']) * .02
     player.y += (held_keys['w'] - held_keys['s']) * .02
-    camera.x = lerp(camera.x, player.x, .05)
-    camera.x = clamp(camera.x, camera.fov/2, bg.scale_x-(camera.fov/2))
-    camera.y = lerp(camera.y, player.y, .05)
-    camera.y = clamp(camera.y, camera.fov/2*aspect_ratio,  bg.scale_y-(camera.fov/2*aspect_ratio))
+    camera.x = player.x
+    camera.y = player.y
+    # camera.x = lerp(camera.x, player.x, .05)
+    # camera.x = clamp(camera.x, camera.fov/2, bg.scale_x-(camera.fov/2))
+    # camera.y = lerp(camera.y, player.y, .05)
+    # camera.y = clamp(camera.y, camera.fov/2*aspect_ratio,  bg.scale_y-(camera.fov/2*aspect_ratio))
     # camera.x += (held_keys['d'] - held_keys['a']) * .01
+
+d = Button(text='lol', draggable=True)
 
 </script><script src="../pokescript_compiler.js"></script></html>
