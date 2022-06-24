@@ -594,9 +594,9 @@ function mousedown(event) {
     if (event.pointerType == 'mouse' || event.pointerType == 'touch') {
         mouse.pressure = 1
     }
-    else {
-        mouse.pressure = event.originalEvent.pressure
-    }
+    // else {
+    //     mouse.pressure = event.originalEvent.pressure
+    // }
     update_mouse_position(event)
     handle_mouse_click(event)
 }
@@ -644,28 +644,15 @@ function _mouse_up(e) {
 }
 function update_mouse_position(event) {
     window_position = game_window.getBoundingClientRect()
-
-    // if (event.touches) {
-    //     touch = event.touches[0] || event.changedTouches[0]
-    //     event_x = touch.clientX
-    //     event_y = touch.clientY
-    // }
-    // else {
-        event_x = event.clientX
-        event_y = event.clientY
-    // }
+    event_x = event.clientX
+    event_y = event.clientY
     mouse.x = (((event_x - window_position.left) / game_window.clientWidth) - .5) * asp_x
     mouse.y = -(((event_y - window_position.top) / game_window.clientHeight ) - .5) / asp_y
     mouse.position = [mouse.x, mouse.y]
-    print('-------', mouse.position)
 }
 
 function onmousemove(event) {
-    print('a')
     update_mouse_position(event)
-    // if (event.touches) {
-    //     event = event.touches[0] || event.changedTouches[0]
-    // }
 
     if (!mouse.hovered_entity) {
         mouse.point = null
