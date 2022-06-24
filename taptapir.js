@@ -589,16 +589,20 @@ class HealthBar extends Entity {
 
 mouse = {x:0, y:0, position:[0,0], left:false, hovered_entity:null}
 
-document.addEventListener('mousedown', function(e) {
-    update_mouse_position(e)
-    e.preventDefault()
-    handle_mouse_click(e)
-})
-document.addEventListener('touchstart', function(e) {
-    update_mouse_position(e.touches[0])
-    // e.preventDefault()
-    handle_mouse_click(e.touches[0])
-})
+
+function mousedown(event) {
+    if (event.pointerType == 'mouse' || event.pointerType == 'touch') {
+        mouse.pressure = 1
+    }
+    else {
+        mouse.pressure = event.originalEvent.pressure
+    }
+    update_mouse_position(event)
+    handle_mouse_click(event)
+}
+document.addEventListener('pointerdown', mousedown)
+
+
 function handle_mouse_click(e) {
     mouse.left = true
     element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
@@ -621,14 +625,12 @@ function handle_mouse_click(e) {
         }
     }
 }
-document.addEventListener('mouseup', function(e) {
+function mouseup(e) {
     e.preventDefault()
     _mouse_up()
-})
-document.addEventListener('touchend', function(e) {
-    e.preventDefault()
-    _mouse_up()
-})
+}
+document.addEventListener('pointerup', mouseup)
+
 function _mouse_up(e) {
     mouse.left = false;
     for (var e of entities) {
@@ -643,25 +645,27 @@ function _mouse_up(e) {
 function update_mouse_position(event) {
     window_position = game_window.getBoundingClientRect()
 
-    if (event.touches) {
-        touch = event.touches[0] || event.changedTouches[0]
-        event_x = touch.clientX
-        event_y = touch.clientY
-    }
-    else {
+    // if (event.touches) {
+    //     touch = event.touches[0] || event.changedTouches[0]
+    //     event_x = touch.clientX
+    //     event_y = touch.clientY
+    // }
+    // else {
         event_x = event.clientX
         event_y = event.clientY
-    }
+    // }
     mouse.x = (((event_x - window_position.left) / game_window.clientWidth) - .5) * asp_x
     mouse.y = -(((event_y - window_position.top) / game_window.clientHeight ) - .5) / asp_y
     mouse.position = [mouse.x, mouse.y]
+    print('-------', mouse.position)
 }
 
 function onmousemove(event) {
+    print('a')
     update_mouse_position(event)
-    if (event.touches) {
-        event = event.touches[0] || event.changedTouches[0]
-    }
+    // if (event.touches) {
+    //     event = event.touches[0] || event.changedTouches[0]
+    // }
 
     if (!mouse.hovered_entity) {
         mouse.point = null
@@ -680,7 +684,6 @@ function onmousemove(event) {
     else {
         mouse.hovered_entity = null
     }
-
     for (var e of entities) {
         if (e.dragging) {
             if (!e.lock_x) {
@@ -707,9 +710,8 @@ function onmousemove(event) {
         }
     }
 }
-document.onmousemove = onmousemove
-document.ontouchmove = onmousemove
 
+document.addEventListener('pointermove', onmousemove)
 
 // function range(n) {return Array(n).keys()}
 function range(start, stop, step) {
