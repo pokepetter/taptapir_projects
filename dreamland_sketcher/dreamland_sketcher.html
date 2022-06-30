@@ -229,6 +229,11 @@ def input(key):
     elif key == 's up':
         smoothing = False
 
+    if key == 'scroll down':
+        canvas_entity.scale = [e*.9 for e in canvas_entity.scale]
+    if key == 'scroll up':
+        canvas_entity.scale = [e*1/.9 for e in canvas_entity.scale]
+
 def paint():
     if not drawing and not using_eyedropper:
         return
