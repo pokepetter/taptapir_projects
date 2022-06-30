@@ -17,6 +17,7 @@ if (!game_window) {
 }
 scene = document.createElement('entity')
 scene.className = 'entity'
+scene.id = 'scene'
 scene.style.backgroundColor = 'transparent'
 game_window.appendChild(scene)
 
@@ -31,10 +32,11 @@ function set_orientation(value) {
     if (format == 'vertical') {
         aspect_ratio = 9/16
         scene.style.width = `${100}%`
-        scene.style.height = `${(9/16)*100}%`
         // used for setting correct draggable limits
         asp_x = 1
         asp_y = aspect_ratio
+        scene.style.height = `${asp_y*100}%`
+        print('-------------', asp_y)
 
         if (browser_aspect_ratio >= 9/16) { // if the screen is wider than 16/9, like a pc monitor.
             game_window.style.width = `${height/(16/9)*scale}px`
@@ -57,17 +59,17 @@ function set_orientation(value) {
     }
 }
 set_orientation('vertical')
-print('spect', aspect_ratio, asp_y)
+print('spect', asp_x, asp_y)
 
 
-top_left =      [-.5, .5*aspect_ratio]
-top_right =     [.5, .5*aspect_ratio]
-bottom_left =   [-.5, -.5*aspect_ratio]
-bottom_right =  [.5, -.5*aspect_ratio]
-top =           [0, .5*aspect_ratio]
-bottom =        [0, -.5*aspect_ratio]
-left =          [-.5, 0]
-right =         [.5, 0]
+top_left =      [-.5*asp_x, .5*asp_y]
+top_right =     [.5*asp_x, .5*asp_y]
+bottom_left =   [-.5*asp_x, -.5*asp_y]
+bottom_right =  [.5*asp_x, -.5*asp_y]
+top =           [0, .5*asp_y]
+bottom =        [0, -.5*asp_y]
+left =          [-.5*asp_x, 0]
+right =         [.5*asp_x, 0]
 
 function set_window_color(value) {game_window.style.backgroundColor = value}
 function set_background_color(value) {document.body.style.backgroundColor = value}
@@ -128,8 +130,8 @@ class Entity {
 
         this.min_x = -.5 * asp_x
         this.max_x = .5 * asp_x
-        this.min_y = -.5 * asp_y
-        this.max_y = .5 * asp_y
+        this.min_y = -.5 / asp_y
+        this.max_y = .5 / asp_y
 
        this.snap_x = 0
         this.snap_y = 0
@@ -587,16 +589,20 @@ class HealthBar extends Entity {
 
 mouse = {x:0, y:0, position:[0,0], left:false, hovered_entity:null}
 
-document.addEventListener('mousedown', function(e) {
-    update_mouse_position(e)
-    e.preventDefault()
-    handle_mouse_click(e)
-})
-document.addEventListener('touchstart', function(e) {
-    update_mouse_position(e.touches[0])
-    // e.preventDefault()
-    handle_mouse_click(e.touches[0])
-})
+
+function mousedown(event) {
+    if (event.pointerType == 'mouse' || event.pointerType == 'touch') {
+        mouse.pressure = 1
+    }
+    // else {
+    //     mouse.pressure = event.originalEvent.pressure
+    // }
+    update_mouse_position(event)
+    handle_mouse_click(event)
+}
+document.addEventListener('pointerdown', mousedown)
+
+
 function handle_mouse_click(e) {
     mouse.left = true
     element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
@@ -619,14 +625,12 @@ function handle_mouse_click(e) {
         }
     }
 }
-document.addEventListener('mouseup', function(e) {
+function mouseup(e) {
     e.preventDefault()
     _mouse_up()
-})
-document.addEventListener('touchend', function(e) {
-    e.preventDefault()
-    _mouse_up()
-})
+}
+document.addEventListener('pointerup', mouseup)
+
 function _mouse_up(e) {
     mouse.left = false;
     for (var e of entities) {
@@ -640,26 +644,15 @@ function _mouse_up(e) {
 }
 function update_mouse_position(event) {
     window_position = game_window.getBoundingClientRect()
-
-    if (event.touches) {
-        touch = event.touches[0] || event.changedTouches[0]
-        event_x = touch.clientX
-        event_y = touch.clientY
-    }
-    else {
-        event_x = event.clientX
-        event_y = event.clientY
-    }
+    event_x = event.clientX
+    event_y = event.clientY
     mouse.x = (((event_x - window_position.left) / game_window.clientWidth) - .5) * asp_x
-    mouse.y = -(((event_y - window_position.top) / game_window.clientHeight ) - .5) * asp_y
+    mouse.y = -(((event_y - window_position.top) / game_window.clientHeight ) - .5) / asp_y
     mouse.position = [mouse.x, mouse.y]
 }
 
 function onmousemove(event) {
     update_mouse_position(event)
-    if (event.touches) {
-        event = event.touches[0] || event.changedTouches[0]
-    }
 
     if (!mouse.hovered_entity) {
         mouse.point = null
@@ -678,7 +671,6 @@ function onmousemove(event) {
     else {
         mouse.hovered_entity = null
     }
-
     for (var e of entities) {
         if (e.dragging) {
             if (!e.lock_x) {
@@ -705,9 +697,8 @@ function onmousemove(event) {
         }
     }
 }
-document.onmousemove = onmousemove
-document.ontouchmove = onmousemove
 
+document.addEventListener('pointermove', onmousemove)
 
 // function range(n) {return Array(n).keys()}
 function range(start, stop, step) {
@@ -980,7 +971,8 @@ class Camera{
       this.el = document.createElement('entity')
       game_window.appendChild(this.el)
       this.el.className = 'entity'
-      this.el.style.height = scene.style.height
+      // this.el.style.height = scene.style.height
+      // this.el.style.width = scene.style.width
       this.el.id = 'camera'
       this.children = []
       this._x = 0
@@ -991,12 +983,22 @@ class Camera{
   get x() {return this._x}
   set x(value) {
       this._x = value
-      scene.style.left = `${50+(-value*100/this.fov)}%`
+      if (format == 'vertical') {
+          scene.style.left = `${50+(-value*100/this.fov)}%`
+      }
+      else {
+          scene.style.left = `${50+(-value*100/aspect_ratio/this.fov)}%`
+      }
   }
   get y() {return this._y}
   set y(value) {
       this._y = value
-      scene.style.top = `${50+(value*100/aspect_ratio/this.fov)}%`
+      if (format == 'vertical') {
+          scene.style.top = `${50+(value*100*aspect_ratio/this.fov)}%`
+      }
+      else {
+          scene.style.top = `${50+(value*100/this.fov)}%`
+      }
   }
   // get z() {return this._z}
   // set z(value) {
@@ -1017,7 +1019,7 @@ class Camera{
   get position() {return this.xyz}
   set position(value) {
       if (value.length == 2) {this.xy = value}
-      // if (value.length == 3) {this.xyz = value}
+      if (value.length == 3) {this.xy = [value[0], value[1]]}
   }
   get rotation() {return this._rotation}
   set rotation(value) {
@@ -1027,8 +1029,15 @@ class Camera{
   get fov() {return self._fov}
   set fov(value) {
       self._fov = value
-      scene.style.width = `${1/value*100}%`
-      scene.style.height = `${1/value*100/aspect_ratio}%`
+      scene.style.width = `${1/value*100/asp_x}%`
+
+      if (format == 'vertical') {
+          scene.style.height = `${1/value*100/asp_x*asp_y}%`
+      }
+      else {
+          scene.style.height = `${1/value*100/asp_y}%`
+      }
+
   }
 }
 camera = new Camera({})
