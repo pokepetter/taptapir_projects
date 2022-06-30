@@ -34,12 +34,14 @@ canvas.style.bottom= '10%'
 canvas.style.pointerEvents = 'none'
 
 set_orientation('horizontal')
-set_scale(.9)
+set_scale(.65)
 canvas_scale = .8
-var w = 1080
-var h = 1920
+# var w = 1080
+# var h = 1920
 var h = 1080*2;
 var w = 1920*2;
+# var h = 1080*1;
+# var w = 1920*1;
 canvas_entity = Entity(color='green', scale_x=aspect_ratio, draggable=True, lock_x=True, lock_y=True)
 canvas_entity.el.id = 'canvas_entity'
 canvas_entity.model.appendChild(canvas)
@@ -189,7 +191,7 @@ def input(key):
     if key == 'alt up':
         using_eyedropper = False
 
-    print(key, held_keys['control'])
+    # print(key, held_keys['control'])
     if held_keys['control'] and key == 'z':
         undo()
 
@@ -227,6 +229,12 @@ def input(key):
         smoothing = True
     elif key == 's up':
         smoothing = False
+
+    if key == 'scroll down':
+        canvas_entity.scale = [e*.9 for e in canvas_entity.scale]
+    if key == 'scroll up':
+        canvas_entity.scale = [e*1/.9 for e in canvas_entity.scale]
+
 
 def paint():
     if not drawing and not using_eyedropper:

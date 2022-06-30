@@ -1041,7 +1041,13 @@ for (var i = 0; i < all_keys.length; i++) {
 }
 input = null
 function _input(event) {
-    key = event.key.toLowerCase()
+    if (event.type == 'mousewheel') {
+        if (event.deltaY > 0) {key = 'scroll down'}
+        else {key = 'scroll up'}
+    }
+    else {
+        key = event.key.toLowerCase()
+    }
     if (event.type == "keyup") {
         held_keys[key] = 0
         key = key + ' up'
@@ -1061,7 +1067,7 @@ function _input(event) {
 }
 document.addEventListener('keydown', _input)
 document.addEventListener('keyup', _input)
-
+document.addEventListener('mousewheel', _input); // modern desktop
 
 
 
