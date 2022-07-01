@@ -587,10 +587,14 @@ class HealthBar extends Entity {
     set bar_color(value) {this.bar.color = value}
 }
 
-mouse = {x:0, y:0, position:[0,0], left:false, hovered_entity:null}
+mouse = {x:0, y:0, position:[0,0], left:false, middle:false, hovered_entity:null}
 
 
 function mousedown(event) {
+    _input(event)
+    if (event.button > 0) {
+        return
+    }
     if (event.pointerType == 'mouse' || event.pointerType == 'touch') {
         mouse.pressure = 1
     }
@@ -604,7 +608,7 @@ document.addEventListener('pointerdown', mousedown)
 
 
 function handle_mouse_click(e) {
-    mouse.left = true
+    // mouse.left = true
     element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
     entity = entities[element_hit.entity_index]
 
@@ -625,13 +629,10 @@ function handle_mouse_click(e) {
         }
     }
 }
-function mouseup(e) {
-    e.preventDefault()
-    _mouse_up()
-}
-document.addEventListener('pointerup', mouseup)
 
-function _mouse_up(e) {
+function mouseup(event) {
+    // event.preventDefault()
+    _input(event)
     mouse.left = false;
     for (var e of entities) {
         if (e.dragging) {
@@ -642,6 +643,9 @@ function _mouse_up(e) {
         }
     }
 }
+document.addEventListener('pointerup', mouseup)
+
+
 function update_mouse_position(event) {
     window_position = game_window.getBoundingClientRect()
     event_x = event.clientX
@@ -750,6 +754,10 @@ math = Math
 int = parseInt
 function enumerate(list) {
     return list.entries()
+}
+
+function str(value) {
+    return value.map(function(i){return String.fromCharCode(i)}).join("")
 }
 
 function rgb(r, g, b) {return `rgb(${parseInt(r*255)},${parseInt(g*255)},${parseInt(b*255)})`}
@@ -1048,15 +1056,28 @@ all_keys = `<zxcvbnm,.-asdfghjkløæ'qwertyuiopå¨1234567890+`
 for (var i = 0; i < all_keys.length; i++) {
     held_keys[all_keys[i]] = 0
 }
+held_keys['mouse left'] = false
+held_keys['mouse middle'] = false
+
 input = null
 function _input(event) {
     if (event.type == 'mousewheel') {
         if (event.deltaY > 0) {key = 'scroll down'}
         else {key = 'scroll up'}
     }
+    else if (event.type == 'pointerdown') {
+        if (event.button == 0) {key = 'left mouse down'; mouse.left=true; held_keys['mouse left']=true}
+        else if (event.button == 1) {key = 'middle mouse down'; mouse.middle=true; held_keys['mouse middle']=true}
+    }
+    else if (event.type == 'pointerup') {
+        if (event.button == 0) {key = 'left mouse up'; mouse.left=false; held_keys['mouse left']=false}
+        else if (event.button == 1) {key = 'middle mouse up'; mouse.middle=false; held_keys['mouse middle']=false}
+    }
+
     else {
         key = event.key.toLowerCase()
     }
+    // print(key)
     if (event.type == "keyup") {
         held_keys[key] = 0
         key = key + ' up'

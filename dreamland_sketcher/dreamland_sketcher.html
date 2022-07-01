@@ -95,6 +95,7 @@ using_eyedropper = False
 prev_pos = None
 
 cursor = Entity(scale=.02, color='red', alpha=.1, parent=canvas_entity, enabled=false)
+zoom_label = Button(text='100%', scale=[.15,.05], origin=[.5,.5], xy=[.5,.5])
 smoothing = false
 
 // def get_canvas_position():
@@ -231,8 +232,22 @@ def input(key):
 
     if key == 'scroll down':
         canvas_entity.scale = [e*.9 for e in canvas_entity.scale]
+        zoom_label.text = `${int(canvas_entity.scale_y*100)}%`
     if key == 'scroll up':
         canvas_entity.scale = [e*1/.9 for e in canvas_entity.scale]
+        zoom_label.text = `${int(canvas_entity.scale_y*100)}%`
+
+    if key == 'middle mouse down':
+        canvas_entity.lock_x = False
+        canvas_entity.lock_y = False
+        canvas_entity.start_offset = [mouse.x-canvas_entity.x , mouse.y-canvas_entity.y]
+        canvas_entity.dragging = True
+
+    if key == 'middle mouse up':
+        canvas_entity.lock_x = True
+        canvas_entity.lock_y = True
+        canvas_entity.dragging = False
+
 
 def paint():
     if not drawing and not using_eyedropper:
