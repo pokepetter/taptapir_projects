@@ -36,13 +36,14 @@ canvas.style.boxShadow = "3px 10px 20px #111";
 
 
 set_orientation('horizontal')
-set_scale(.9)
+# set_scale(.66)
+set_scale(1)
 canvas_scale = .8
 var w = 1080
 var h = 1920
 var h = 1080;
 var w = 1920;
-canvas_entity = Entity(color='green', scale_x=aspect_ratio, draggable=True, lock_x=True, lock_y=True)
+canvas_entity = Entity(color=color.green, scale_x=aspect_ratio, draggable=True, lock_x=True, lock_y=True)
 canvas_entity.el.id = 'canvas_entity'
 canvas_entity.model.appendChild(canvas)
 canvas_entity.origin = [0,0]
@@ -94,8 +95,8 @@ drawing = False
 using_eyedropper = False
 prev_pos = None
 
-cursor = Entity(scale=.02, color='red', alpha=.1, parent=canvas_entity, enabled=false)
-zoom_label = Button(text='100%', scale=[.15,.05], origin=[.5,.5], xy=[.5,.5])
+cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enabled=false)
+zoom_label = Button(text='100%', scale=[.15,.05], origin=[.5,.5], xy=[.5,.5], color=hsv(0,0,.1), text_color=color.gray)
 smoothing = false
 
 // def get_canvas_position():
@@ -111,6 +112,9 @@ start_position = null
 snap_to_hex = false
 
 canvas_entity.on_click = def():
+    if not held_keys['shift']:
+        prev_pos = None
+
     if not using_painterly_brush:
         for j in range(brush_tips.length):
             brush_canvas = brush_canvases[j]
@@ -179,8 +183,10 @@ using_painterly_brush = True
 prev_brush_tip = -1
 
 opacity_keys = '|1234567890'.split('')
+target_zoom = canvas_entity.scale
 
 def input(key):
+    # print(key)
     for i, e in enumerate(opacity_keys):
         if key == e:
             current_color[3] = int(255/10 * i)
@@ -212,18 +218,7 @@ def input(key):
 
     if key == 'r':
         current_color = [255, 0, 0, 255]
-    if key == 'p':
-        set_brush(painterly_brush_tips)
-        brush_size = [178, 400]
-        using_painterly_brush = True
-        SPACING = .5
-        draw_on_click = False
-    if key == 'b':
-        set_brush(round_brush_tips)
-        brush_size = [128, 128]
-        SPACING = .1
-        draw_on_click = True
-        using_painterly_brush = False
+
 
     if key == 's':
         smoothing = True
@@ -231,22 +226,26 @@ def input(key):
         smoothing = False
 
     if key == 'scroll down':
-        canvas_entity.scale = [e*.9 for e in canvas_entity.scale]
-        zoom_label.text = `${int(canvas_entity.scale_y*100)}%`
+        target_zoom = [e*.9 for e in target_zoom]
+        zoom_label.text = `${int(target_zoom[1]*100)}%`
     if key == 'scroll up':
-        canvas_entity.scale = [e*1/.9 for e in canvas_entity.scale]
-        zoom_label.text = `${int(canvas_entity.scale_y*100)}%`
+        target_zoom = [e*1/.9 for e in target_zoom]
+        zoom_label.text = `${int(target_zoom[1]*100)}%`
 
-    if key == 'middle mouse down':
+    if key == 'middle mouse down' or key == 'space':
         canvas_entity.lock_x = False
         canvas_entity.lock_y = False
         canvas_entity.start_offset = [mouse.x-canvas_entity.x , mouse.y-canvas_entity.y]
         canvas_entity.dragging = True
 
-    if key == 'middle mouse up':
+    if key == 'middle mouse up' or key == 'space up':
         canvas_entity.lock_x = True
         canvas_entity.lock_y = True
         canvas_entity.dragging = False
+
+def update():
+    canvas_entity.scale_x = lerp(canvas_entity.scale[0], target_zoom[0], .2)
+    canvas_entity.scale_y = lerp(canvas_entity.scale[1], target_zoom[1], .2)
 
 
 def paint():
@@ -331,6 +330,7 @@ def paint():
 
     pixels_traveled -= steps * spacing_in_pixels
     prev_pos = [x, y]
+    # prev_pos_for_line_draw_mode = [x, y]
     # if not held_keys['shift']:
 
 canvas_entity.while_dragging = paint
@@ -341,8 +341,9 @@ def mouse_up(ev):
         record_undo()
 
     drawing = false
-    if not held_keys['shift']:
-        prev_pos = None
+    # if not held_keys['shift']:
+    #     prev_pos = None
+    #     print('reset')
 
 
 document.addEventListener("mouseup", mouse_up, false)
@@ -356,11 +357,8 @@ def distanceApprox(p1,p2):
     return 1.426776695*Math.min(0.7071067812*(Math.abs(x)+Math.abs(y)), Math.max(Math.abs(x), Math.abs(y)))
 
 
-def lerp(a, b, t):
-    return a + (b - a) * t
 
-
-color_menu = Entity(visible_self=False, position=[.465,-.451])
+color_menu = Entity(parent=camera.ui, visible_self=False, position=[.465,-.451,-1])
 color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=True, scale=.3)
 
 // def color_menu_input(key):
@@ -369,13 +367,13 @@ color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=True, sc
 // color_menu.input = color_menu_input
 
 slider_height = .075
-bg = Entity(parent=color_menu.menu, x=.15, scale=[1.05+.3, (slider_height*1.1*3)+.05], color='black', alpha=.8, roundness=.05, z=2)
+bg = Entity(parent=color_menu.menu, x=.15, scale=[1.05+.3, (slider_height*1.1*3)+.05], color=color.black, alpha=.8, roundness=.05, z=2)
 color_preview = Entity(parent=color_menu.menu, scale=slider_height*3*1.1, x=.55, origin=[-.5,0], roundness=.5)
 
 compiler.define(*slider_style, scale_y=.075, roundness=.15, draggable=True, lock_x=True, lock_y=True)
 
 hue_slider = Entity(*slider_style, parent=color_menu.menu, y=slider_height*1.1, texture='rainbow.png')
-hue_slider.indicator = Entity(parent=hue_slider, scale_x=.01, color='black')
+hue_slider.indicator = Entity(parent=hue_slider, scale_x=.01, color=color.black)
 hue_slider.on_click = def():
     _curr_color = rgb_to_hsv(current_color)
     value = (mouse.point[0]+.5) * 360
@@ -391,7 +389,7 @@ hue_slider.while_dragging = hue_slider.on_click
 
 sat_slider = Entity(*slider_style, parent=color_menu.menu, y=0)
 sat_slider.overlay = Entity(parent=sat_slider, texture='horizontal_gradient.png', y=0, z=-1, roundness=.15)
-sat_slider.indicator = Entity(parent=sat_slider, scale_x=.01, color='black')
+sat_slider.indicator = Entity(parent=sat_slider, scale_x=.01, color=color.black)
 sat_slider.on_click = def():
     _curr_color = rgb_to_hsv(current_color)
     value = (mouse.point[0]+.5)
@@ -405,7 +403,7 @@ sat_slider.on_click = def():
 sat_slider.while_dragging = sat_slider.on_click
     # print('set sat:', value, current_color)
 val_slider = Entity(*slider_style, parent=color_menu.menu, texture='horizontal_gradient.png', y=-slider_height*1.1)
-val_slider.indicator = Entity(parent=val_slider, scale_x=.01, color='black')
+val_slider.indicator = Entity(parent=val_slider, scale_x=.01, color=color.black)
 val_slider.on_click = def():
     # print('aaaaa', mouse.hovered_entity)
     color_as_hsv = rgb_to_hsv(current_color)
@@ -435,16 +433,44 @@ def set_color(value):
     val_slider.indicator.x = -.5 + color_as_hsv[2]
 
 menu_parent = Entity(parent=camera.ui, visible_self=False, name='menu_parent')
-compiler.define(*button_style, parent=menu_parent, roundness=.02, origin=[.5,.5], text_origin=[0,0], x=(.5*aspect_ratio)-.0125, scale=[.075,.075], z=-1, text_size=2)
+# Entity(parent=menu_parent, origin=[-.5,0], color=hsv(0,0,.1), x=(.5*aspect_ratio)-.125)
+# Entity(parent=menu_parent, origin=[0, .5], color=hsv(0,0,.1), y=-.5+.1, scale_x=2)
 
-increase_brush_size_button = Button(*button_style, y=.1,  text='+', on_click=def():brush_size = [e*1.5 for e in brush_size])
-decrease_brush_size_button = Button(*button_style, y=.1, x=increase_brush_size_button.x-increase_brush_size_button.scale_x, text='-', on_click=def():brush_size = [e*1/1.5 for e in brush_size])
+compiler.define(*button_style, parent=menu_parent, roundness=.02, origin=[.5,.5], text_origin=[0,0], x=(.5*aspect_ratio)-.0125, scale=[.05,.05], z=-1, text_size=1.5, color=hsv(0,0,.05), text_color=color.gray)
+right_button_x = (.5*aspect_ratio)-.0125
+left_button_x = right_button_x-.05
+
+increase_brush_size_button = Entity(*button_style, y=.1, text='+', on_click=def():brush_size = [e*1.5 for e in brush_size])
+decrease_brush_size_button = Entity(*button_style, y=.1, x=left_button_x, text='-', on_click=def():brush_size = [e*1/1.5 for e in brush_size])
+
+def change_to_painterly_brush():
+    set_brush(painterly_brush_tips)
+    brush_size = [178, 400]
+    using_painterly_brush = True
+    SPACING = .5
+    draw_on_click = False
+painterly_brush_button = Entity(*button_style, xy=[left_button_x,.05], text='paint', on_click=change_to_painterly_brush)
+painterly_brush_button.input = def input(key):
+    if key == 'p':
+        change_to_painterly_brush()
+
+def change_to_round_brush():
+    set_brush(round_brush_tips)
+    brush_size = [2, 2]
+    SPACING = .75
+    draw_on_click = True
+    using_painterly_brush = False
+    set_color(current_color)
+round_brush_button = Entity(*button_style, xy=[right_button_x,.05], text='round', on_click=change_to_round_brush)
+round_brush_button.input = def input(key):
+    if key == 'b':
+        change_to_painterly_brush()
 
 window.onfocus = def():
     using_eyedropper = False
 
 
-save_button = Button(*button_style, y=-.26, scale_x=.15, text='save')
+save_button = Button(*button_style, y=-.26, scale_x=.1, text='save')
 save_button.on_click = def save():
     dataURL = canvas.toDataURL("image")
     window.localStorage.setItem("image", dataURL)
@@ -482,7 +508,7 @@ async def paste(e):
 window.addEventListener("paste", paste)
 
 
-download_button = Button(text='download', text_size=2, scale=[.15,.05], origin=[.5,.5], x=(.5*aspect_ratio)-.0125, y=-.2)
+download_button = Button(*button_style, text='download', scale=[.1,.05], origin=[.5,.5], x=(.5*aspect_ratio)-.0125, y=-.2)
 var link = document.createElement('a');
 download_button.on_click = def download():
     link.download = "untitled.png"
@@ -490,7 +516,7 @@ download_button.on_click = def download():
     link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream")
     #
     link.click()
-    print('dowlonad')
+    print('download')
 
 #
 const undo_data = [canvas.toDataURL("image"), ]

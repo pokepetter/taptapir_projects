@@ -36,7 +36,7 @@ for (var i=0; i<all_lines.length; i++) {
     for (var j=0; j<quotes.length; j++) {
         if (quotes[j][1].length > 0) {
             strings.push(quotes[j][1])
-            print(quotes[j][1])
+            // print('TEXT_CONTENT_$', string_index, quotes[j][1])
             all_lines[i] = all_lines[i].replace(`'${quotes[j][1]}'`, `[TEXT_CONTENT_${string_index}]`)
             string_index += 1
         }

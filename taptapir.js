@@ -31,12 +31,12 @@ function set_orientation(value) {
     format = value
     if (format == 'vertical') {
         aspect_ratio = 9/16
-        scene.style.width = `${100}%`
+        // scene.style.width = `${100}%`
         // used for setting correct draggable limits
         asp_x = 1
         asp_y = aspect_ratio
-        scene.style.height = `${asp_y*100}%`
-        print('-------------', asp_y)
+        scene.style.width = `${1/asp_x*100}%`
+        scene.style.height = `${1/asp_y*100}%`
 
         if (browser_aspect_ratio >= 9/16) { // if the screen is wider than 16/9, like a pc monitor.
             game_window.style.width = `${height/(16/9)*scale}px`
@@ -49,13 +49,19 @@ function set_orientation(value) {
     }
     else {
         aspect_ratio = 16/9
-        game_window.style.height = `${width/(16/9)*scale}px`
-        game_window.style.width =  `${width*scale}px`
-        scene.style.height = `${100}%`
-        scene.style.width = `${(9/16)*100}%`
-        // used for setting correct draggable limits
         asp_x = aspect_ratio
         asp_y = 1
+        scene.style.width = `${1/asp_x*100}%`
+        scene.style.height = `${1/asp_y*100}%`
+        if (browser_aspect_ratio > aspect_ratio) { // if the screen is wider than 16/9, fit to height
+            game_window.style.height = `${height*scale}px`
+            game_window.style.width =  `${height*scale*aspect_ratio}px`
+        }
+        else {                              // if the screen is taller than 16/9, fit to width
+            game_window.style.height = `${width*scale/aspect_ratio}px`
+            game_window.style.width =  `${width*scale}px`
+        }
+
     }
 }
 set_orientation('vertical')
@@ -229,8 +235,13 @@ class Entity {
     }
     get color() {return this._color}
     set color(value) {
-        if (!value instanceof String) {
-            value = `rgba(${value[0]},${value[1]},${value[2]},${value[3]})`
+        if (!(value instanceof String)) {
+            print('set color:', value)
+            var alpha = 255
+            if (value.length == 4) {
+                alpha = value[3]
+            }
+            value = `rgba(${value[0]},${value[1]},${value[2]},${alpha})`
         }
         this.model.style.backgroundColor = value
         this._color = value
@@ -347,7 +358,14 @@ class Entity {
     }
     get text_color() {return this.model.style.color}
     set text_color(value) {
-        return this.model.style.color = value
+        if (!(value instanceof String)) {
+            var alpha = 255
+            if (value.length == 4) {
+                alpha = value[3]
+            }
+            value = `rgba(${value[0]},${value[1]},${value[2]},${alpha})`
+        }
+        this.model.style.color = value
     }
     get text_size() {return this._text_size}
     set text_size(value) {
@@ -791,6 +809,7 @@ function hsv(h, s, v) {
         case 5: r = v, g = p, b = q; break;
     }
     // return {r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255)};
+    print('adwoiadjaoijdawd', [parseInt(r*255), parseInt(g*255), parseInt(b*255)])
     return [parseInt(r*255), parseInt(g*255), parseInt(b*255)];
 }
 
@@ -817,6 +836,26 @@ function rgb_to_hsv(rgb_color) {
     }
     return [parseInt(h*360), s, v]
 }
+
+color = {}
+color.white =         hsv(0, 0, 1)
+color.smoke =         hsv(0, 0, 0.96)
+color.light_gray =    hsv(0, 0, 0.75)
+color.gray =          hsv(0, 0, 0.5)
+color.dark_gray =     hsv(0, 0, 0.25)
+color.black =         hsv(0, 0, 0)
+color.red =           hsv(0, 1, 1)
+color.orange =        hsv(30, 1, 1)
+color.yellow =        hsv(60, 1, 1)
+color.lime =          hsv(90, 1, 1)
+color.green =         hsv(120, 1, 1)
+color.turquoise =     hsv(150, 1, 1)
+color.cyan =          hsv(180, 1, 1)
+color.azure =         hsv(210, 1, 1)
+color.blue =          hsv(240, 1, 1)
+color.violet =        hsv(270, 1, 1)
+color.magenta =       hsv(300, 1, 1)
+color.pink =          hsv(330, 1, 1)
 // palette = [
 //     '#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8',
 //     '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA'
@@ -1077,14 +1116,22 @@ function _input(event) {
     else {
         key = event.key.toLowerCase()
     }
-    // print(key)
+
+    if (key == ' ') {
+        key = 'space'
+    }
+
     if (event.type == "keyup") {
         held_keys[key] = 0
         key = key + ' up'
     }
-    else {
+    else if (!held_keys[key]){
         held_keys[key] = 1
     }
+    else if (event.type == "keydown") {  // prevent key repeat
+        return
+    }
+
 
     for (var e of entities) {
         if (e.input && e.enabled) {
