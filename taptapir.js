@@ -30,11 +30,11 @@ var format = null
 function set_orientation(value) {
     format = value
     if (format == 'vertical') {
-        aspect_ratio = 9/16
+        aspect_ratio = 16/9
         // scene.style.width = `${100}%`
         // used for setting correct draggable limits
         asp_x = 1
-        asp_y = aspect_ratio
+        asp_y = 9/16
         scene.style.width = `${1/asp_x*100}%`
         scene.style.height = `${1/asp_y*100}%`
 
@@ -48,17 +48,17 @@ function set_orientation(value) {
         }
     }
     else {
-        aspect_ratio = 16/9
-        asp_x = aspect_ratio
+        aspect_ratio = 9/16
+        asp_x = 16/9
         asp_y = 1
         scene.style.width = `${1/asp_x*100}%`
         scene.style.height = `${1/asp_y*100}%`
-        if (browser_aspect_ratio > aspect_ratio) { // if the screen is wider than 16/9, fit to height
+        if (browser_aspect_ratio > 1/aspect_ratio) { // if the screen is wider than 16/9, fit to height
             game_window.style.height = `${height*scale}px`
-            game_window.style.width =  `${height*scale*aspect_ratio}px`
+            game_window.style.width =  `${height*scale/aspect_ratio}px`
         }
         else {                              // if the screen is taller than 16/9, fit to width
-            game_window.style.height = `${width*scale/aspect_ratio}px`
+            game_window.style.height = `${width*scale*aspect_ratio}px`
             game_window.style.width =  `${width*scale}px`
         }
 
@@ -235,14 +235,14 @@ class Entity {
     }
     get color() {return this._color}
     set color(value) {
-        if (!(value instanceof String)) {
-            print('set color:', value)
-            var alpha = 255
-            if (value.length == 4) {
-                alpha = value[3]
-            }
-            value = `rgba(${value[0]},${value[1]},${value[2]},${alpha})`
-        }
+        // if (!(value instanceof String)) {
+        //     // print('set color:', value)
+        //     var alpha = 255
+        //     if (value.length == 4) {
+        //         alpha = value[3]
+        //     }
+        //     value = `rgba(${value[0]},${value[1]},${value[2]},${alpha})`
+        // }
         this.model.style.backgroundColor = value
         this._color = value
     }
@@ -358,13 +358,13 @@ class Entity {
     }
     get text_color() {return this.model.style.color}
     set text_color(value) {
-        if (!(value instanceof String)) {
-            var alpha = 255
-            if (value.length == 4) {
-                alpha = value[3]
-            }
-            value = `rgba(${value[0]},${value[1]},${value[2]},${alpha})`
-        }
+        // if (!(value instanceof String)) {
+        //     var alpha = 255
+        //     if (value.length == 4) {
+        //         alpha = value[3]
+        //     }
+        //     value = `rgba(${value[0]},${value[1]},${value[2]},${alpha})`
+        // }
         this.model.style.color = value
     }
     get text_size() {return this._text_size}
@@ -473,6 +473,9 @@ function random_int(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function random_choice(list) {
+    return list[random_int(0, len(list)-1)]
 }
 
 function Button(options) {
@@ -809,7 +812,7 @@ function hsv(h, s, v) {
         case 5: r = v, g = p, b = q; break;
     }
     // return {r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255)};
-    print('adwoiadjaoijdawd', [parseInt(r*255), parseInt(g*255), parseInt(b*255)])
+    // print('adwoiadjaoijdawd', [parseInt(r*255), parseInt(g*255), parseInt(b*255)])
     return [parseInt(r*255), parseInt(g*255), parseInt(b*255)];
 }
 
@@ -1034,14 +1037,14 @@ class Camera{
           scene.style.left = `${50+(-value*100/this.fov)}%`
       }
       else {
-          scene.style.left = `${50+(-value*100/aspect_ratio/this.fov)}%`
+          scene.style.left = `${50+(-value*100/asp_x/this.fov)}%`
       }
   }
   get y() {return this._y}
   set y(value) {
       this._y = value
       if (format == 'vertical') {
-          scene.style.top = `${50+(value*100*aspect_ratio/this.fov)}%`
+          scene.style.top = `${50+(value*100*asp_y/this.fov)}%`
       }
       else {
           scene.style.top = `${50+(value*100/this.fov)}%`

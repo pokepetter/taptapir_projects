@@ -1,0 +1,52 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>taptapir</title><link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir.js"></script><script type='text/pokescript'>
+
+set_window_color('rgb(49 72 60)')
+
+num_mines = 3
+
+slider = Entity(y=-.65, origin=[0,-.5], color='#888', scale=[.95,.1], shadow=True, roundness=.2)
+fill =   Entity(parent=slider, origin=[-.5,-.5], x=-.5, color='green', shadow=True, roundness=.2, scale_x=.2)
+slider.on_click = def():
+    num_mines = floor((mouse.point[0]+.5) * 25) + 1
+    fill.scale_x = num_mines / 25
+    print('num_mines:', num_mines)
+
+
+squares = []
+for y in range(5):
+    for x in range(5):
+        let e = Button(scale=.2, xy=[(x/5)-.5, (y/5)-.5], origin=[-.5,-.5], text='?', color='#222', text_color='#ccc', text_size=6, value='💎')
+        squares.append(e)
+        e.on_click = def():
+            e.text = e.value
+            if e.value == '💀':
+                print('lose')
+                reveal_all()
+            else:
+                print('win!')
+
+def randomize():
+    for e in squares:
+        e.value = '💎'
+        e.text = '?'
+        e.color = '#222'
+        e.text_color = '#ccc'
+
+    squares_copy = [e for e in squares]
+    for i in range(num_mines):
+        n = random_int(0, len(squares_copy)-1)
+        target = squares_copy[n]
+        print('------', n, target, squares_copy)
+        target.value = '💀'
+        # squares_copy.remove(e)
+        squares_copy = [e for e in squares_copy if e != target]
+
+def reveal_all():
+    for e in squares:
+        e.text = e.value
+
+randomize()
+reveal_button = Button(y=-.7, text='reveal_all', on_click=reveal_all)
+
+
+</script><script src="../pokescript_compiler.js"></script></html>
