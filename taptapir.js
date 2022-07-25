@@ -305,9 +305,10 @@ class Entity {
         this.el.style.transform = `translate(-50%, -50%) rotate(${value}deg)`
     }
 
-    get texture() {return this.model.style.backgroundImage}
+    get texture() {return this._texture}
     set texture(value) {
-        this.model.style.backgroundImage = `url("${ASSETS_FOLDER}${value}")`
+        this._texture = value
+        this.model.style.backgroundImage = `url("${ASSETS_FOLDER}${value}?${random_int(0,999)}")`
         this.visible_self = false
         // var loaded = 0
         // var img = new Image();
