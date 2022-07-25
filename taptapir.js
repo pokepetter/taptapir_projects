@@ -424,7 +424,7 @@ class Entity {
     }
 
     animate(variable_name, target_value, duration=.1) {
-        // print('animate:', this, variable_name)
+        // print('animate:', variable_name, target_value)
         if (!this.enabled) {return false}
         let entity = this
         // stop ongoing animation of this varibale
@@ -435,16 +435,18 @@ class Entity {
             }
         }
         entity.setTimeout_calls[variable_name] = []
+        let start_value = entity[variable_name]
 
-        for (let i=0; i<duration*60; i+=1) {
+        for (let i=0; i<=duration*60; i+=1) {
             entity.setTimeout_calls[variable_name].push(
                 setTimeout(
-                    function () {
+                    function anon() {
                         if (!entity.enabled) {
-                            return false};
-                        entity[variable_name] = lerp(entity[variable_name], target_value, i/duration/60);
+                            return false}
+                        var t = i / duration / 60
+                        entity[variable_name] = lerp(start_value, target_value, t)
                     },
-                    1000*i*1/60
+                    1000*i/60
                 )
             )
         }
@@ -463,8 +465,8 @@ class Entity {
 
 
 function lerp(a, b, t) {
-    // return (1-t)*a+t*b
-    return a + (b - a) * t
+    return ((1-t)*a) + (t*b)
+    // return a + (b - a) * t
     // return a * (1-t)+b * t
 }
 function clamp(num, min, max) {
@@ -513,16 +515,16 @@ function Canvas(options) {
 }
 
 
-function StateHandler(states, fade=true) {
-    var that = Object.create(StateHandler.prototype)
-    that.states = states
-    that.fade = fade
-
-    that.overlay = new Entity({name:'overlay', color:'black', alpha:0, z:-1, scale:[1,aspect_ratio]})
-
-    that['state'] = Object.keys(states)[0]
-    return that
-}
+// function StateHandler(states, fade=true) {
+//     var that = Object.create(StateHandler.prototype)
+//     that.states = states
+//     that.fade = fade
+//
+//     that.overlay = new Entity({name:'overlay', color:'black', alpha:0, z:-1, scale:[1,aspect_ratio]})
+//
+//     that['state'] = Object.keys(states)[0]
+//     return that
+// }
 
 function Scene(name='', options=false) {
     settings = {visible_self:false, on_enter:null}
@@ -536,9 +538,15 @@ function Scene(name='', options=false) {
     state_handler.states[name] = _entity
     return _entity
 }
+class StateHandler {
+    constructor (states, fade) {
+        this.overlay = new Entity({name:'overlay', color:'black', alpha:0, z:-1, scale:[1,aspect_ratio]})
+        this.states = states
+        this.fade = fade
+        this.state = Object.keys(states)[0]
+    }
 
-StateHandler.prototype =  {
-    get state() {return this._state},
+    get state() {return this._state}
     set state(value) {
         if (this.fade && (value != this._state)) {
             this.overlay.animate('alpha', 1, .1)
@@ -550,7 +558,7 @@ StateHandler.prototype =  {
         else {
             this.hard_state = value
         }
-    },
+    }
     set hard_state(value) {     // set the state without fading
         // print('set state to:', value)
         for (const [key, entity] of Object.entries(this.states)) {
@@ -568,12 +576,16 @@ StateHandler.prototype =  {
     }
 }
 
-state_handler = StateHandler({
+state_handler = new StateHandler({
     // main_menu : b,
     // scene_2 : scene_2
-})
+}, true)
 
-function goto_scene(scene_name) {
+function goto_scene(scene_name, fade=True) {
+    if (!fade) {
+        state_handler.hard_state = scene_name
+        return
+    }
     state_handler.state = scene_name
 
 

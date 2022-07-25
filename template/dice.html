@@ -25,12 +25,13 @@ slider.on_click = def():
 
 bet_text = Button(parent=gem_hunt_start_bet_scene, scale=[.3*1.5,.075*1.5], text_origin=[-.5,0], y=-.2, shadow=True, text='  💎 1000', text_size=4)
 
-start_button = Button(parent=gem_hunt_start_bet_scene, text='START', scale_x=.4, y=-.5, shadow=True)
+start_button = Button(parent=gem_hunt_start_bet_scene, text='START', scale_x=.4, y=-.5, shadow=True, color='white')
 start_button.on_click = def():
     print('start')
     goto_scene(gem_hunt_play_scene)
 
 // bet_text = Text(text=`thisi s \nsome text`, text_origin=[0,0], y=-.1, text_color=color.white)
+impact = Entity(texture='impact.gif', scale=.3, z=-100, enabled=False)
 
 gem_hunt_play_scene = Scene('taptapir_stars')
 
@@ -46,6 +47,9 @@ for y in range(5):
                 reveal_all()
             else:
                 print('win!')
+                impact.xy = [(x/5)-.4, (y/5)-.4]
+                impact.texture = impact.texture
+                impact.enabled = True
 
 def randomize():
     for e in squares:
@@ -67,7 +71,7 @@ def reveal_all():
     for e in squares:
         e.text = e.value
 
-goto_scene(gem_hunt_start_bet_scene)
+goto_scene(gem_hunt_start_bet_scene, fade=false)
 
 randomize()
 reveal_button = Button(y=-.75, text='cash out', scale=[.3,.1], x=.32, color='yellow', shadow=True, on_click=reveal_all)
