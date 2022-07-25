@@ -10,7 +10,7 @@ slider.on_click = def():
     num_mines = floor((mouse.point[0]+.5) * 25) + 1
     fill.scale_x = num_mines / 25
     print('num_mines:', num_mines)
-
+impact = Entity(texture='impact.gif', scale=.3, z=-100, enabled=False)
 
 squares = []
 for y in range(5):
@@ -24,6 +24,11 @@ for y in range(5):
                 reveal_all()
             else:
                 print('win!')
+                impact.xy = [(x/5)-.4, (y/5)-.4]
+                impact.texture = impact.texture
+                impact.enabled = True
+
+
 
 def randomize():
     for e in squares:
