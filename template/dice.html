@@ -1,21 +1,43 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>taptapir</title><link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir.js"></script><script type='text/pokescript'>
 
 set_window_color('rgb(49 72 60)')
+// set_scale(1)
+wallet = Button(scale=[.3,.075], origin=[-.5,.5], text_origin=[-.5,0], position=[-.5,.5*aspect_ratio], shadow=True, text=' 💎 99  ')
+wallet.fit_to_text()
+
+gem_hunt_start_bet_scene = Scene('taptapir_stars')
 
 num_mines = 3
 
-slider = Entity(y=-.65, origin=[0,-.5], color='#888', scale=[.95,.1], shadow=True, roundness=.2)
+skull_icon= Button(parent=gem_hunt_start_bet_scene, scale=[.1,.075], origin=[-.5,0], text=`💀`, text_size=3, color=color.clear, text_color='white', position=[-.16, .1, -1])
+chance_text = Button(parent=gem_hunt_start_bet_scene, scale=[.15,.075], text=`${num_mines}/25`, text_size=3, y=.1, z=-2)
+// Text(text=`multiplier:    x1`)
+
+slider = Entity(parent=gem_hunt_start_bet_scene, y=-.03, origin=[0,-.5], color='#333', scale=[.95,.1], shadow=True, roundness=.2)
 fill =   Entity(parent=slider, origin=[-.5,-.5], x=-.5, color='green', shadow=True, roundness=.2, scale_x=.2)
 slider.on_click = def():
     num_mines = floor((mouse.point[0]+.5) * 25) + 1
     fill.scale_x = num_mines / 25
-    print('num_mines:', num_mines)
+    // print('num_mines:', num_mines)
+    chance_text.text = `${num_mines}/25`
+    // print('aa', color.green, color.red, lerp(color.green, color.red, num_mines/25))
+    fill.color = lerp(color.green, color.red, num_mines/25)
 
+bet_text = Button(parent=gem_hunt_start_bet_scene, scale=[.3*1.5,.075*1.5], text_origin=[-.5,0], y=-.2, shadow=True, text='  💎 1000', text_size=4)
+
+start_button = Button(parent=gem_hunt_start_bet_scene, text='START', scale_x=.4, y=-.5, shadow=True)
+start_button.on_click = def():
+    print('start')
+    goto_scene(gem_hunt_play_scene)
+
+// bet_text = Text(text=`thisi s \nsome text`, text_origin=[0,0], y=-.1, text_color=color.white)
+
+gem_hunt_play_scene = Scene('taptapir_stars')
 
 squares = []
 for y in range(5):
     for x in range(5):
-        let e = Button(scale=.2, xy=[(x/5)-.5, (y/5)-.5], origin=[-.5,-.5], text='?', color='#222', text_color='#ccc', text_size=6, value='💎')
+        let e = Button(parent=gem_hunt_play_scene, scale=.2, xy=[(x/5)-.5, (y/5)-.5], origin=[-.5,-.5], text='?', color='#222', text_color='#fff', text_size=6, value='💎', alpha=.95)
         squares.append(e)
         e.on_click = def():
             e.text = e.value
@@ -45,8 +67,11 @@ def reveal_all():
     for e in squares:
         e.text = e.value
 
+goto_scene(gem_hunt_start_bet_scene)
+
 randomize()
-reveal_button = Button(y=-.7, text='reveal_all', on_click=reveal_all)
+reveal_button = Button(y=-.75, text='cash out', scale=[.3,.1], x=.32, color='yellow', shadow=True, on_click=reveal_all)
+// reveal_button.fit_to_text()
 
 
 </script><script src="../pokescript_compiler.js"></script></html>

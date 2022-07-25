@@ -859,6 +859,7 @@ color.blue =          hsv(240, 1, 1)
 color.violet =        hsv(270, 1, 1)
 color.magenta =       hsv(300, 1, 1)
 color.pink =          hsv(330, 1, 1)
+color.clear =         '#00000000'
 // palette = [
 //     '#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8',
 //     '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA'
@@ -907,8 +908,20 @@ function Text(options) {
     if (!('scale' in options && !'scale_x' in options)) {
         options['scale_x'] = .8
     }
+    if ('background' in options && options['background'] && !'color' in options) {
+        if (options['background'] == true) {
+            options['color'] = '#ffffff00'
+            options['alpha'] = .9
+        }
+        else {
+            options['color'] = options['background']
+        }
+        if (!'shadow' in options) {
+            options['shadow'] = 1
+        }
+    }
 
-    defaults = {'roundness':.05, 'shadow':1, 'alpha':.9, 'padding':.75, 'z':-1}
+    defaults = {'roundness':.05, 'padding':.75, 'z':-1, 'color':color.clear}
     for (const [key, value] of Object.entries(defaults)) {
         if (!(key in options)) {
             options[key] = value
