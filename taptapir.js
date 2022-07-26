@@ -481,6 +481,84 @@ function random_choice(list) {
     return list[random_int(0, len(list)-1)]
 }
 
+
+class Camera{
+  constructor(options=null) {
+      this.el = document.createElement('entity')
+      game_window.appendChild(this.el)
+      this.el.className = 'entity'
+      // this.el.style.height = scene.style.height
+      // this.el.style.width = scene.style.width
+      this.el.id = 'camera'
+      this.children = []
+      this._x = 0
+      this._y = 0
+      this.fov = 1
+  }
+
+  get x() {return this._x}
+  set x(value) {
+      this._x = value
+      if (format == 'vertical') {
+          scene.style.left = `${50+(-value*100/this.fov)}%`
+      }
+      else {
+          scene.style.left = `${50+(-value*100/asp_x/this.fov)}%`
+      }
+  }
+  get y() {return this._y}
+  set y(value) {
+      this._y = value
+      if (format == 'vertical') {
+          scene.style.top = `${50+(value*100*asp_y/this.fov)}%`
+      }
+      else {
+          scene.style.top = `${50+(value*100/this.fov)}%`
+      }
+  }
+  // get z() {return this._z}
+  // set z(value) {
+  //     scene.style.zIndex = -value
+  //     this._z = value
+  // }
+  get xy() {return [this._x, this._y]}
+  set xy(value) {
+      this.x = value[0]
+      this.y = value[1]
+  }
+  get xyz() {return [this._x, this._y, this._z]}
+  set xyz(value) {
+      this.x = value[0]
+      this.y = value[1]
+      // this.z = value[2]
+  }
+  get position() {return this.xyz}
+  set position(value) {
+      if (value.length == 2) {this.xy = value}
+      if (value.length == 3) {this.xy = [value[0], value[1]]}
+  }
+  get rotation() {return this._rotation}
+  set rotation(value) {
+      this._rotation = value
+      scene.style.transform = `rotate(${-value}deg)`
+  }
+  get fov() {return self._fov}
+  set fov(value) {
+      self._fov = value
+      scene.style.width = `${1/value*100/asp_x}%`
+
+      if (format == 'vertical') {
+          scene.style.height = `${1/value*100/asp_x*asp_y}%`
+      }
+      else {
+          scene.style.height = `${1/value*100/asp_y}%`
+      }
+
+  }
+}
+camera = new Camera({})
+camera.ui = new Entity({name:'ui', scale:[1,1], visible_self:false, z:-100})
+
 function Button(options) {
     if (!('parent' in options)) {
         options['parent'] = camera.ui
@@ -540,7 +618,7 @@ function Scene(name='', options=false) {
 }
 class StateHandler {
     constructor (states, fade) {
-        this.overlay = new Entity({name:'overlay', color:'black', alpha:0, z:-1, scale:[1,aspect_ratio]})
+        this.overlay = new Entity({parent:camera, name:'overlay', color:'black', alpha:0, z:-1, scale:[1,aspect_ratio]})
         this.states = states
         this.fade = fade
         this.state = Object.keys(states)[0]
@@ -1041,83 +1119,6 @@ function _step(timestamp) {
 }
 window.requestAnimationFrame(_step)
 
-
-class Camera{
-  constructor(options=null) {
-      this.el = document.createElement('entity')
-      game_window.appendChild(this.el)
-      this.el.className = 'entity'
-      // this.el.style.height = scene.style.height
-      // this.el.style.width = scene.style.width
-      this.el.id = 'camera'
-      this.children = []
-      this._x = 0
-      this._y = 0
-      this.fov = 1
-  }
-
-  get x() {return this._x}
-  set x(value) {
-      this._x = value
-      if (format == 'vertical') {
-          scene.style.left = `${50+(-value*100/this.fov)}%`
-      }
-      else {
-          scene.style.left = `${50+(-value*100/asp_x/this.fov)}%`
-      }
-  }
-  get y() {return this._y}
-  set y(value) {
-      this._y = value
-      if (format == 'vertical') {
-          scene.style.top = `${50+(value*100*asp_y/this.fov)}%`
-      }
-      else {
-          scene.style.top = `${50+(value*100/this.fov)}%`
-      }
-  }
-  // get z() {return this._z}
-  // set z(value) {
-  //     scene.style.zIndex = -value
-  //     this._z = value
-  // }
-  get xy() {return [this._x, this._y]}
-  set xy(value) {
-      this.x = value[0]
-      this.y = value[1]
-  }
-  get xyz() {return [this._x, this._y, this._z]}
-  set xyz(value) {
-      this.x = value[0]
-      this.y = value[1]
-      // this.z = value[2]
-  }
-  get position() {return this.xyz}
-  set position(value) {
-      if (value.length == 2) {this.xy = value}
-      if (value.length == 3) {this.xy = [value[0], value[1]]}
-  }
-  get rotation() {return this._rotation}
-  set rotation(value) {
-      this._rotation = value
-      scene.style.transform = `rotate(${-value}deg)`
-  }
-  get fov() {return self._fov}
-  set fov(value) {
-      self._fov = value
-      scene.style.width = `${1/value*100/asp_x}%`
-
-      if (format == 'vertical') {
-          scene.style.height = `${1/value*100/asp_x*asp_y}%`
-      }
-      else {
-          scene.style.height = `${1/value*100/asp_y}%`
-      }
-
-  }
-}
-camera = new Camera({})
-camera.ui = new Entity({name:'ui', scale:[1,1], visible_self:false, z:-100})
 
 held_keys = {}
 all_keys = `<zxcvbnm,.-asdfghjkløæ'qwertyuiopå¨1234567890+`
