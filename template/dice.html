@@ -17,14 +17,10 @@ wallet.set_gems = def (value):
 wallet.set_gems(99)
 
 gem_hunt_start_bet_scene = Scene('market_crop')
-# gem_hunt_start_bet_scene.on_enter = def ():
-#     skulls_label.y = .35
 
 num_mines = 3
 multiplier = 1
 current_bet = 1
-
-
 
 
 # slider = Entity(parent=gem_hunt_start_bet_scene, y=.25-.03, origin=[0,-.5], color='#333', scale=[.95,.1], shadow=True, roundness=.2)
@@ -57,18 +53,25 @@ skulls_label = Entity(visible_self=False, y=slider.y-.1)
 # num_mines_text = Button(parent=skulls_label, scale=[.2,.1], text=`${num_mines}/25`, text_size=3, z=-2)
 
 # bet_text = Button(parent=gem_hunt_start_bet_scene, scale=[.3*1.5,.075*1.5], text_origin=[-.5,0], y=-.4, shadow=True, text=`  💎 ${current_bet}`, text_size=4)
+bet_buttons = []
 for i, e in enumerate([1, 5, 10, 20, 50, 100, 200, 500]):
-    let b = Button(parent=gem_hunt_start_bet_scene, scale=[.2,.2], x=-.325+((i%4)*.22), y=(-int(i/4)*.22)-.15, text=`💎${e}`, color='white', shadow=True)
+    let b = Button(parent=gem_hunt_start_bet_scene, scale=[.2,.2], x=-.325+((i%4)*.22), y=(-int(i/4)*.22)-.15, text=`💎${e}`, color='white', shadow=True, value=e)
+    bet_buttons.append(b)
     b.on_click = def ():
-        current_bet = e
+        current_bet = b.value
         start_game()
 
-    if wallet.gems < e:
-        b.color = 'black'
-        b.alpha = .5
-        b.text_color = 'darkred'
-        b.shadow = False
-        b.on_click = False
+gem_hunt_start_bet_scene.on_enter = def ():
+    print('ON SCENE ENTIER')
+    for b in bet_buttons:
+        print(b.value)
+        disabled = wallet.gems < b.value ? 1 : 0
+        print('---', disabled)
+        b.color = ['white', 'black'][disabled]
+        b.alpha = [1, .5][disabled]
+        b.text_color = ['black', 'darkred'][disabled]
+        b.shadow = disabled
+        b.ignore_collision = disabled
 
 impact = Entity(texture='impact.gif', scale=.3, z=-100, enabled=False)
 
@@ -92,7 +95,9 @@ for y in range(5):
                 amount_won += int(current_bet * multiplier)
                 cash_out_button.enabled = True
                 back_button.enabled = False
+                current_win_label.enabled = True
                 current_win_label.render()
+                e.ignore_collision = True
 
 amount_won = 0
 def start_game():
@@ -103,6 +108,7 @@ def start_game():
         e.text = '?'
         e.color = '#222'
         e.text_color = '#ccc'
+        e.ignore_collision = False
 
     squares_copy = [e for e in squares]
     for i in range(num_mines):
@@ -133,22 +139,23 @@ current_win_label.render = def():
 
 
 
-cash_out_button = Button(parent=gem_hunt_play_scene, y=-.6, z=0, text='cash out', scale=[.5,.25], origin=[0,.5], color='yellow', shadow=True, enabled=False, on_click=win)
+cash_out_button = Button(parent=gem_hunt_play_scene, y=-.6, z=0, text='cash out', scale=[.5,.25], origin=[0,.5], color='yellow', shadow=True, enabled=False, on_click=cash_out)
 end_screen = Entity(parent=gem_hunt_play_scene, visible_self=False, enabled=False)
 overlay = Entity(parent=end_screen, color='black', alpha=.75, scale=[1,1*aspect_ratio], roundness=.05, on_click=True, z=-3)
 lose_text = Text(parent=end_screen, text='YOU LOST :(', text_origin=[0,0], text_size=5, z=-4)
 
-def reveal_all()
+def reveal_all():
     bet_text_retry.text = `  💎 ${current_bet} `
     bet_text_retry.fit_to_text()
     has_enough_for_retry = wallet.gems > current_bet
+    print('has_enough_for_retry', has_enough_for_retry)
     # has_enough_for_retry = True
     retry_button.enabled = has_enough_for_retry
     bet_text_retry.enabled = has_enough_for_retry
     for e in squares:
         e.text = e.value
 
-def win():
+def cash_out():
     reveal_all()
     end_screen.enabled = True
     # lose_text.enabled = False
@@ -161,21 +168,21 @@ def win():
 
 
 def lose():
-    reveal_all()
     cash_out_button.enabled = False
     end_screen.enabled = True
 
     lose_text.text = `YOU LOST :(`
-    lose_text.text_color = 'darkred'
+    lose_text.text_color = 'red'
 
     amount_won = current_bet
     current_win_label.enabled = False
+    reveal_all()
     # current_win_label.render()
     # gem_hunt_start_bet_scene.enabled=triUTCemLF3ne
 
 retry_button = Button(parent=end_screen, y=-.35, z=-4, text='🗘', scale=[.4,.25], color='#738', shadow=True, text_size=4, text_color='white', on_click=start_game)
 bet_text_retry = Button(parent=end_screen, scale=[.2,.075], text_origin=[-.5,0], y=retry_button.y+.12, z=-4, text=`  💎 ${current_bet}`, text_size=2.5, padding=.3)
-back_button = Button(parent=end_screen, y=-.35, x=-.45, z=-4, origin=[-.5,0], text='<<', scale=[.2,.25], color='#287', shadow=True, text_color='white')
+back_button = Button(parent=end_screen, y=-.35, x=-.45, z=-4, origin=[-.5,0], text='back', scale=[.2,.25], color='#287', shadow=True, text_color='white')
 back_button.on_click = def():
     goto_scene(gem_hunt_start_bet_scene)
     end_screen.enabled = False
