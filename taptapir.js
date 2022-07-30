@@ -1196,6 +1196,11 @@ hidden_fullscreen_button.on_click = function() {
     hidden_fullscreen_button.last_pressed_timestamp = time
 }
 
+// function fullscreenchange() {
+//     set_orientation(orientation)
+// }
+// document.addEventListener('fullscreenchange', fullscreenchange)
+
 
 // 3D
 engine_3d = new Object();
