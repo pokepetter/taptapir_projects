@@ -1095,6 +1095,7 @@ function save_system_load(name) {return localStorage.getItem(name)}
 function save_system_clear() {localStorage.clear()}
 
 savesystem = {save:save_system_save, load:save_system_load, clear:save_system_clear}
+time = 0
 delta_time = 1/60
 let start, previousTimeStamp;
 update = null
@@ -1113,6 +1114,7 @@ function _step(timestamp) {
         }
     }
 
+    time = timestamp / 1000
     delta_time = (timestamp - previousTimeStamp) / 1000
     previousTimeStamp = timestamp
     window.requestAnimationFrame(_step);
@@ -1176,6 +1178,23 @@ document.addEventListener('keydown', _input)
 document.addEventListener('keyup', _input)
 document.addEventListener('mousewheel', _input); // modern desktop
 
+
+// triple click in the lower right to enter fullscreen
+hidden_fullscreen_button = new Button({parent:camera.ui, xy:[.5,-.5*aspect_ratio], roundness:.5, color:'red', last_pressed_timestamp:-1, sequential_taps:0})
+hidden_fullscreen_button.on_click = function() {
+    // print(time - hidden_fullscreen_button.last_pressed_timestamp)
+    if (time - hidden_fullscreen_button.last_pressed_timestamp < .25) {
+        hidden_fullscreen_button.sequential_taps += 1
+        if (hidden_fullscreen_button.sequential_taps >= 3) {
+            set_fullscreen(!fullscreen)
+            hidden_fullscreen_button.sequential_taps = 0
+        }
+    }
+    else {  //reset
+        hidden_fullscreen_button.sequential_taps = 1
+    }
+    hidden_fullscreen_button.last_pressed_timestamp = time
+}
 
 
 // 3D
