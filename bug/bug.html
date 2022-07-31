@@ -26,12 +26,14 @@
 
 set_window_color('rgb(49 72 60)')
 
-// e = Entity(scale=.2, color='red', shadow=1)
-// def update():
-//     e.x += (held_keys['d'] - held_keys['a']) *.01
+e = Entity(scale=.2, color='red', shadow=1)
+def update():
+    camera.x += (held_keys['d'] - held_keys['a']) *.01
+    camera.y += (held_keys['w'] - held_keys['s']) *.01
 
 
 e = Entity(scale=.2, color=hsv(30,1,1), shadow=1)
+e = Entity(scale=.1, color='red', shadow=1, xy=[.5,.5*aspect_ratio])
 
 // my_dict = {'name': 'Petter', 'age': '5'}
 // print(my_dict.name)

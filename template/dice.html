@@ -65,9 +65,7 @@ for i, e in enumerate([1, 5, 10, 20, 50, 100, 200, 500]):
 gem_hunt_start_bet_scene.on_enter = def ():
     print('ON SCENE ENTIER')
     for b in bet_buttons:
-        print(b.value)
         disabled = wallet.gems < b.value ? 1 : 0
-        print('---', disabled)
         b.color = ['white', 'black'][disabled]
         b.alpha = [1, .5][disabled]
         b.text_color = ['black', 'darkred'][disabled]

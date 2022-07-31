@@ -27,6 +27,10 @@ var height = browser_size.height;
 browser_aspect_ratio = width / height
 // print('browser aspect_ratio:', browser_aspect_ratio)
 var format = null
+var is_mobile = 'ontouchstart' in document.documentElement
+var fullscreen = false
+
+
 function set_orientation(value) {
     format = value
     if (format == 'vertical') {
@@ -36,9 +40,12 @@ function set_orientation(value) {
         asp_x = 1
         asp_y = 9/16
         scene.style.width = `${1/asp_x*100}%`
-        scene.style.height = `${1/asp_y*100}%`
+        // if (!is_mobile && !fullscreen) {
+        //     // scene.style.height = `${1/asp_y*100}%`
+        // }
 
         if (browser_aspect_ratio >= 9/16) { // if the screen is wider than 16/9, like a pc monitor.
+            print('--------------')
             game_window.style.width = `${height/(16/9)*scale}px`
             game_window.style.height =  `${height*scale}px`
         }
@@ -48,6 +55,7 @@ function set_orientation(value) {
         }
     }
     else {
+        // print('---hhhhhhhhhhhhhhhhh-')
         aspect_ratio = 9/16
         asp_x = 16/9
         asp_y = 1
@@ -84,7 +92,6 @@ function set_scale(value) {
     set_orientation(format)
 }
 
-fullscreen = false
 function set_fullscreen(value) {
     fullscreen = value
     if (value) {
@@ -557,7 +564,7 @@ class Camera{
   }
 }
 camera = new Camera({})
-camera.ui = new Entity({name:'ui', scale:[1,1], visible_self:false, z:-100})
+camera.ui = new Entity({parent:camera, name:'ui', scale:[1,1/aspect_ratio], visible_self:false, z:-100})
 
 function Button(options) {
     if (!('parent' in options)) {
@@ -1197,7 +1204,7 @@ hidden_fullscreen_button.on_click = function() {
 }
 
 function fullscreenchange() {
-    set_zoom(1)
+    set_scale(1)
 }
 document.addEventListener('fullscreenchange', fullscreenchange)
 

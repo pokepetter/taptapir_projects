@@ -258,5 +258,5 @@ for (var i=0; i<strings.length; i++) {
     compiled_code = compiled_code.replace(`[TEXT_CONTENT_${i}]`, `'${strings[i]}'`)
 }
 
-print('COMPILED CODE:', compiled_code)
+// print('COMPILED CODE:', compiled_code)
 eval(compiled_code)
