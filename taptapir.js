@@ -21,10 +21,7 @@ scene.id = 'scene'
 scene.style.backgroundColor = 'transparent'
 game_window.appendChild(scene)
 
-browser_size = game_window.getBoundingClientRect();
-var width = browser_size.width;
-var height = browser_size.height;
-browser_aspect_ratio = width / height
+
 // print('browser aspect_ratio:', browser_aspect_ratio)
 var format = null
 var is_mobile = 'ontouchstart' in document.documentElement
@@ -32,6 +29,12 @@ var fullscreen = false
 
 
 function set_orientation(value) {
+    browser_size = game_window.getBoundingClientRect();
+    var width = browser_size.width;
+    var height = browser_size.height;
+    browser_aspect_ratio = width / height
+    print(width, height)
+
     format = value
     if (format == 'vertical') {
         aspect_ratio = 16/9
