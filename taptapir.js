@@ -250,7 +250,6 @@ class Entity {
     get color() {return this._color}
     set color(value) {
         this._color = value
-        print(value, typeof value)
         if (!(typeof value == "string")) {
             // print('set color:', value)
             var alpha = 255
