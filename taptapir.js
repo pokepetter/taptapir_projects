@@ -18,7 +18,7 @@ if (!game_window) {
 scene = document.createElement('entity')
 scene.className = 'entity'
 scene.id = 'scene'
-scene.style.backgroundColor = 'transparent'
+// scene.style.backgroundColor = '#ff000022'
 game_window.appendChild(scene)
 
 
@@ -26,52 +26,64 @@ game_window.appendChild(scene)
 var format = null
 var is_mobile = 'ontouchstart' in document.documentElement
 var fullscreen = false
-
+camera = null
 
 function set_orientation(value) {
-    browser_size = game_window.getBoundingClientRect();
-    var width = browser_size.width;
-    var height = browser_size.height;
+    var width = window.innerWidth
+    var height = window.innerHeight
     browser_aspect_ratio = width / height
-    print(width, height)
+    // print('width:', width, 'height:', height, 'browser_aspect_ratio:', browser_aspect_ratio)
 
     format = value
     if (format == 'vertical') {
         aspect_ratio = 16/9
-        // scene.style.width = `${100}%`
         // used for setting correct draggable limits
         asp_x = 1
         asp_y = 9/16
-        scene.style.width = `${1/asp_x*100}%`
-        // if (!is_mobile && !fullscreen) {
-        //     // scene.style.height = `${1/asp_y*100}%`
-        // }
 
-        if (browser_aspect_ratio >= 9/16) { // if the screen is wider than 16/9, like a pc monitor.
-            print('--------------')
-            game_window.style.width = `${height/(16/9)*scale}px`
-            game_window.style.height =  `${height*scale}px`
+        if (browser_aspect_ratio >= 16/9) { // if the screen is wider than 16/9, like a pc monitor.
+            print('vertical view desktop')
+            game_window.style.width = `${100*scale/browser_aspect_ratio/(16/9)}%`
+            game_window.style.height =  `${100*scale}%`
         }
         else {                              // if the screen is taller than 16/9, like a phone screen.
-            game_window.style.width = `${width*scale}px`
-            game_window.style.height =  `${width*16/9*scale}px`
+            print('vertical view mobile')
+            game_window.style.height = `${100*scale}%`
+            game_window.style.width =  `${100*scale/browser_aspect_ratio*(9/16)}%`
         }
+        if (camera) {camera.ui.scale = [1, 1/aspect_ratio]}
+        top_left =      [-.5, .5*aspect_ratio]
+        top_right =     [.5, .5*aspect_ratio]
+        bottom_left =   [-.5, -.5*aspect_ratio]
+        bottom_right =  [.5, -.5*aspect_ratio]
+        top =           [0, .5*aspect_ratio]
+        bottom =        [0, -.5*aspect_ratio]
+        left =          [-.5, 0]
+        right =         [.5, 0]
     }
     else {
-        // print('---hhhhhhhhhhhhhhhhh-')
-        aspect_ratio = 9/16
+        aspect_ratio = 16/9
         asp_x = 16/9
         asp_y = 1
         scene.style.width = `${1/asp_x*100}%`
         scene.style.height = `${1/asp_y*100}%`
-        if (browser_aspect_ratio > 1/aspect_ratio) { // if the screen is wider than 16/9, fit to height
-            game_window.style.height = `${height*scale}px`
-            game_window.style.width =  `${height*scale/aspect_ratio}px`
+        if (browser_aspect_ratio > 16/9) { // if the screen is wider than 16/9, fit to height
+            game_window.style.height = `${100*scale}%`
+            game_window.style.width =  `${100*scale/browser_aspect_ratio*16/9}%`
         }
         else {                              // if the screen is taller than 16/9, fit to width
-            game_window.style.height = `${width*scale*aspect_ratio}px`
-            game_window.style.width =  `${width*scale}px`
+            game_window.style.height = `${100*scale*browser_aspect_ratio/(16/9)}%`
+            game_window.style.width =  `${100*scale}%`
         }
+        if (camera) {camera.ui.scale = [1/aspect_ratio, 1]}
+        top_left =      [-.5*aspect_ratio, .5]
+        top_right =     [.5*aspect_ratio, .5]
+        bottom_left =   [-.5*aspect_ratio, -.5]
+        bottom_right =  [.5*aspect_ratio, -.5]
+        top =           [0, .5]
+        bottom =        [0, -.5]
+        left =          [-.5*aspect_ratio, 0]
+        right =         [.5*aspect_ratio, 0]
 
     }
 }
@@ -79,14 +91,6 @@ set_orientation('vertical')
 print('spect', asp_x, asp_y)
 
 
-top_left =      [-.5*asp_x, .5*asp_y]
-top_right =     [.5*asp_x, .5*asp_y]
-bottom_left =   [-.5*asp_x, -.5*asp_y]
-bottom_right =  [.5*asp_x, -.5*asp_y]
-top =           [0, .5*asp_y]
-bottom =        [0, -.5*asp_y]
-left =          [-.5*asp_x, 0]
-right =         [.5*asp_x, 0]
 
 function set_window_color(value) {game_window.style.backgroundColor = value}
 function set_background_color(value) {document.body.style.backgroundColor = value}
@@ -245,16 +249,17 @@ class Entity {
     }
     get color() {return this._color}
     set color(value) {
-        // if (!(value instanceof String)) {
-        //     // print('set color:', value)
-        //     var alpha = 255
-        //     if (value.length == 4) {
-        //         alpha = value[3]
-        //     }
-        //     value = `rgba(${value[0]},${value[1]},${value[2]},${alpha})`
-        // }
-        this.model.style.backgroundColor = value
         this._color = value
+        print(value, typeof value)
+        if (!(typeof value == "string")) {
+            // print('set color:', value)
+            var alpha = 255
+            if (value.length == 4) {
+                alpha = value[3]
+            }
+            value = `rgba(${value[0]},${value[1]},${value[2]},${alpha})`
+        }
+        this.model.style.backgroundColor = value
     }
     get scale_x() {return this._scale_x}
     set scale_x(value) {
@@ -567,7 +572,7 @@ class Camera{
   }
 }
 camera = new Camera({})
-camera.ui = new Entity({parent:camera, name:'ui', scale:[1,1/aspect_ratio], visible_self:false, z:-100})
+camera.ui = new Entity({parent:camera, name:'ui', scale:[1,1], visible_self:false, z:-100, color:'#00ffff00'})
 
 function Button(options) {
     if (!('parent' in options)) {
@@ -1208,8 +1213,12 @@ hidden_fullscreen_button.on_click = function() {
 
 function fullscreenchange() {
     set_scale(1)
+    print('fullscreenchange')
 }
 document.addEventListener('fullscreenchange', fullscreenchange)
+
+set_orientation('vertical')
+
 
 
 // 3D
