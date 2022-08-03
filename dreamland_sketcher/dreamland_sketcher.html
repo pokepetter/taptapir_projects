@@ -96,7 +96,7 @@ using_eyedropper = False
 prev_pos = None
 
 cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enabled=false)
-zoom_label = Button(text='100%', scale=[.15,.05], origin=[.5,.5], xy=[.5,.5], color=hsv(0,0,.1), text_color=color.gray)
+zoom_label = Button(text='100%', scale=[.15,.05], origin=[.5,.5], xy=[.5,.5], color=hsv(0,0,.9), text_color=color.gray, on_click=def():target_zoom=[aspect_ratio,1])
 smoothing = false
 
 // def get_canvas_position():
@@ -373,53 +373,55 @@ color_preview = Entity(parent=color_menu.menu, scale=slider_height*3*1.1, x=.55,
 compiler.define(*slider_style, scale_y=.075, roundness=.15, draggable=True, lock_x=True, lock_y=True)
 
 hue_slider = Entity(*slider_style, parent=color_menu.menu, y=slider_height*1.1, texture='rainbow.png')
-hue_slider.indicator = Entity(parent=hue_slider, scale_x=.01, color=color.black)
+hue_slider.indicator = Entity(parent=hue_slider, scale_x=.01, color=color.black, z=-2)
 hue_slider.on_click = def():
+    hue_slider.indicator.x = mouse.point[0]
+
     _curr_color = rgb_to_hsv(current_color)
     value = (mouse.point[0]+.5) * 360
-
     color_as_rgb = hsv(value, _curr_color[1], _curr_color[2])
     current_color[0] = color_as_rgb[0]
     current_color[1] = color_as_rgb[1]
     current_color[2] = color_as_rgb[2]
     # print('----------------', current_color)
-    set_color(current_color)
+    set_color(current_color, False)
     # print('set hue:', value)
 hue_slider.while_dragging = hue_slider.on_click
 
 sat_slider = Entity(*slider_style, parent=color_menu.menu, y=0)
 sat_slider.overlay = Entity(parent=sat_slider, texture='horizontal_gradient.png', y=0, z=-1, roundness=.15)
-sat_slider.indicator = Entity(parent=sat_slider, scale_x=.01, color=color.black)
+sat_slider.indicator = Entity(parent=sat_slider, scale_x=.01, color=color.black, z=-2)
 sat_slider.on_click = def():
+    sat_slider.indicator.x = mouse.point[0]
+
     _curr_color = rgb_to_hsv(current_color)
     value = (mouse.point[0]+.5)
-    # sat_slider.indicator.x = value
     color_as_rgb = hsv(_curr_color[0], value, _curr_color[2])
 
     current_color[0] = color_as_rgb[0]
     current_color[1] = color_as_rgb[1]
     current_color[2] = color_as_rgb[2]
-    set_color(current_color)
+    set_color(current_color, False)
 sat_slider.while_dragging = sat_slider.on_click
     # print('set sat:', value, current_color)
-val_slider = Entity(*slider_style, parent=color_menu.menu, texture='horizontal_gradient.png', y=-slider_height*1.1)
-val_slider.indicator = Entity(parent=val_slider, scale_x=.01, color=color.black)
+val_slider = Entity(*slider_style, parent=color_menu.menu, y=-slider_height*1.1)
+val_slider.overlay = Entity(parent=val_slider, texture='horizontal_gradient.png', color=color.black, rotation=180, y=0, z=-1, roundness=.15)
+val_slider.indicator = Entity(parent=val_slider, scale_x=.01, color=color.black, z=-2)
 val_slider.on_click = def():
-    # print('aaaaa', mouse.hovered_entity)
+    val_slider.indicator.x = mouse.point[0]
+
     color_as_hsv = rgb_to_hsv(current_color)
     value = (mouse.point[0]+.5)
-    # val_slider.indicator.x = value
     color_as_rgb = hsv(color_as_hsv[0], color_as_hsv[1], value)
     current_color[0] = color_as_rgb[0]
     current_color[1] = color_as_rgb[1]
     current_color[2] = color_as_rgb[2]
-    set_color(current_color)
+    set_color(current_color, False)
     # print('set value:', value)
 val_slider.while_dragging = val_slider.on_click
 
-def set_color(value):
+def set_color(value, move_sliders=True):
     current_color = value
-    print('aaaaa', current_color)
     color_preview.color = rgb(current_color[0]/255, current_color[1]/255, current_color[2]/255)
     color_as_hsv = rgb_to_hsv(current_color)
     color_saturated = hsv(color_as_hsv[0], 1, color_as_hsv[2])
@@ -428,15 +430,17 @@ def set_color(value):
     sat_slider.color = rgb(color_saturated[0]/255, color_saturated[1]/255, color_saturated[2]/255)
     # sat.overlay.color = rgb(color_desaturated[0]/255, color_desaturated[1]/255, color_desaturated[2]/255)
     # sat.overlay.alpha = current_color[3]/255
-    hue_slider.indicator.x = -.5 + color_as_hsv[0]/360
-    sat_slider.indicator.x = -.5 + color_as_hsv[1]
-    val_slider.indicator.x = -.5 + color_as_hsv[2]
+    if move_sliders:
+        print('aaaaa', current_color)
+        hue_slider.indicator.x = -.5 + color_as_hsv[0]/360
+        sat_slider.indicator.x = -.5 + color_as_hsv[1]
+        val_slider.indicator.x = -.5 + color_as_hsv[2]
 
 menu_parent = Entity(parent=camera.ui, visible_self=False, name='menu_parent')
 # Entity(parent=menu_parent, origin=[-.5,0], color=hsv(0,0,.1), x=(.5*aspect_ratio)-.125)
 # Entity(parent=menu_parent, origin=[0, .5], color=hsv(0,0,.1), y=-.5+.1, scale_x=2)
 
-compiler.define(*button_style, parent=menu_parent, roundness=.02, origin=[.5,.5], text_origin=[0,0], x=(.5*aspect_ratio)-.0125, scale=[.05,.05], z=-1, text_size=1.5, color=hsv(0,0,.05), text_color=color.gray)
+compiler.define(*button_style, parent=menu_parent, roundness=.02, origin=[.5,.5], text_origin=[0,0], x=(.5*aspect_ratio)-.0125, scale=[.05,.05], z=-1, text_size=1.5, color=hsv(0,0,1), text_color=color.gray)
 right_button_x = (.5*aspect_ratio)-.0125
 left_button_x = right_button_x-.05
 
@@ -457,7 +461,7 @@ painterly_brush_button.input = def input(key):
 def change_to_round_brush():
     set_brush(round_brush_tips)
     brush_size = [2, 2]
-    SPACING = .75
+    SPACING = .5
     draw_on_click = True
     using_painterly_brush = False
     set_color(current_color)
