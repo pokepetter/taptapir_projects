@@ -239,6 +239,13 @@ for (var i=0; i<lines.length; i++) {
             }
         }
     }
+    for (var n=0; n<10; n++) {
+        // print('-------------', n)
+        print('---', `${n}s `)
+        lines[i] = lines[i].replaceAll(`${n}s `, `${n} `)
+        lines[i] = lines[i].replaceAll(`${n}m `, `${n}*60 `)
+    }
+
 }
 
 function convert_arguments(line, class_name) {
