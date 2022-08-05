@@ -1001,6 +1001,9 @@ timeout_id = 0
 function invoke(func, delay) {
     timeout_id = setTimeout(func, delay*1000)
 }
+function invoke(delay, func) {
+    timeout_id = setTimeout(func, delay*1000)
+}
 function stop_all_invokes() {
     for (let i = timeout_id; i >= 0; i--) {
         window.clearInterval(i);
