@@ -229,8 +229,8 @@ for (var i=0; i<lines.length; i++) {
     // after keyword for easier invoke()
     if (lines[i].trimStart().startsWith('after ') && lines[i].trimEnd().endsWith('{')) {
         start_indent = get_indent(lines[i])
-        lines[i] = lines[i].replaceAll('after ', 'invoke(after=')
-        lines[i] = lines[i].slice(0, -1) + ', func=function() {'
+        lines[i] = lines[i].replaceAll('after ', 'after(')
+        lines[i] = lines[i].slice(0, -1) + ', function() {'
 
         for (var j=i+1; j<lines.length; j++) {
             if (get_indent(lines[j]) <= start_indent) {

@@ -82,18 +82,11 @@ for y in range(5):
         let e = Button(parent=gem_hunt_play_scene, scale=.2, xy=[(x/5)-.5, (y/5)-.5], origin=[-.5,-.5], text='?', color='#222', text_color='#fff', text_size=6, value='💎', alpha=.95)
         squares.append(e)
         e.on_click = def():
-            # sequence: wait .05, e.text=value
-            after 0.05:
-                e.text=e.value
 
-            # invoke(delay=0.2, func=def():
-            #     e.text=e.value
-            # )
+            after 0.2:
+                e.text = e.value
 
-            # invoke(delay=.2, func=function(){e.text=e.value})
-            # invoke(func=function(){e.text=e.value}, delay=.2)
 
-            # e.text = e.value
             if e.value == '💀':
                 lose()
             else:
@@ -102,13 +95,13 @@ for y in range(5):
                 impact.texture = impact.texture
                 impact.enabled = True
                 set_amount_won(amount_won + int(current_bet * multiplier))
-                loose_gem.xy = impact.xy
-                loose_gem.enabled = True
-                loose_gem.animate('x', current_win_label.x, duration=.2)
-                loose_gem.animate('y', current_win_label.y, duration=.2)
-                invoke(def():
+                after .2:
+                    loose_gem.xy = impact.xy
+                    loose_gem.enabled = True
+                    loose_gem.animate('x', current_win_label.x, duration=.2)
+                    loose_gem.animate('y', current_win_label.y, duration=.2)
+                after .45:
                     loose_gem.enabled = False
-                , delay=.2)
 
                 cash_out_button.enabled = True
                 back_button.enabled = False

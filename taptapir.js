@@ -1001,7 +1001,7 @@ timeout_id = 0
 function invoke(func, delay) {
     timeout_id = setTimeout(func, delay*1000)
 }
-function invoke(delay, func) {
+function after(delay, func) {
     timeout_id = setTimeout(func, delay*1000)
 }
 function stop_all_invokes() {
