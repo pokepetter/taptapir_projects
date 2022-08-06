@@ -22,7 +22,7 @@ board = Array_2d(3,3)
 turns_taken = 0
 for y in range(3):
     for x in range(3):
-        let b = Button(scale=1, position=[x,y], roundness=.1, text_origin=[0,0], text_size=8, text_color='white')
+        let b = Entity(scale=1, position=[x,y], roundness=.1, text_origin=[0,0], text_size=8, text_color='white')
         board[x][y] = b
 
         b.on_click = def():
