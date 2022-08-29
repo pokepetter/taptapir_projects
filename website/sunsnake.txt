@@ -1,0 +1,70 @@
+# style a.button {background-color: #2f5dd1;} a.button:hover {background-color: #ab1579}
+# arial, width 650, center
+# size 10
+☀️🐍
+# size 3, monospace
+
+sunsnake script
+#size 1
+
+
+[Download, link.html]
+
+
+# left
+## A Programming Language for the Web
+
+• Can be run in web browsers.
+• Inspired by Python's syntax.
+• Transpiles into JavaScript.
+• List comprehension.
+• Indentation significant, no {}-brackets.
+• Enforces good style.
+
+## Example
+```
+
+```
+
+## Range
+
+```
+for i in range(8):
+    print(i)
+```
+```
+for i in range(1, 8): # from 1 to 8
+    print(i)
+```
+```
+for i in range(1, 8, 2): # from 1 to 8, with a step of 2
+    print(i)
+```
+
+There's also a shorthand range:
+```
+for i in 8:
+    print(i)
+```
+
+## Enumerate
+
+```
+my_list = ['sun', 'snake', 'script']
+for i, e in enumerate(my_list):
+    print(i, e)
+
+>>> 0 'sun'
+>>> 1 'snake'
+>>> 2 'script'
+```
+
+## List Comprehension
+
+```
+my_list = [1, 0, 9, 4, 8]
+my_list = [e for e in my_list if e < 5]
+print(my_list)
+
+>>> [1, 0, 4]
+```

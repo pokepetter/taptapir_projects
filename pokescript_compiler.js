@@ -281,5 +281,67 @@ for (var i=0; i<strings.length; i++) {
     compiled_code = compiled_code.replace(`[TEXT_CONTENT_${i}]`, `'${strings[i]}'`)
 }
 
+function len(arr) {
+    return arr.length
+}
+
+String.prototype.count=function(c) {
+  var result = 0, i = 0;
+  for(i;i<this.length;i++)if(this[i]==c)result++;
+  return result;
+};
+print = console.log
+False = false
+True = true
+None = null
+min = Math.min
+max = Math.max
+abs = Math.abs
+floor = Math.floor
+ceil = Math.ceil
+math = Math
+int = parseInt
+round = Math.round
+sqrt = Math.sqrt
+
+function enumerate(list) {
+    return list.entries()
+}
+
+function str(value) {
+    return value.map(function(i){return String.fromCharCode(i)}).join("")
+}
+
+function Array_2d(w, h) {
+    var tiles = new Array(w)
+    for (var i = 0; i < tiles.length; i++) {
+        tiles[i] = new Array(h);
+    }
+    return tiles
+}
+// function range(n) {return Array(n).keys()}
+function range(start, stop, step) {
+    if (typeof stop == 'undefined') {
+        // one param defined
+        stop = start;
+        start = 0;
+    }
+
+    if (typeof step == 'undefined') {
+        step = 1;
+    }
+
+    if ((step > 0 && start >= stop) || (step < 0 && start <= stop)) {
+        return [];
+    }
+
+    var result = [];
+    for (var i = start; step > 0 ? i < stop : i > stop; i += step) {
+        result.push(i);
+    }
+
+    return result;
+};
+
 print('COMPILED CODE:', compiled_code)
 eval(compiled_code)

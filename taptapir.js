@@ -1,9 +1,6 @@
-print = console.log
-False = false
-True = true
-None = null
 // aspect_ratio = 16/9
 scale = 1
+print = console.log
 
 var loading_text = document.getElementById('loading_text')
 if (loading_text) {
@@ -89,7 +86,6 @@ function set_orientation(value) {
 }
 set_orientation('vertical')
 print('spect', asp_x, asp_y)
-
 
 
 function set_window_color(value) {game_window.style.backgroundColor = value}
@@ -832,62 +828,6 @@ function onmousemove(event) {
 
 document.addEventListener('pointermove', onmousemove)
 
-// function range(n) {return Array(n).keys()}
-function range(start, stop, step) {
-    if (typeof stop == 'undefined') {
-        // one param defined
-        stop = start;
-        start = 0;
-    }
-
-    if (typeof step == 'undefined') {
-        step = 1;
-    }
-
-    if ((step > 0 && start >= stop) || (step < 0 && start <= stop)) {
-        return [];
-    }
-
-    var result = [];
-    for (var i = start; step > 0 ? i < stop : i > stop; i += step) {
-        result.push(i);
-    }
-
-    return result;
-};
-
-function Array_2d(w, h) {
-    var tiles = new Array(w)
-    for (var i = 0; i < tiles.length; i++) {
-        tiles[i] = new Array(h);
-    }
-    return tiles
-}
-
-function len(arr) {
-    return arr.length
-}
-
-String.prototype.count=function(c) {
-  var result = 0, i = 0;
-  for(i;i<this.length;i++)if(this[i]==c)result++;
-  return result;
-};
-min = Math.min
-max = Math.max
-abs = Math.abs
-floor = Math.floor
-ceil = Math.ceil
-math = Math
-int = parseInt
-function enumerate(list) {
-    return list.entries()
-}
-
-function str(value) {
-    return value.map(function(i){return String.fromCharCode(i)}).join("")
-}
-
 function rgb(r, g, b) {return `rgb(${parseInt(r*255)},${parseInt(g*255)},${parseInt(b*255)})`}
 
 function hex_to_rgb(hex) {
@@ -1012,7 +952,6 @@ function stop_all_invokes() {
     }
 }
 
-round = Math.round
 
 function Text(options) {
     if (!('scale' in options && !'scale_x' in options)) {
@@ -1039,8 +978,6 @@ function Text(options) {
     }
     return new Entity(options)
 }
-
-sqrt = Math.sqrt
 
 function distance(a, b) {
     return sqrt((b[0] - a[0])**2 + (b[1] - a[1])**2)
