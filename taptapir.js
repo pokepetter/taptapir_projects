@@ -324,6 +324,7 @@ class Entity {
         this._texture = value
         this.model.style.backgroundImage = `url("${ASSETS_FOLDER}${value}?${random_int(0,999)}")`
         this.visible_self = false
+
         // var loaded = 0
         // var img = new Image();
         // img.src = value + '.jpg'
@@ -342,6 +343,7 @@ class Entity {
         //     this.visible_self = false
         // }
     }
+
     get tileset_size() {return this._tileset_size}
     set tileset_size(value) {
         this._tileset_size = value

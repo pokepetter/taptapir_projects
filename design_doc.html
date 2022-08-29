@@ -1,0 +1,92 @@
+
+<!DOCTYPE HTML>
+<!--generated with sswg-->
+
+<html>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head> <link rel="stylesheet" href="sswg.css"> </head>
+<left>
+<title>design_doc</title>
+<br>
+
+<br>
+looks like python<br>
+compiles into javascript<br>
+<br>
+<br>
+ASSETS_FOLDER<br>
+aspect_ratio, 9/16<br>
+<br>
+<br>
+<br>
+<br>
+Entity()<br>
+<br>
+parent<br>
+children<br>
+enabled<br>
+visible_self<br>
+color<br>
+<br>
+scale_x<br>
+scale_y<br>
+scale<br>
+<br>
+x<br>
+y<br>
+z<br>
+xy<br>
+xyz<br>
+position<br>
+origin<br>
+texture&nbsp;&nbsp;&nbsp;&nbsp; # texture='my_sprite.png' (supports transparency) / texture='my_sprite.jpg' / texture='my_sprite.gif' (supports animation)<br>
+<br>
+tileset_size&nbsp;&nbsp;# If the texture is a tileset, say how many tiles there are so it only use one tile of the texture<br>
+tile_coordinate&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# <a href="0" class="button">0</a>. Set the tile coordinate, starts in the lower left.<br>
+<br>
+roundness&nbsp;&nbsp; # 0.0 - 0.5<br>
+shadow&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# false / true<br>
+<br>
+text&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# set text content<br>
+text_color<br>
+text_size<br>
+alpha&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # set transparency<br>
+on_click&nbsp;&nbsp;&nbsp;&nbsp;# set a function you want get called when an Entity is clicked on. This will also enable mouse collision<br>
+draggable&nbsp;&nbsp; # false / true&nbsp;&nbsp;&nbsp;&nbsp;#<br>
+<br>
+<br>
+Button() // an Entity, but scaled to 0.2 and has rounded corners<br>
+StateHandler(states, fade=true)&nbsp;&nbsp;&nbsp;&nbsp;# toggles .enabled of entities in states.<br>
+menus = {<br>
+'a' : Entity(scale=.2, x=-.3, color='red'),<br>
+'b' : Entity(scale=.2, x=-.0, color='green'),<br>
+'c' : Entity(scale=.2, x=0.3, color='blue'),<br>
+}<br>
+menu_handler = StateHandler(menus, fade=false)<br>
+<br>
+<br>
+Scene(name='')<br>
+<br>
+goto_scene(scene_name)<br>
+range(n)&nbsp;&nbsp;&nbsp;&nbsp;#<br>
+<br>
+invoke(function, delay)<br>
+<div class="code_block" style="margin-left: 0em;"><purple>def</purple> test(<olive>text</olive>=<green>'hello!'</green>):
+  <blue>print</blue>(text)
+
+<gray># invoke(test, dela<olive>y</olive>=<yellow>1</yellow>)</gray>
+
+<gray># or with an argument</gray>
+<gray># invoke(test, <green>'goodbye!'</green>, dela<olive>y</olive>=<yellow>1</yellow>)</gray>
+
+<gray># size <yellow>2</yellow>, bold</gray>
+&lt;div id="functions"/&gt;
+functions
+<gray># size <yellow>1</yellow>, normal</gray>
+
+lerp(a, b, t)
+clamp(n, min, max)
+random_int(min, max)
+
+
+</html>
