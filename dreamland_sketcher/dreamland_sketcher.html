@@ -1,24 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="utf-8" />
+<head><meta charset="utf-8" />
     <!-- <link rel="manifest" href="/manifest.json"> -->
     <title>dreamland sketcher</title>
     <link rel="stylesheet" href="../taptapir.css">
 </head>
-
-<body>
-</body>
+<body></body>
 
 <script src="color_conversion.js"></script>
 <script src="../taptapir.js"></script>
-
-
-<body style="margin: 0; background-color:black">
-</body>
 </html>
-
-<!-- <script src="color_conversion.js"></script> --> -->
 <script type='text/pokescript'>
 
 set_window_color('#222')
@@ -41,9 +32,9 @@ set_scale(1)
 canvas_scale = .8
 var w = 1080
 var h = 1920
-var h = 1080;
-var w = 1920;
-canvas_entity = Entity(color=color.green, scale_x=aspect_ratio, draggable=True, lock_x=True, lock_y=True)
+var h = 1080*2;
+var w = 1920*2;
+canvas_entity = Entity(color=color.clear, scale_x=aspect_ratio, draggable=True, lock_x=True, lock_y=True)
 canvas_entity.el.id = 'canvas_entity'
 canvas_entity.model.appendChild(canvas)
 canvas_entity.origin = [0,0]

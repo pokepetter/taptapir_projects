@@ -1,0 +1,20 @@
+layers
+  sketch layer
+  layer 1
+  layer 2
+
+layers menu
+
+different formats
+
+pixel art mode
+
+selection
+  rect
+  lasso
+  poly
+
+transform, g,s,r instead?
+
+offset (for making tileable textures)
+tile preview

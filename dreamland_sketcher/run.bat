@@ -1,1 +1,1 @@
-"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" file:///D:/programming/taptapir/dreamland_sketcher/dreamland_sketcher.html  --disable-web-security --user-data-dir="D:/programming/taptapir/dreamland_sketcher/Temp"
+start msedge --kiosk "file:///D:/programming/taptapir/dreamland_sketcher/dreamland_sketcher.html"  --disable-web-security --user-data-dir="D:/programming/taptapir/dreamland_sketcher/Temp/"

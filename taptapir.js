@@ -40,13 +40,13 @@ function set_orientation(value) {
 
         if (browser_aspect_ratio >= 16/9) { // if the screen is wider than 16/9, like a pc monitor.
             print('vertical view desktop')
-            game_window.style.width = `${100*scale/browser_aspect_ratio/(16/9)}%`
-            game_window.style.height =  `${100*scale}%`
+            game_window.style.width = `${width*scale/browser_aspect_ratio/(16/9)}px`
+            game_window.style.height =  `${height*scale}px`
         }
         else {                              // if the screen is taller than 16/9, like a phone screen.
             print('vertical view mobile')
-            game_window.style.height = `${100*scale}%`
-            game_window.style.width =  `${100*scale/browser_aspect_ratio*(9/16)}%`
+            game_window.style.height = `${height*scale}px`
+            game_window.style.width =  `${width*scale/browser_aspect_ratio*(9/16)}px`
         }
         if (camera) {camera.ui.scale = [1, 1/aspect_ratio]}
         top_left =      [-.5, .5*aspect_ratio]
@@ -65,12 +65,12 @@ function set_orientation(value) {
         scene.style.width = `${1/asp_x*100}%`
         scene.style.height = `${1/asp_y*100}%`
         if (browser_aspect_ratio > 16/9) { // if the screen is wider than 16/9, fit to height
-            game_window.style.height = `${100*scale}%`
-            game_window.style.width =  `${100*scale/browser_aspect_ratio*16/9}%`
+            game_window.style.height = `${height*scale}px`
+            game_window.style.width =  `${width*scale/browser_aspect_ratio*16/9}px`
         }
         else {                              // if the screen is taller than 16/9, fit to width
-            game_window.style.height = `${100*scale*browser_aspect_ratio/(16/9)}%`
-            game_window.style.width =  `${100*scale}%`
+            game_window.style.height = `${height*scale*browser_aspect_ratio/(16/9)}px`
+            game_window.style.width =  `${width*scale}px`
         }
         if (camera) {camera.ui.scale = [1/aspect_ratio, 1]}
         top_left =      [-.5*aspect_ratio, .5]
