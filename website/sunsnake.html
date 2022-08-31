@@ -39,6 +39,23 @@ A Programming Language for the Web<br>
 Example<br>
 <div style="font-size: 20.0px;font-weight: normal;">
 <div class="code_block" style="margin-left: 0em;">
+</div><div style="font-size: 40.0px;font-weight: bold;">
+<div id="Macros"/><br>
+Macros<br>
+<div style="font-size: 20.0px;font-weight: normal;">
+<div class="code_block" style="margin-left: 0em;"><gray># replace the first argument with the second argument</gray>
+compiler.define(*style, <olive>scale</olive>=.<yellow>2</yellow>, <olive>color</olive>=hsv(<yellow>3</yellow><yellow>0</yellow><yellow>0</yellow>,<yellow>1</yellow>,<yellow>1</yellow>), roundness=.<yellow>2</yellow><yellow>5</yellow>, text_<olive>origin</olive>=[<yellow>0</yellow>,<yellow>0</yellow>])
+
+brush_size = [<yellow>1</yellow>,<yellow>1</yellow>]
+
+<gray># use the defined macro to prevent code duplication</gray>
+plus_button = <olive>Entity</olive>(*style, x=-.<yellow>1</yellow>, <olive>text</olive>=<green>'+'</green>)
+plus_button.on_click = def():
+    brush_size = [e*<yellow>1</yellow>.<yellow>5</yellow> <purple>for</purple> e in brush_size]
+
+minus_button = <olive>Entity</olive>(*style, x=.<yellow>1</yellow>, <olive>text</olive>=<green>'-'</green>)
+minus_button.on_click = def():
+    brush_size = [e*<yellow>1</yellow>/<yellow>1</yellow>.<yellow>5</yellow> <purple>for</purple> e in brush_size]
 </div><br>
 <div style="font-size: 40.0px;font-weight: bold;">
 <div id="Range"/><br>
