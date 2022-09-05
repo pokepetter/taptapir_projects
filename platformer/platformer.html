@@ -4,13 +4,13 @@
 set_window_color('rgb(50 50 50)')
 set_background_color('rgb(9 9 1)')
 set_orientation('landscape')
-player = Entity(scale=.1, color='orange', origin_y=-.5)
+player = Entity(scale=[.1,.2], texture='player.png', origin_y=-.5, z=-1)
 camera.fov = 1
-brush = new Image()
-brush.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAANUlEQVQokWPYvHnzf1zg6dOn/5kkJSUZcAEpKSkGJpyyUDAYFLA8f/6c4ezZs1glnz9/zgAAx+wnKdc1c+QAAAAASUVORK5CYII="
-ground = Entity(scale=[10,.2], origin_y=.5, y=-.5, texture=brush.src, tileset_size=[.02,1], z=1)
-bg = Entity(texture='bg.png', scale=5, origin=[-.5,-.5], z=1)
-# set_scale(.5)
+# brush = new Image()
+# brush.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAANUlEQVQokWPYvHnzf1zg6dOn/5kkJSUZcAEpKSkGJpyyUDAYFLA8f/6c4ezZs1glnz9/zgAAx+wnKdc1c+QAAAAASUVORK5CYII="
+# ground = Entity(scale=[10,.2], origin_y=.5, y=-.5, texture=brush.src, tileset_size=[.02,1], z=1)
+bg = Entity(texture='bg.png', scale=4, origin=[-.5,-.5], z=1)
+set_scale(.75)
 
 def update():
     # print(mouse.position)
@@ -20,20 +20,51 @@ def update():
     #     print('aa')
     #     player.y = max(player.y, ground.y)
     player_bot = player.y-(player.scale_y/2)
-    ground_top = ground.y+(ground.scale_y/2)
+    # ground_top = ground.y+(ground.scale_y/2)
     # if player_bot > ground.y and player_bot < ground_top:
     #     player.y = max(player_bot, ground_top)
     # print((held_keys['d'] - held_keys['a']))
     player.x += (held_keys['d'] - held_keys['a']) * .02
     player.y += (held_keys['w'] - held_keys['s']) * .02
-    camera.x = player.x
-    camera.y = player.y
-    # camera.x = lerp(camera.x, player.x, .05)
+    # camera.x = player.x
+    # camera.y = player.y
+    camera.x = lerp(camera.x, player.x, .1)
     # camera.x = clamp(camera.x, camera.fov/2, bg.scale_x-(camera.fov/2))
-    # camera.y = lerp(camera.y, player.y, .05)
+    camera.y = lerp(camera.y, player.y, .1)
     # camera.y = clamp(camera.y, camera.fov/2*aspect_ratio,  bg.scale_y-(camera.fov/2*aspect_ratio))
     # camera.x += (held_keys['d'] - held_keys['a']) * .01
 
-d = Button(text='lol', draggable=True)
+
+
+d = Entity(scale=.2, xy=[.45,.35],roundness=.5, shadow=1, text='-', alpha=.3, on_click=True)
+player.xy = d.xy
+# d.on_click = def():
+#     player.xy = d.xy
+d = Entity(scale=.2, xy=[.9,.8],roundness=.5, shadow=1, text='-', alpha=.3, on_click=True)
+d = Entity(scale=.2, xy=[1.4,.8],roundness=.5, shadow=1, text='-', alpha=.3, on_click=True)
+
+const enemies = []
+for pos in [[1.8,1.1], [2.8,1.6]]:
+    enemies.append(Entity(hp=3, scale=.2, xy=pos, roundness=.2, shadow=1, text='enemy', color=color.red, alpha=.3, on_click=True))
+
+print('----', enemies)
+
+def input(key):
+    print('efijeofisejfoisef', enemies)
+    if key == 'left mouse down' and mouse.hovered_entity:
+        target = mouse.hovered_entity;
+        is_enemy = target in enemies
+        if is_enemy:
+            target.hp -= 1
+            if target.hp <= 0:
+                destroy(target)
+
+            return
+        # if target in enemies:
+
+        # movement
+        player.animate('x', target.x, duration=.2)
+        player.animate('y', target.y, duration=.2)
+        # player.xy = d.xy
 
 </script><script src="../pokescript_compiler.js"></script></html>

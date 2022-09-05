@@ -78,6 +78,11 @@ current_indent = 0
 
 for (var i=0; i<lines.length; i++) {
     if (i > 0) {
+        print(lines[i].trimEnd())
+        if (lines[i].trimEnd().endsWith('[')) {
+            print('aaaaaaa')
+            continue
+        }
         prev_line_indent = get_indent(lines[i-1])
         current_line_indent = get_indent(lines[i])
 
