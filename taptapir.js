@@ -732,7 +732,7 @@ document.addEventListener('pointerdown', mousedown)
 
 
 function handle_mouse_click(e) {
-    // mouse.left = true
+    mouse.left = true
     element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
     entity = entities[element_hit.entity_index]
 
@@ -1136,7 +1136,7 @@ document.addEventListener('mousewheel', _input); // modern desktop
 
 
 // triple click in the lower right to enter fullscreen
-hidden_fullscreen_button = new Button({parent:camera.ui, xy:[.5,-.5*aspect_ratio], roundness:.5, color:'red', last_pressed_timestamp:-1, sequential_taps:0, visible_self:false})
+hidden_fullscreen_button = new Button({parent:camera.ui, xy:bottom_right, roundness:.5, color:'red', last_pressed_timestamp:-1, sequential_taps:0, visible_self:true})
 hidden_fullscreen_button.on_click = function() {
     // print(time - hidden_fullscreen_button.last_pressed_timestamp)
     if (time - hidden_fullscreen_button.last_pressed_timestamp < .25) {
