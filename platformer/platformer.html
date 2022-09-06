@@ -4,47 +4,43 @@
 set_window_color('rgb(50 50 50)')
 set_background_color('rgb(9 9 1)')
 set_orientation('landscape')
-player = Entity(scale=[.1,.2], texture='player.png', origin_y=-.5, z=-1)
+# player = Entity(scale=[.1,.2], texture='player.png', origin_y=-.5, z=-1)
+player = Entity(scale=.075, shadow=1, origin_y=-.5, z=-1, roundness=.5, alpha=.2)
+player.graphics = Entity(scale=.075, shadow=1, origin_y=-.5, z=-1, roundness=.5)
 camera.fov = 1
 # brush = new Image()
 # brush.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAANUlEQVQokWPYvHnzf1zg6dOn/5kkJSUZcAEpKSkGJpyyUDAYFLA8f/6c4ezZs1glnz9/zgAAx+wnKdc1c+QAAAAASUVORK5CYII="
 # ground = Entity(scale=[10,.2], origin_y=.5, y=-.5, texture=brush.src, tileset_size=[.02,1], z=1)
-bg = Entity(texture='bg.png', scale=4, origin=[-.5,-.5], z=1)
-set_scale(.75)
+bg = Entity(texture='bg.png', scale=4, z=1)
+# set_scale(.9)
 
 def update():
-    # print(mouse.position)
-    # player.y -= .01
-    # player.y = max(player.y, ground.y+ground.scale_y)
-    # if player.y > ground.y:
-    #     print('aa')
-    #     player.y = max(player.y, ground.y)
     player_bot = player.y-(player.scale_y/2)
-    # ground_top = ground.y+(ground.scale_y/2)
-    # if player_bot > ground.y and player_bot < ground_top:
-    #     player.y = max(player_bot, ground_top)
-    # print((held_keys['d'] - held_keys['a']))
     player.x += (held_keys['d'] - held_keys['a']) * .02
     player.y += (held_keys['w'] - held_keys['s']) * .02
+    player.graphics.x = lerp(player.graphics.x, player.x, .1)
+    player.graphics.y = lerp(player.graphics.y, player.y, .1)
     # camera.x = player.x
     # camera.y = player.y
-    camera.x = lerp(camera.x, player.x, .1)
+    camera.x = lerp(camera.x, player.x, .025)
+    camera.x = clamp(camera.x, -bg.scale_x/2+(camera.fov/2*aspect_ratio), bg.scale_x/2-(camera.fov/2*aspect_ratio))
     # camera.x = clamp(camera.x, camera.fov/2, bg.scale_x-(camera.fov/2))
-    camera.y = lerp(camera.y, player.y, .1)
-    # camera.y = clamp(camera.y, camera.fov/2*aspect_ratio,  bg.scale_y-(camera.fov/2*aspect_ratio))
+    camera.y = lerp(camera.y, player.y, .025)
+    camera.y = clamp(camera.y, -bg.scale_y/2+(camera.fov/2), bg.scale_y/2-(camera.fov/2))
+    # camera.y = max(camera.y, -1000)
     # camera.x += (held_keys['d'] - held_keys['a']) * .01
 
 
+points = []
+for pos in [[-1.55,-1.65], [-1.1,-1.25], [-.6,-1.2]]:
+    p = Entity(scale=.2, xy=pos, roundness=.5, texture='ring_dashed.png', alpha=.5, on_click=True)
+    points.append(p)
 
-d = Entity(scale=.2, xy=[.45,.35],roundness=.5, shadow=1, text='-', alpha=.3, on_click=True)
-player.xy = d.xy
-# d.on_click = def():
-#     player.xy = d.xy
-d = Entity(scale=.2, xy=[.9,.8],roundness=.5, shadow=1, text='-', alpha=.3, on_click=True)
-d = Entity(scale=.2, xy=[1.4,.8],roundness=.5, shadow=1, text='-', alpha=.3, on_click=True)
+player.xy = points[0].xy
+player.graphics.xy = player.xy
 
 const enemies = []
-for pos in [[1.8,1.1], [2.8,1.6]]:
+for pos in [[-.0,-1.1], ]:
     enemies.append(Entity(hp=3, scale=.2, xy=pos, roundness=.2, shadow=1, text='enemy', color=color.red, alpha=.3, on_click=True))
 
 print('----', enemies)
@@ -63,8 +59,8 @@ def input(key):
         # if target in enemies:
 
         # movement
-        player.animate('x', target.x, duration=.2)
-        player.animate('y', target.y, duration=.2)
-        # player.xy = d.xy
+        # player.animate('x', target.x, duration=.4)
+        # player.animate('y', target.y, duration=.4)
+        player.xy = target.xy
 
 </script><script src="../pokescript_compiler.js"></script></html>
