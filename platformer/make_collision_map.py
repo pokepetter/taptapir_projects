@@ -1,8 +1,5 @@
 from PIL import Image
-from numpy import asarray, flip, swapaxes
 import numpy as np
-import json
-
 
 skip = 32
 threshold = int(.4 * 255)
@@ -21,9 +18,15 @@ for y, row in enumerate(image_as_list):
         image_as_list[y][x] = int(value)
 
 
-# print(image_as_list)
-# json_data = json.dumps()
-#
-#serialize.
+
 with open("collision_map.txt", "w") as file:
     file.write(str(image_as_list))
+
+
+tiff = Image.open('level_1.tiff')
+tiff.load()
+
+### Saving each image to output folder
+for i in range(tiff.n_frames):
+    tiff.seek(i)
+    tiff.save(f'level_1_layer{i}.webp')
