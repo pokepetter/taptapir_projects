@@ -19,6 +19,19 @@ bg = Entity(scale=3.8, z=3)
 bbg = Entity(scale=3, z=5)
 fg = Entity(scale=5, z=-4)
 
+rocks = []
+hookshot_points = [
+
+]
+rock_positions = {
+    'level_0' : [[1.2,-.33], [1.4, -.29]],
+    'level_1' : [[0,0], [0,0]],
+}
+hook_positions = {
+    'level_0' : [],
+    'level_1' : [[0,0], [0,0]],
+}
+
 def goto_level(name):
     current_level_name = name
     mg.texture = name + '_mg.webp'
@@ -28,6 +41,19 @@ def goto_level(name):
     current_collision_map = collision_maps[name]
     camera.xy = player.xy
     player.graphics.xy = player.xy
+
+    for e in rocks:
+        destroy(e)
+
+    target_list = rock_positions[name]
+    for pos in target_list:
+        rocks.append(Entity(hp=3, scale=.2, xy=pos, roundness=.2, color=color.red, alpha=.3, on_click=True))
+
+    for e in hookshot_points:
+        destroy(e)
+    target_list = hook_positions[name]
+    for pos in target_list:
+        hookshot_points.append(Entity(scale=.2, xy=pos, roundness=.5, texture='ring_dashed.png', alpha=.5, on_click=True))
 
 set_scale(.75)
 
@@ -41,7 +67,7 @@ collision_maps = {
 
 
 # current_collision_map = collision_maps[]
-goto_level('level_0')
+goto_level('level_1')
 
 grid_size = len(current_collision_map)
 
@@ -109,19 +135,13 @@ def update():
             goto_level('level_0')
 
 
-points = []
-for pos in [[-1.55,-1.65], [-1.1,-1.25], [-.6,-1.2]]:
-    p = Entity(scale=.2, xy=pos, roundness=.5, texture='ring_dashed.png', alpha=.5, on_click=True)
-    points.append(p)
-
 # player.xy = points[0].xy
 # player.graphics.xy = player.xy
 
-
 gun_line = Entity(scale=.005, enabled=False, color=color.white, origin=[-.5,0])
-const enemies = []
-for pos in [[-.0,-1.1], ]:
-    enemies.append(Entity(hp=3, scale=.2, xy=pos, roundness=.2, shadow=1, text='enemy', color=color.red, alpha=.3, on_click=True))
+
+# for pos in [[-.0,-1.1], ]:
+#     enemies.append(Entity(hp=3, scale=.2, xy=pos, roundness=.2, shadow=1, text='enemy', color=color.red, alpha=.3, on_click=True))
 
 # print('----', enemies)
 
