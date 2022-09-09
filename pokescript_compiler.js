@@ -6,6 +6,8 @@ var poke_script = document.querySelector('script[type="text/pokescript"]').textC
 // start parsing
 poke_script = poke_script.replaceAll(',\n', ',')
 poke_script = poke_script.replaceAll('(\n', '(')
+poke_script = poke_script.replaceAll('{\n', '{')
+poke_script = poke_script.replaceAll('[\n', '[')
 
 poke_script = poke_script.replaceAll('.index(', '.indexOf(')
 
@@ -17,6 +19,7 @@ strings = []
 string_index = 0
 const regexp = '\'(.*?)\'';
 extra_replacements = []
+is_in_merge_lines_mode = false;
 
 for (var i=0; i<all_lines.length; i++) {
 
@@ -41,6 +44,23 @@ for (var i=0; i<all_lines.length; i++) {
             string_index += 1
         }
     }
+
+    // merge lines ending with , or {
+    // continue_line = all_lines[i].trimEnd().endsWith('{') || all_lines[i].trimEnd().endsWith(',')
+    // print('cont', continue_line, all_lines[i])
+    // if (continue_line && !is_in_merge_lines_mode) {
+    //     temp_lines = []
+    //     is_in_merge_lines_mode = true
+    // }
+    // if (is_in_merge_lines_mode && continue_line) {
+    //     temp_lines.push(all_lines[i])
+    //     continue
+    // }
+    // if (is_in_merge_lines_mode && !continue_line) {
+    //     lines.push(temp_lines.join())
+    //     i += temp_lines.length
+    //     continue
+    // }
 
     lines.push(all_lines[i])
 }
@@ -78,11 +98,6 @@ current_indent = 0
 
 for (var i=0; i<lines.length; i++) {
     if (i > 0) {
-        print(lines[i].trimEnd())
-        if (lines[i].trimEnd().endsWith('[')) {
-            print('aaaaaaa')
-            continue
-        }
         prev_line_indent = get_indent(lines[i-1])
         current_line_indent = get_indent(lines[i])
 

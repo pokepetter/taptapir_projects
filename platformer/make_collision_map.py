@@ -1,32 +1,41 @@
-from PIL import Image
+from PIL import Image,ImageSequence
 import numpy as np
 
-skip = 32
-threshold = int(.4 * 255)
+update_collision_only = False
+# update_collision_only = True
 
-img = Image.open('mg.png').convert('L')
-width = img.width // skip
-height = img.height // skip
-img = img.resize([width, height], Image.NEAREST)
-img = img.point(lambda p: 255 if p > threshold else 0) # threshold filter
-img = img.convert('1') # to mono
+levels = ['level_0', 'level_1', ]
+layers = ['bbg', 'bg', 'mg', 'fg', ]
+if update_collision_only:
+    layers = ['mg', ]
 
-# img.show()
-image_as_list = np.array(img).tolist()
-for y, row in enumerate(image_as_list):
-    for x, value in enumerate(row):
-        image_as_list[y][x] = int(value)
+for level_name in levels:
+    for layer_name in layers:
+        file_name = f'{level_name}_{layer_name}'
+        print('opening:', f'{file_name}.png')
+        img = Image.open(f'{file_name}.png')
 
+        if not update_collision_only:
+            img.save(f'{file_name}.webp', 'webp')
+            print('saved:', file_name)
 
+        if layer_name == 'mg':
+            skip = 32
+            threshold = int(.4 * 255)
 
-with open("collision_map.txt", "w") as file:
-    file.write(str(image_as_list))
+            img = img.convert('L')
+            width = img.width // skip
+            height = img.height // skip
+            img = img.resize([width, height], Image.NEAREST)
+            img = img.point(lambda p: 255 if p > threshold else 0) # threshold filter
+            img = img.convert('1') # to mono
 
+            # img.show()
+            image_as_list = np.array(img).tolist()
+            for y, row in enumerate(image_as_list):
+                for x, value in enumerate(row):
+                    image_as_list[y][x] = int(value)
 
-tiff = Image.open('level_1.tiff')
-tiff.load()
-
-### Saving each image to output folder
-for i in range(tiff.n_frames):
-    tiff.seek(i)
-    tiff.save(f'level_1_layer{i}.webp')
+            with open(f'{level_name}_collision_map.txt', "w") as file:
+                file.write(str(image_as_list))
+            print('made collision map:', f'{level_name}_collision_map.txt')
