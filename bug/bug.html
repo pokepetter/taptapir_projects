@@ -28,12 +28,18 @@ set_window_color('rgb(49 72 60)')
 // set_scale(1)
 // set_orientation('horizontal')
 
-e = Button(scale=.2, color=hsv(30,1,1), shadow=1)
-e.on_click = def():
-    after .5:
-        print('a')
+rocks = {
+    'level_1': [0,],
+    'level_2': [0,],
+}
 
-    print('b')
+t = 1
+
+if t in rocks['level_1']:
+    print('a')
+
+Text(text='yay', text_origin=[0,0])
+
 
 // e = Button(scale=.2, color='red', shadow=1, draggable=True)
 // def update():

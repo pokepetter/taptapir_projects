@@ -45,23 +45,6 @@ for (var i=0; i<all_lines.length; i++) {
         }
     }
 
-    // merge lines ending with , or {
-    // continue_line = all_lines[i].trimEnd().endsWith('{') || all_lines[i].trimEnd().endsWith(',')
-    // print('cont', continue_line, all_lines[i])
-    // if (continue_line && !is_in_merge_lines_mode) {
-    //     temp_lines = []
-    //     is_in_merge_lines_mode = true
-    // }
-    // if (is_in_merge_lines_mode && continue_line) {
-    //     temp_lines.push(all_lines[i])
-    //     continue
-    // }
-    // if (is_in_merge_lines_mode && !continue_line) {
-    //     lines.push(temp_lines.join())
-    //     i += temp_lines.length
-    //     continue
-    // }
-
     lines.push(all_lines[i])
 }
 
@@ -217,6 +200,9 @@ for (var i=0; i<lines.length; i++) {
     // is in list
     else if (lines[i].includes(' in ')) {
         word_before_in = lines[i].split(' in ')[0].split(' ').pop()
+        if (word_before_in.startsWith('(')) {
+            word_before_in = word_before_in.slice(1) // remove first and last
+        }
         // print('word before:', word_before_in)
         word_after_in =  lines[i].split(' in ')[1].split(' ')[0]
         if (word_after_in.endsWith(')') && !word_after_in.endsWith('()')) {
