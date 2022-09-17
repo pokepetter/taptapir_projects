@@ -5,17 +5,46 @@
 <html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <head> <link rel="stylesheet" href="sswg.css"> </head>
+<body>
 <left>
-<style>a.button {background-color: #2f5dd1;} a.button:hover {background-color: #ab1579}</style><title>sunsnake</title>
+<title>sunsnake</title>
 <br>
 
+<style>
+a.button {background-color: #2f5dd1;}
+a.button:hover {background-color: #ab1579}
+body{background-color:#c2beb3; color:#333;}
+.code_block {background-color:#3c3c3c; color:#cfcfcf}
+olive&nbsp;&nbsp;{color: #dec533;}
+blue&nbsp;&nbsp; {color: hsl(210deg 73% 61%);}
+purple {color: hsl(289deg 76% 62%);}
+green&nbsp;&nbsp;{color: #37b764;}
+yellow {color: #d69e13;}
+/* ===== Scrollbar CSS ===== */
+/* Firefox */
+* {
+scrollbar-width: auto;
+scrollbar-color: #3c3c3c #c2beb3;
+}
+
+/* Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+width: 16px;
+}
+
+*::-webkit-scrollbar-track {
+background: #c2beb3;
+}
+
+*::-webkit-scrollbar-thumb {
+background-color: #3c3c3c;
+border-radius: 10px;
+border: 2px solid #c2beb3;
+}
+</style><br>
 <div style="font-family: arial;max-width: 650px; margin: auto;text-align: center;">
-<div style="font-size: 200.0px;">
-☀️🐍<br>
-<div style="font-size: 60.0px;font-family: monospace;">
+<div style="text-shadow: 3px 3px rgba(0,0,0,0.8); font-size: 7em; font-weight: bold; color:white;">sunsnake script</div><br>
 <br>
-sunsnake script<br>
-<div style="font-size: 20.0px;">
 <br>
 <br>
 <a href=" link.html" class="button">Download</a><br>
@@ -38,11 +67,13 @@ A Programming Language for the Web<br>
 <div id="Example"/><br>
 Example<br>
 <div style="font-size: 20.0px;font-weight: normal;">
-<div class="code_block" style="margin-left: 0em;">
+<br>
+<div class="code_block" style="margin-left: 0em;"><yellow>1</yellow><yellow>2</yellow><yellow>3</yellow>
 </div><div style="font-size: 40.0px;font-weight: bold;">
 <div id="Macros"/><br>
 Macros<br>
 <div style="font-size: 20.0px;font-weight: normal;">
+<br>
 <div class="code_block" style="margin-left: 0em;"><gray># replace the first argument with the second argument</gray>
 compiler.define(*style, <olive>scale</olive>=.<yellow>2</yellow>, <olive>color</olive>=hsv(<yellow>3</yellow><yellow>0</yellow><yellow>0</yellow>,<yellow>1</yellow>,<yellow>1</yellow>), roundness=.<yellow>2</yellow><yellow>5</yellow>, text_<olive>origin</olive>=[<yellow>0</yellow>,<yellow>0</yellow>])
 
@@ -64,9 +95,11 @@ Range<br>
 <br>
 <div class="code_block" style="margin-left: 0em;"><purple>for</purple> i in <blue>range</blue>(<yellow>8</yellow>):
     <blue>print</blue>(i)
-</div><div class="code_block" style="margin-left: 0em;"><purple>for</purple> i in <blue>range</blue>(<yellow>1</yellow>, <yellow>8</yellow>): <gray># <purple>from</purple> <yellow>1</yellow> to <yellow>8</yellow></gray>
+</div><br>
+<div class="code_block" style="margin-left: 0em;"><purple>for</purple> i in <blue>range</blue>(<yellow>1</yellow>, <yellow>8</yellow>): <gray># <purple>from</purple> <yellow>1</yellow> to <yellow>8</yellow></gray>
     <blue>print</blue>(i)
-</div><div class="code_block" style="margin-left: 0em;"><purple>for</purple> i in <blue>range</blue>(<yellow>1</yellow>, <yellow>8</yellow>, <yellow>2</yellow>): <gray># <purple>from</purple> <yellow>1</yellow> to <yellow>8</yellow>, with a step of <yellow>2</yellow></gray>
+</div><br>
+<div class="code_block" style="margin-left: 0em;"><purple>for</purple> i in <blue>range</blue>(<yellow>1</yellow>, <yellow>8</yellow>, <yellow>2</yellow>): <gray># <purple>from</purple> <yellow>1</yellow> to <yellow>8</yellow>, with a step of <yellow>2</yellow></gray>
     <blue>print</blue>(i)
 </div><br>
 There's also a shorthand range:<br>
@@ -98,4 +131,5 @@ my_list = [e <purple>for</purple> e in my_list <purple>if</purple> e &lt; <yello
 &gt;&gt;&gt; [<yellow>1</yellow>, <yellow>0</yellow>, <yellow>4</yellow>]
 </div><br>
 
+</body>
 </html>

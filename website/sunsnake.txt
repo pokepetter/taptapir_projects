@@ -1,11 +1,38 @@
-# style a.button {background-color: #2f5dd1;} a.button:hover {background-color: #ab1579}
-# arial, width 650, center
-# size 10
-☀️🐍
-# size 3, monospace
+<style>
+a.button {background-color: #2f5dd1;}
+a.button:hover {background-color: #ab1579}
+body{background-color:#c2beb3; color:#333;}
+.code_block {background-color:#3c3c3c; color:#cfcfcf}
+olive  {color: #dec533;}
+blue   {color: hsl(210deg 73% 61%);}
+purple {color: hsl(289deg 76% 62%);}
+green  {color: #37b764;}
+yellow {color: #d69e13;}
+/* ===== Scrollbar CSS ===== */
+/* Firefox */
+* {
+scrollbar-width: auto;
+scrollbar-color: #3c3c3c #c2beb3;
+}
 
-sunsnake script
-#size 1
+/* Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+width: 16px;
+}
+
+*::-webkit-scrollbar-track {
+background: #c2beb3;
+}
+
+*::-webkit-scrollbar-thumb {
+background-color: #3c3c3c;
+border-radius: 10px;
+border: 2px solid #c2beb3;
+}
+</style>
+# arial, width 650, center
+<div style="text-shadow: 3px 3px rgba(0,0,0,0.8); font-size: 7em; font-weight: bold; color:white;">sunsnake script</div>
+
 
 
 [Download, link.html]
@@ -22,10 +49,12 @@ sunsnake script
 • Enforces good style.
 
 ## Example
-```
 
 ```
+123
+```
 ## Macros
+
 ```
 # replace the first argument with the second argument
 compiler.define(*style, scale=.2, color=hsv(300,1,1), roundness=.25, text_origin=[0,0])
@@ -48,10 +77,12 @@ minus_button.on_click = def():
 for i in range(8):
     print(i)
 ```
+
 ```
 for i in range(1, 8): # from 1 to 8
     print(i)
 ```
+
 ```
 for i in range(1, 8, 2): # from 1 to 8, with a step of 2
     print(i)

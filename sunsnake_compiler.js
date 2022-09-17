@@ -1,5 +1,5 @@
 print = console.log
-var poke_script = document.querySelector('script[type="text/pokescript"]').textContent
+var poke_script = document.querySelector('script[type="text/sunsnake"]').textContent
 
 
 
