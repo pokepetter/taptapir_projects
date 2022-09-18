@@ -123,6 +123,7 @@ for (var i=0; i<lines.length; i++) {
     lines[i] = lines[i].replaceAll('.append(', '.push(')
     lines[i] = lines[i].replaceAll('.add(', '.push(')
     lines[i] = lines[i].replaceAll('.sum()', '.reduce((a, b) => a + b, 0)')
+    lines[i] = lines[i].replaceAll('[-1]', '.at(-1)')
 
 
     if (lines[i].includes('[') && lines[i].includes(']') && lines[i].includes(' for ') && lines[i].includes(' in ') &&  !lines[i].includes(' enumerate(')) {
@@ -192,7 +193,7 @@ for (var i=0; i<lines.length; i++) {
 
     // for loops
     else if (lines[i].trimStart().startsWith('for ') && lines[i].includes(' in ')) {
-        lines[i] = lines[i].replace('for ', 'for (const ')
+        lines[i] = lines[i].replace('for ', 'for (var ')
         lines[i] = lines[i].replace(' in ', ' of ')
         lines[i] = lines[i].replace(' {', ') {')
 

@@ -168,7 +168,7 @@ for (var i=0; i<lines.length; i++) {
 
     // for loops
     else if (lines[i].trimStart().startsWith('for ') && lines[i].includes(' in ')) {
-        lines[i] = lines[i].replace('for ', 'for (const ')
+        lines[i] = lines[i].replace('for ', 'for (var ')
         lines[i] = lines[i].replace(' in ', ' of ')
         lines[i] = lines[i].replace(' {', ') {')
 

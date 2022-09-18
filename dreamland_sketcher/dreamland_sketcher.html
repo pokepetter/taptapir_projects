@@ -68,7 +68,7 @@ brush_size = [178, 400]
 img = new Image()
 
 # brush_size = [128, 128]
-// SPACING = .5
+# SPACING = .5
 SPACING = .5
 brush_canvases = [document.createElement('canvas') for i in range(brush_tips.length)]
 
@@ -82,13 +82,13 @@ cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enab
 zoom_label = Button(text='100%', scale=[.15,.05], origin=[.5,.5], xy=[.5,.5], color=hsv(0,0,.9), text_color=color.gray, on_click=def():target_zoom=[aspect_ratio,1])
 smoothing = false
 
-// def get_canvas_position():
-//     x = (.5 + (mouse.x / .88)) * w
-//     // y = (.5 -((mouse.y / .88 / aspect_ratio) - .05)) * w*aspect_ratio
-//     y = (.5 -((mouse.y / .88 / aspect_ratio))) * w * aspect_ratio * 2
-//     # cursor.position = [x,y]
-//
-//     return [Math.floor(x), Math.floor(y)]
+# def get_canvas_position():
+#     x = (.5 + (mouse.x / .88)) * w
+#     # y = (.5 -((mouse.y / .88 / aspect_ratio) - .05)) * w*aspect_ratio
+#     y = (.5 -((mouse.y / .88 / aspect_ratio))) * w * aspect_ratio * 2
+#     # cursor.position = [x,y]
+#
+#     return [Math.floor(x), Math.floor(y)]
 
 
 start_position = null
@@ -345,10 +345,10 @@ def distanceApprox(p1,p2):
 color_menu = Entity(parent=camera.ui, visible_self=False, position=[.465,-.451,-1])
 color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=True, scale=.3)
 
-// def color_menu_input(key):
-//     if key == 'c':
-//         color_menu.menu.enabled = not color_menu.menu.enabled
-// color_menu.input = color_menu_input
+# def color_menu_input(key):
+#     if key == 'c':
+#         color_menu.menu.enabled = not color_menu.menu.enabled
+# color_menu.input = color_menu_input
 
 slider_height = .075
 bg = Entity(parent=color_menu.menu, x=.15, scale=[1.05+.3, (slider_height*1.1*3)+.05], color='#000f', alpha=.8, roundness=.05, z=2)
@@ -555,50 +555,138 @@ def record_undo():
     undo_index += 1
 
 using_lasso_tool = True
-selection = []
+selection = {'points':[]}
 lasso_tool = Entity(visible_self=False)
 lasso_tool.input = def input(key):
     if key == 'l':
         using_lasso_tool = True
-    // elif key == 'l up':
-    //     using_lasso_tool = False
+    # elif key == 'l up':
+    #     using_lasso_tool = False
     if using_lasso_tool and key == 'left mouse down':
         pos = mouse.point
         var x = int((pos[0]+.5) * w)
         var y = int((pos[1]-.5) * -h)
         lasso_prev_pos = [x,y]
         if not held_keys['shift']:
-            selection = []
+            selection.points = []
         lasso_tool.start_point = [x,y]
 
 
     if using_lasso_tool and key == 'left mouse up':
-        print('END SELECTIN')
-
-
+        print('END SELECTION')
         start = lasso_tool.start_point
-        end = selection[len(selection)-1]
+        end = selection.points[len(selection.points)-1]
         dist = distanceApprox(start, end)
         if not dist:
             return
 
         for i in range(0, dist):
             t = i / dist
-            let _x = lerp(start[0], end[0], t)
-            let _y = lerp(start[1], end[1], t)
-            if not [_x,_y] in selection:
-                selection.append([_x,_y])
+            let _x = int(lerp(start[0], end[0], t))
+            let _y = int(lerp(start[1], end[1], t))
+            if not [_x,_y] in selection.points:
+                selection.points.append([_x,_y])
                 ctx.fillStyle = rgb(0/255, 0/255, 0/255, 255/255)
-                ctx.fillRect(_x, _y, 2, 2);
+                ctx.fillRect(_x, _y, 1, 1);
+
+        unique_selection = []
+
+        for a in selection.points:
+            is_duplicate = False
+            # if a in unique_selection: contine
+            for b in unique_selection:
+                if a[0]===b[0] and a[1]===b[1]:
+                    is_duplicate = True
+                    break
+
+            if is_duplicate:
+                continue
+
+            unique_selection.append(a)
+        selection.points = unique_selection
+
+        xs = [e[0] for e in selection.points]
+        ys = [e[1] for e in selection.points]
+
+        selection.min_x = min(...xs)
+        selection.max_x = max(...xs)
+        selection.min_y = min(...ys)
+        selection.max_y = max(...ys)
+
+        selection.width = (selection.max_x - selection.min_x) +1
+        selection.height = (selection.max_y - selection.min_y) +1
+
+        def inside(point, vs):
+            # // ray-casting algorithm based on
+            # // https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html/pnpoly.html
+
+            var x = point[0], y = point[1]
+
+            var inside = False
+            for (var i=0, j=vs.length-1; i < vs.length; j=i++):
+                var xi = vs[i][0], yi = vs[i][1];
+                var xj = vs[j][0], yj = vs[j][1];
+
+                intersect = ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / (yj - yi) + xi)
+                if intersect:
+                    inside = !inside;
+
+            return inside
+
+        poly = selection.points
+        for y in range(selection.min_y, selection.min_y+selection.height):
+            for x in range(selection.min_x, selection.min_x+selection.width):
+                if inside([x,y], poly):
+                    ctx.fillRect(x, y, 1, 1);
 
 
-        def sort_vertically(a, b):
-            return a[1]-b[1]
-        selection.sort(sort_vertically)
+        # selection.grid = Array_2d(selection.width, selection.height)
+        # for y in range(selection.height):
+        #     for x in range(selection.width):
+        #         selection.grid[x][y] = 0
+        #
+        # for e in selection.points:
+        #     selection.grid[e[0]-selection.min_x][e[1]-selection.min_y] = 1
+        # # print(len(selection))
+        #
+        # # print('selection_height:', selection[0][1], selection[len(selection)-1][1])
+        # # selection_width =  range(selection[0][0], selection[len(selection)-1][0])
+        # def sort_horizontally(a, b):
+        #     return a[0]-b[0]
+        # # print(selection[0][1], selection[len(selection)-1][1])
+        # flood_fill_start_point = None
+        # for _y in range(selection.min_y, selection.max_y):
+        #     points_on_this_y = [e for e in selection.points if e[1] == _y]
+        #     points_on_this_y.sort(sort_horizontally)
+        #     length = points_on_this_y[-1] - points_on_this_y[0]
+        #
+        #     if len(points_on_this_y) == 2:
+        #         # ctx.fillRect(points_on_this_y[0][0], _y, points_on_this_y[1][0]-points_on_this_y[0][0], 1);
+        #         ctx.fillStyle = rgb(0/255, 0/255, 255/255, 255/255)
+        #         ctx.fillRect(points_on_this_y[0], _y, length, 1);
+
 
         lasso_prev_pos = None
-        // for
 
+
+# def floodfill(matrix, x, y, first=True):
+#     if matrix[y][y] == 1:
+#         return
+#
+#     if first:
+#         fill_target = matrix[x][y]
+#
+#     if matrix[x][y] == fill_target:
+#         matrix[x][y] = 1
+#         # recursively invoke flood fill on all surrounding cells
+#         if x > 0:
+#             self.floodfill(matrix, x-1, y, False)
+#         if x < selection.width-1:
+#             self.floodfill(matrix, x+1, y, False)
+#         if y > 0:
+#             self.floodfill(matrix, x, y-1, False)
+#         if y < selection.height-1:
+#             self.floodfill(matrix, x, y+1, False)
 
 
 lasso_prev_pos = None
@@ -609,25 +697,26 @@ lasso_tool.update = def():
     pos = mouse.point
     var x = int((pos[0]+.5) * w)
     var y = int((pos[1]-.5) * -h)
-    
+
     dist = distanceApprox(lasso_prev_pos, [x,y])
+    # dist = abs(y - lasso_prev_pos[1])
     if not dist:
         return
 
     for i in range(0, dist):
         t = i / dist
-        let _x = lerp(lasso_prev_pos[0], x, t)
-        let _y = lerp(lasso_prev_pos[1], y, t)
-        if not [_x,_y] in selection:
-            selection.append([_x,_y])
+        let _x = int(lerp(lasso_prev_pos[0], x, t))
+        let _y = int(lerp(lasso_prev_pos[1], y, t))
+        if not [_x,_y] in selection.points:
+            selection.points.append([_x,_y])
             ctx.fillStyle = rgb(0/255, 0/255, 0/255, 255/255)
-            ctx.fillRect(_x, _y, 2, 2);
+            ctx.fillRect(_x, _y, 1, 1);
 
     lasso_prev_pos = [x,y]
-    // if not [x,y] in selection:
-    //     selection.append([x,y])
-    //     ctx.fillStyle = rgb(0/255, 0/255, 0/255, 255/255)
-    //     ctx.fillRect(x, y, 2, 2);
+    # if not [x,y] in selection:
+    #     selection.append([x,y])
+    #     ctx.fillStyle = rgb(0/255, 0/255, 0/255, 255/255)
+    #     ctx.fillRect(x, y, 2, 2);
 
 </script>
 <script src="../sunsnake_compiler.js"></script>

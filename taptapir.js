@@ -492,6 +492,14 @@ function random_int(min, max) {
 function random_choice(list) {
     return list[random_int(0, len(list)-1)]
 }
+function lists_are_equal(array_a, array_b) {
+    for (let i=0; i<array_a.length; i++) {
+        if (array_a[i] != array_b[i]) {
+            return false
+        }
+    }
+    return true
+}
 
 
 class Camera{
