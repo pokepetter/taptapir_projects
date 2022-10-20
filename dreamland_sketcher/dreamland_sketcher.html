@@ -52,26 +52,27 @@ ctx = canvas.getContext('2d')
 ctx.fillStyle = rgb(128/255, 128/255, 128/255, 255/255)
 ctx.fillRect(0, 0, canvas.width, canvas.height)
 
+round_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.5, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
+poke_brush = {'textures':["pokebrush.png", ], 'size':[256, 256], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
+painterly_brush = {'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[178, 400], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':False}
 
-round_brush_tips = ["round_brush_16.png", ]
-poke_brush_tips = ["pokebrush.png", ]
-painterly_brush_tips = ["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ]
+brushes = [round_brush, poke_brush, painterly_brush]
 
-
-def set_brush(images):
-    brush_tips = [new Image() for e in images]
+def set_brush(brush):
+    brush_tips = [new Image() for e in brush.textures]
     for i in range(brush_tips.length):
-        brush_tips[i].src = images[i]
+        brush_tips[i].src = brush.textures[i]
 
-set_brush(painterly_brush_tips)
-brush_size = [178, 400]
+    brush_size = brush.size
+    SPACING = brush.spacing
+    using_painterly_brush = brush.painterly_brush
+    rotate_brush = brush.rotate
+    draw_on_click = brush.draw_on_click
+
+
+set_brush(painterly_brush)
 img = new Image()
-
-# brush_size = [128, 128]
-# SPACING = .5
-SPACING = .5
 brush_canvases = [document.createElement('canvas') for i in range(brush_tips.length)]
-
 current_color = [255, 0, 128, 255]
 # current_color = [0, 0, 0, 255]
 drawing = False
@@ -79,7 +80,7 @@ using_eyedropper = False
 prev_pos = None
 
 cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enabled=false)
-zoom_label = Button(text='100%', scale=[.15,.05], origin=[.5,.5], xy=[.5,.5], color=hsv(0,0,.9), text_color=color.gray, on_click=def():target_zoom=[aspect_ratio,1])
+zoom_label = Button(text='100%', scale=[.075,.04], origin=[.5,.5], xy=[(.5*aspect_ratio)-.005,.495], color=hsv(0,0,0), text_color=hsv(0,0,.8), text_size=2, on_click=def():target_zoom=[aspect_ratio,1])
 smoothing = false
 
 # def get_canvas_position():
@@ -424,57 +425,35 @@ menu_parent = Entity(parent=camera.ui, visible_self=False, name='menu_parent')
 # Entity(parent=menu_parent, origin=[-.5,0], color=hsv(0,0,.1), x=(.5*aspect_ratio)-.125)
 # Entity(parent=menu_parent, origin=[0, .5], color=hsv(0,0,.1), y=-.5+.1, scale_x=2)
 
-compiler.define(*button_style, parent=menu_parent, roundness=.02, origin=[.5,.5], text_origin=[0,0], x=(.5*aspect_ratio)-.0125, scale=[.05,.05], z=-1, text_size=1.5, color=hsv(0,0,1), text_color=color.gray)
+compiler.define(*button_style, parent=menu_parent, roundness=.01, origin=[.5,.5], text_origin=[0,0], x=(.5*aspect_ratio)-.0125, scale=[.05,.05], z=-1, text_size=1.5, color=hsv(0,0,.05), text_color=hsv(0,.0,.8))
 right_button_x = (.5*aspect_ratio)-.0125
 left_button_x = right_button_x-.05
 
 increase_brush_size_button = Entity(*button_style, y=.1, text='+', on_click=def():brush_size = [e*1.5 for e in brush_size])
 decrease_brush_size_button = Entity(*button_style, y=.1, x=left_button_x, text='-', on_click=def():brush_size = [e*1/1.5 for e in brush_size])
 
-def change_to_painterly_brush():
-    set_brush(painterly_brush_tips)
-    brush_size = [178, 400]
-    using_painterly_brush = True
-    SPACING = .5
-    rotate_brush = True
-    draw_on_click = False
-painterly_brush_button = Entity(*button_style, xy=[left_button_x,.05], text='paint', on_click=change_to_painterly_brush)
-painterly_brush_button.input = def input(key):
-    if key == 'p':
-        change_to_painterly_brush()
 
-def change_to_round_brush():
-    set_brush(round_brush_tips)
-    brush_size = [2, 2]
-    SPACING = .5
-    draw_on_click = True
-    rotate_brush = False
-    using_painterly_brush = False
-    set_color(current_color)
-round_brush_button = Entity(*button_style, xy=[right_button_x,.05], text='round', on_click=change_to_round_brush)
-round_brush_button.input = def input(key):
-    if key == 'o':
-        change_to_round_brush()
+for i, e in enumerate(brushes):
+    let brush = e
+    let brush_button = Entity(*button_style, xy=[right_button_x,.05*-i])
+    icon = Entity(roundness=.01, parent=brush_button, texture=e.textures[0], xy=[-.5,-.5], color=color.black, z=-1, scale=.7)
+    icon_aspect = brush.size[0] / brush.size[1]
+    if icon_aspect > 1:
+        icon.scale = [1, icon_aspect]
+    else:
+        icon.scale = [icon_aspect, 1]
 
-def change_to_poke_brush():
-    set_brush(poke_brush_tips)
-    brush_size = [256, 256]
-    SPACING = .075
-    draw_on_click = True
-    rotate_brush = False
-    using_painterly_brush = False
-    set_color(current_color)
-poke_brush_button = Entity(*button_style, xy=[right_button_x,.05-.05], on_click=change_to_poke_brush)
-Entity(roundness=.01, parent=poke_brush_button, texture='pokebrush.png', origin=[.5,.5], color=color.black, z=-1)
-poke_brush_button.input = def input(key):
-    if key == 'i':
-        change_to_poke_brush()
+    brush_button.on_click = def():
+        set_brush(brush)
+
+# //     if key == 'i':
+# //         change_to_poke_brush()
 
 window.onfocus = def():
     using_eyedropper = False
 
 
-save_button = Button(*button_style, y=-.26, scale_x=.1, text='save')
+save_button = Button(*button_style, y=-.25, scale=[.1,.04], text='save')
 save_button.on_click = def save():
     dataURL = canvas.toDataURL("image")
     window.localStorage.setItem("image", dataURL)
@@ -512,7 +491,7 @@ async def paste(e):
 window.addEventListener("paste", paste)
 
 
-download_button = Button(*button_style, text='download', scale=[.1,.05], origin=[.5,.5], x=(.5*aspect_ratio)-.0125, y=-.2)
+download_button = Button(*button_style, text='download', scale=[.1,.04], origin=[.5,.5], x=(.5*aspect_ratio)-.0125, y=-.2)
 var link = document.createElement('a');
 download_button.on_click = def download():
     link.download = "untitled.png"
@@ -554,7 +533,7 @@ def record_undo():
     # print('record undo')
     undo_index += 1
 
-using_lasso_tool = True
+using_lasso_tool = False
 selection = {'points':[]}
 lasso_tool = Entity(visible_self=False)
 lasso_tool.input = def input(key):
@@ -639,32 +618,7 @@ lasso_tool.input = def input(key):
                 if inside([x,y], poly):
                     ctx.fillRect(x, y, 1, 1);
 
-
-        # selection.grid = Array_2d(selection.width, selection.height)
-        # for y in range(selection.height):
-        #     for x in range(selection.width):
-        #         selection.grid[x][y] = 0
-        #
-        # for e in selection.points:
-        #     selection.grid[e[0]-selection.min_x][e[1]-selection.min_y] = 1
-        # # print(len(selection))
-        #
-        # # print('selection_height:', selection[0][1], selection[len(selection)-1][1])
-        # # selection_width =  range(selection[0][0], selection[len(selection)-1][0])
-        # def sort_horizontally(a, b):
-        #     return a[0]-b[0]
-        # # print(selection[0][1], selection[len(selection)-1][1])
-        # flood_fill_start_point = None
-        # for _y in range(selection.min_y, selection.max_y):
-        #     points_on_this_y = [e for e in selection.points if e[1] == _y]
-        #     points_on_this_y.sort(sort_horizontally)
-        #     length = points_on_this_y[-1] - points_on_this_y[0]
-        #
-        #     if len(points_on_this_y) == 2:
-        #         # ctx.fillRect(points_on_this_y[0][0], _y, points_on_this_y[1][0]-points_on_this_y[0][0], 1);
-        #         ctx.fillStyle = rgb(0/255, 0/255, 255/255, 255/255)
-        #         ctx.fillRect(points_on_this_y[0], _y, length, 1);
-
+            length = points_on_this_y[-1] - points_on_this_y[0]
 
         lasso_prev_pos = None
 

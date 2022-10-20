@@ -24,7 +24,7 @@ fullscreen_button {padding: 4px 4px; width: 64px; height: 64px; background-color
 body {
     margin:0;
     background-color:'#111';
-    font-family: Verdana, Arial, sans-serif;
+    font-family: CerebriSans-Regular,-apple-system,system-ui,Roboto,sans-serif;
     white-space: pre-wrap;
     overscroll-behavior-y: contain;
 }

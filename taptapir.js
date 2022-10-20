@@ -371,13 +371,14 @@ class Entity {
     }
     get text_color() {return this.model.style.color}
     set text_color(value) {
-        // if (!(value instanceof String)) {
-        //     var alpha = 255
-        //     if (value.length == 4) {
-        //         alpha = value[3]
-        //     }
-        //     value = `rgba(${value[0]},${value[1]},${value[2]},${alpha})`
-        // }
+        if (!(typeof value == "string")) {
+            // print('set color:', value)
+            var alpha = 255
+            if (value.length == 4) {
+                alpha = value[3]
+            }
+            value = `rgba(${value[0]},${value[1]},${value[2]},${alpha})`
+        }
         this.model.style.color = value
     }
     get text_size() {return this._text_size}
