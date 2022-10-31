@@ -76,8 +76,9 @@ brush_canvases = [document.createElement('canvas') for i in range(brush_tips.len
 current_color = [255, 0, 128, 255]
 # current_color = [0, 0, 0, 255]
 drawing = False
-using_eyedropper = False
 prev_pos = None
+tool = 'brush'
+# set_tool()
 
 cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enabled=false)
 zoom_label = Button(text='100%', scale=[.075,.04], origin=[.5,.5], xy=[(.5*aspect_ratio)-.005,.495], color=hsv(0,0,0), text_color=hsv(0,0,.8), text_size=2, on_click=def():target_zoom=[aspect_ratio,1])
@@ -155,7 +156,7 @@ canvas_entity.on_click = def():
 
             brush_canvas_context.putImageData(imgData, 0, 0)
 
-    if not using_eyedropper:
+    if tool == 'eyedropper':
         drawing = True
     try:
         paint()
@@ -178,11 +179,14 @@ def input(key):
             current_color[3] = int(255/10 * i)
             print(current_color)
 
-    if key == 'alt':
-        using_eyedropper = True
+    if tool == 'brush' and key == 'alt':
+        prev_tool = tool
+        tool = 'eyedropper'
+        print('tool:', tool)
 
-    if key == 'alt up':
-        using_eyedropper = False
+    if tool == 'eyedropper' and key == 'alt up':
+        tool = prev_tool
+        print('tool:', tool)
 
     if held_keys['control'] and key == 'z':
         undo()
@@ -235,7 +239,7 @@ def update():
 
 
 def paint():
-    if not drawing and not using_eyedropper:
+    if not drawing and tool == 'eyedropper':
         return
     if mouse.hovered_entity != canvas_entity:
         return
@@ -249,7 +253,7 @@ def paint():
         x = lerp(prev_pos[0], x, .025)
         y = lerp(prev_pos[1], y, .025)
 
-    if using_eyedropper:
+    if tool == 'eyedropper':
         current_color = ctx.getImageData(x, y, 1, 1).data
         set_color(current_color)
         return
@@ -449,8 +453,8 @@ for i, e in enumerate(brushes):
 # //     if key == 'i':
 # //         change_to_poke_brush()
 
-window.onfocus = def():
-    using_eyedropper = False
+# window.onfocus = def():
+#     using_eyedropper = False
 
 
 save_button = Button(*button_style, y=-.25, scale=[.1,.04], text='save')
