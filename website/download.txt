@@ -1,0 +1,53 @@
+<style>
+a.button {background-color: #2f5dd1;}
+a.button:hover {background-color: #ab1579}
+body{background-color:#c2beb3; color:#333;}
+.code_block {background-color:#3c3c3c; color:#cfcfcf}
+olive  {color: #dec533;}
+blue   {color: hsl(210deg 73% 61%);}
+purple {color: hsl(289deg 76% 62%);}
+green  {color: #37b764;}
+yellow {color: #d69e13;}
+/* ===== Scrollbar CSS ===== */
+/* Firefox */
+* {
+scrollbar-width: auto;
+scrollbar-color: #3c3c3c #c2beb3;
+}
+
+/* Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+width: 16px;
+}
+
+*::-webkit-scrollbar-track {
+background: #c2beb3;
+}
+
+*::-webkit-scrollbar-thumb {
+background-color: #3c3c3c;
+border-radius: 10px;
+border: 2px solid #c2beb3;
+}
+</style>
+# arial, width 650, center
+<div style="text-shadow: 3px 3px rgba(0,0,0,0.8); font-size: 7em; font-weight: bold; color:white;">sunsnake script</div>
+
+# left
+### Download
+
+## Files
+
+Right click and choose "Save link as..."
+
+
+[sunsnake.js, ../sunsnake_compiler.js]
+
+## Additional Files
+
+These are not required to use sunsnake, but taptapir is
+useful for making apps/games
+
+[taptapir.js, ../taptapir.js]
+[taptapir.css, ../taptapir.css]
+[empty_project.html, ../empty_project.html]

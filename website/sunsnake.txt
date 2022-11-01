@@ -35,7 +35,7 @@ border: 2px solid #c2beb3;
 
 
 
-[Download, link.html]
+[Download, download.html]
 
 
 # left
