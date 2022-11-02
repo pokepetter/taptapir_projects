@@ -30,12 +30,16 @@ border-radius: 10px;
 border: 2px solid #c2beb3;
 }
 </style>
-# arial, width 650, center
-<div style="text-shadow: 3px 3px rgba(0,0,0,0.8); font-size: 7em; font-weight: bold; color:white;">sunsnake script</div>
+# arial, width 650, center, size 8, bold
+sunsnake script
+# size 1.5, normal
 
+A Programming Language for the Web
 
+# right
 
-[Download, link.html]
+# center
+[Download, download.html]   [Documentation, link.html]   [GitHub, link.html]
 
 
 # left
@@ -44,9 +48,9 @@ border: 2px solid #c2beb3;
 • Can be run in web browsers.
 • Inspired by Python's syntax.
 • Transpiles into JavaScript.
-• List comprehension.
-• Indentation significant, no {}-brackets.
-• Enforces good style.
+
+## Indentation Significant
+No more {}-brackets :)
 
 ## Example
 
@@ -115,3 +119,16 @@ print(my_list)
 
 >>> [1, 0, 4]
 ```
+
+## Coroutines/Delay
+
+```
+let e = Button(scale=.2, text='?', color='#222', text_color='#fff', text_size=6, value='✔️', alpha=.95)
+e.on_click = def():
+    after 0.2s:
+        e.text = e.value
+```
+
+## Made with sunsnake
+
+Dustred
