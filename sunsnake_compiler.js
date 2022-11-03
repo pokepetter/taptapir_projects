@@ -32,6 +32,9 @@ for (var i=0; i<all_lines.length; i++) {
     if (all_lines[i].trimStart().startsWith('#')) {
         continue
     }
+    if (all_lines[i].includes(': #')) {
+        all_lines[i] = all_lines[i].split(': #')[0] + ':'
+    }
     // if (all_lines[i].trimStart().startsWith('define(')) {}
     // remove text so it doesn't get parsed as code.
     quotes = [...all_lines[i].matchAll(regexp)];
