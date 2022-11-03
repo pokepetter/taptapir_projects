@@ -52,16 +52,22 @@ ctx = canvas.getContext('2d')
 ctx.fillStyle = rgb(128/255, 128/255, 128/255, 255/255)
 ctx.fillRect(0, 0, canvas.width, canvas.height)
 
+square_brush = {'textures':None, 'size':[5, 5], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 round_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.5, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 poke_brush = {'textures':["pokebrush.png", ], 'size':[256, 256], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 painterly_brush = {'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[178, 400], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':False}
 
-brushes = [round_brush, poke_brush, painterly_brush]
+brushes = [square_brush, round_brush, poke_brush, painterly_brush]
 
 def set_brush(brush):
-    brush_tips = [new Image() for e in brush.textures]
-    for i in range(brush_tips.length):
-        brush_tips[i].src = brush.textures[i]
+    brush_tips = None
+    brush_canvases = None
+    if brush.textures:
+        brush_tips = [new Image() for e in brush.textures]
+        brush_canvases = [document.createElement('canvas') for e in range(brush_tips)]
+        print('set')
+        for i in range(brush_tips.length):
+            brush_tips[i].src = brush.textures[i]
 
     brush_size = brush.size
     SPACING = brush.spacing
@@ -70,19 +76,21 @@ def set_brush(brush):
     draw_on_click = brush.draw_on_click
 
 
-set_brush(painterly_brush)
+brush_distance = 0
+draw_on_click = False
+rotate_brush = True
+using_painterly_brush = True
+prev_brush_tip = -1
+set_brush(square_brush)
 img = new Image()
-brush_canvases = [document.createElement('canvas') for i in range(brush_tips.length)]
 current_color = [255, 0, 128, 255]
-# current_color = [0, 0, 0, 255]
 drawing = False
+smoothing = False
 prev_pos = None
+start_position = None
+snap_to_hex = False
 tool = 'brush'
-# set_tool()
-
 cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enabled=false)
-zoom_label = Button(text='100%', scale=[.075,.04], origin=[.5,.5], xy=[(.5*aspect_ratio)-.005,.495], color=hsv(0,0,0), text_color=hsv(0,0,.8), text_size=2, on_click=def():target_zoom=[aspect_ratio,1])
-smoothing = false
 
 # def get_canvas_position():
 #     x = (.5 + (mouse.x / .88)) * w
@@ -91,86 +99,206 @@ smoothing = false
 #     # cursor.position = [x,y]
 #
 #     return [Math.floor(x), Math.floor(y)]
+brush_tool = Entity(name='brush_tool', visible_self=False)
+brush_tool.input = def input(key):
+    if mouse.hovered_entity == canvas_entity and key == 'left mouse down':
+        if not held_keys['shift']:
+            prev_pos = None
+        if not brush_tips:
+            return
 
+        if not using_painterly_brush: # tint the temporary brush tip
+            for j in range(brush_tips.length):
+                brush_canvas = brush_canvases[j]
+                brush = brush_tips[j]
 
-start_position = null
-snap_to_hex = false
+                brush_canvas.width = brush_size[0]
+                brush_canvas.height = brush_size[1]
+                brush_canvas_context = brush_canvas.getContext("2d")
+                brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
+                imgData = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
 
-canvas_entity.on_click = def():
-    if using_lasso_tool:
-        return
+                for i in range(0, imgData.data.length, 4):
+                    imgData.data[i] = imgData.data[i] * (current_color[0]/255)
+                    imgData.data[i+1] = imgData.data[i+1] * (current_color[1]/255)
+                    imgData.data[i+2] = imgData.data[i+2] * (current_color[2]/255)
+                    imgData.data[i+3] = imgData.data[i+3] * (current_color[3]/255)
 
-    if not held_keys['shift']:
-        prev_pos = None
+                brush_canvas_context.putImageData(imgData, 0, 0)
+        else: # special tint for paiterly brushes to keep contrast
+            color_as_hsv = rgb_to_hsv(current_color)
+            c = color_as_hsv[2] * 255
+            c = (current_color[0] + current_color[1] + current_color[2])/3
+            # print('------------', c)
+            sat = color_as_hsv[1]
+            contrast = 64
+            dark = c-contrast
+            light = c+contrast
+            # adjust contrast and brighten based on saturation
+            dark = c-contrast + (sat*contrast*1.2)
+            light = c+contrast + contrast + (sat*contrast*1.2)
 
-    if not using_painterly_brush:
-        for j in range(brush_tips.length):
-            brush_canvas = brush_canvases[j]
-            brush = brush_tips[j]
+            for j in range(brush_tips.length):
+                brush_canvas = brush_canvases[j]
+                brush = brush_tips[j]
 
-            brush_canvas.width = brush_size[0]
-            brush_canvas.height = brush_size[1]
-            brush_canvas_context = brush_canvas.getContext("2d")
-            brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
-            imgData = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
+                brush_canvas.width = brush_size[0]
+                brush_canvas.height = brush_size[1]
+                brush_canvas_context = brush_canvas.getContext("2d")
+                brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
+                imgData = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
 
-            for i in range(0, imgData.data.length, 4):
-                imgData.data[i] = imgData.data[i] * (current_color[0]/255)
-                imgData.data[i+1] = imgData.data[i+1] * (current_color[1]/255)
-                imgData.data[i+2] = imgData.data[i+2] * (current_color[2]/255)
-                imgData.data[i+3] = imgData.data[i+3] * (current_color[3]/255)
+                for i in range(0, imgData.data.length, 4):
+                    # imgData.data[i] = lerp(dark, light, imgData.data[i]/255) * lerp(1, current_color[0]/255, sat)
+                    # imgData.data[i+1] = lerp(dark, light, imgData.data[i+1]/255) * lerp(1, current_color[1]/255, sat)
+                    # imgData.data[i+2] = lerp(dark, light, imgData.data[i+2]/255) * lerp(1, current_color[2]/255, sat)
+                    imgData.data[i] = lerp(dark, light, imgData.data[i]/255) * current_color[0]/255
+                    imgData.data[i+1] = lerp(dark, light, imgData.data[i+1]/255) * current_color[1]/255
+                    imgData.data[i+2] = lerp(dark, light, imgData.data[i+2]/255) * current_color[2]/255
+                    imgData.data[i+3] = imgData.data[i+3] * current_color[3]/255
 
-            brush_canvas_context.putImageData(imgData, 0, 0)
-    else:
-        color_as_hsv = rgb_to_hsv(current_color)
-        c = color_as_hsv[2] * 255
-        c = (current_color[0] + current_color[1] + current_color[2])/3
-        # print('------------', c)
-        sat = color_as_hsv[1]
-        contrast = 64
-        dark = c-contrast
-        light = c+contrast
-        # adjust contrast and brighten based on saturation
-        dark = c-contrast + (sat*contrast*1.2)
-        light = c+contrast + contrast + (sat*contrast*1.2)
+                brush_canvas_context.putImageData(imgData, 0, 0)
 
-        for j in range(brush_tips.length):
-            brush_canvas = brush_canvases[j]
-            # print(typeof(brush_canvases[j]))
-            brush = brush_tips[j]
+        if tool == 'eyedropper':
+            drawing = True
 
-            brush_canvas.width = brush_size[0]
-            brush_canvas.height = brush_size[1]
-            brush_canvas_context = brush_canvas.getContext("2d")
-            brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
-            imgData = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
+        if key == 's':
+            smoothing = True
+        elif key == 's up':
+            smoothing = False
 
-            for i in range(0, imgData.data.length, 4):
-                # imgData.data[i] = lerp(dark, light, imgData.data[i]/255) * lerp(1, current_color[0]/255, sat)
-                # imgData.data[i+1] = lerp(dark, light, imgData.data[i+1]/255) * lerp(1, current_color[1]/255, sat)
-                # imgData.data[i+2] = lerp(dark, light, imgData.data[i+2]/255) * lerp(1, current_color[2]/255, sat)
-                imgData.data[i] = lerp(dark, light, imgData.data[i]/255) * current_color[0]/255
-                imgData.data[i+1] = lerp(dark, light, imgData.data[i+1]/255) * current_color[1]/255
-                imgData.data[i+2] = lerp(dark, light, imgData.data[i+2]/255) * current_color[2]/255
-                imgData.data[i+3] = imgData.data[i+3] * current_color[3]/255
+        try:
+            paint()
+        catch:
+            return
 
-            brush_canvas_context.putImageData(imgData, 0, 0)
-
-    if tool == 'eyedropper':
-        drawing = True
-    try:
+brush_tool.update = def update():
+    if mouse.left and mouse.hovered_entity == canvas_entity:
+        print('aaaaaaaaaaaaaaaa', brush_tool.enabled)
         paint()
-    catch:
+
+
+def get_canvas_position():
+    if not mouse.point:
+        return [0,0]
+
+    pos = mouse.point
+    return [int((pos[0]+.5) * w), int((pos[1]-.5) * -h)]
+
+def paint():
+    if held_keys['alt']:
+        return
+    if mouse.hovered_entity != canvas_entity:
         return
 
-brush_distance = 0
-draw_on_click = False
-rotate_brush = True
-using_painterly_brush = True
-prev_brush_tip = -1
+    [x, y] = get_canvas_position()
+    if smoothing and prev_pos:
+        x = lerp(prev_pos[0], x, .025)
+        y = lerp(prev_pos[1], y, .025)
+
+    # print('--------------', prev_pos)
+    if prev_pos == None:
+        if draw_on_click:
+            if not brush_tips: # no, brush texture, so draw a rect
+                invoke(def anon():
+                    ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
+                    ctx.fillRect(x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+                , delay=0)
+            else:
+                prev_brush_tip += 1
+                if prev_brush_tip >= brush_tips.length:
+                    prev_brush_tip = 0
+                img.src = brush_canvases[prev_brush_tip].toDataURL()
+
+                invoke(def anon():
+                    ctx.drawImage(img, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+                , delay=0)
+
+        start_position = pos
+        prev_draw_pos = pos
+        prev_pos = [x,y]
+        pixels_traveled = 0
+        return
+
+    if snap_to_hex:
+        y = start_position[1] + (x-start_position[0])
+
+    # print('--------', prev_pos)
+    distance_since_last_frame = distanceApprox(prev_pos, [x,y])
+    pixels_traveled += distance_since_last_frame
+    spacing_in_pixels = brush_size[1]*SPACING
+    steps = floor(pixels_traveled / spacing_in_pixels)
+
+    delta_pos = [x - prev_pos[0], y - prev_pos[1]]
+    radians = -math.atan2(delta_pos[0], delta_pos[1])
+    # if steps:
+    #     print('--------------', steps, spacing_in_pixels, pixels_traveled)
+
+    for i in range(0, steps):
+        if brush_tips:
+            prev_brush_tip += 1
+            if prev_brush_tip >= brush_tips.length:
+                prev_brush_tip = 0
+
+        t = i / steps
+        let _x = lerp(prev_pos[0], x, t)
+        let _y = lerp(prev_pos[1], y, t)
+
+        if brush_tips:
+            img.src = brush_canvases[prev_brush_tip].toDataURL()
+
+
+        if not rotate_brush:
+            if brush_tips:
+                ctx.drawImage(img, _x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
+            else: # draw rect
+                ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
+                ctx.fillRect(_x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
+
+        else:
+            invoke(def anon():
+                ctx.translate(_x, _y)
+                ctx.rotate(radians)
+                ctx.drawImage(img, -brush_size[0]/2, -brush_size[1]/2)
+                ctx.rotate(-radians)
+                ctx.translate(-_x, -_y)
+            , delay=0)
+
+        prev_draw_pos = [_x, _y]
+
+    pixels_traveled -= steps * spacing_in_pixels
+    prev_pos = [x, y]
+    # prev_pos_for_line_draw_mode = [x, y]
+    # if not held_keys['shift']:
+
+
+
+def mouse_up(ev):
+    if drawing:
+        record_undo()
+
+    drawing = false
+    # if not held_keys['shift']:
+    #     prev_pos = None
+    #     print('reset')
+
+
+document.addEventListener("mouseup", mouse_up, false)
+document.addEventListener("touchend", mouse_up, false)
+var canvas_rect = canvas.getBoundingClientRect()
+
+# Approximation by using octagons approach
+def distanceApprox(p1,p2):
+    var x = p2[0]-p1[0]
+    var y = p2[1]-p1[1]
+    return 1.426776695*Math.min(0.7071067812*(Math.abs(x)+Math.abs(y)), Math.max(Math.abs(x), Math.abs(y)))
 
 opacity_keys = '|1234567890'.split('')
 target_zoom = canvas_entity.scale
+zoom_label = Button(text='100%', scale=[.075,.04], origin=[.5,.5], xy=[(.5*aspect_ratio)-.005,.495], color=hsv(0,0,0), text_color=hsv(0,0,.8), text_size=2, on_click=def():target_zoom=[aspect_ratio,1])
+zoom_label.update = def update():
+    canvas_entity.scale_x = lerp(canvas_entity.scale[0], target_zoom[0], .2)
+    canvas_entity.scale_y = lerp(canvas_entity.scale[1], target_zoom[1], .2)
 
 def input(key):
     # print(key)
@@ -179,14 +307,14 @@ def input(key):
             current_color[3] = int(255/10 * i)
             print(current_color)
 
-    if tool == 'brush' and key == 'alt':
-        prev_tool = tool
-        tool = 'eyedropper'
-        print('tool:', tool)
-
-    if tool == 'eyedropper' and key == 'alt up':
-        tool = prev_tool
-        print('tool:', tool)
+    # if tool == 'brush' and key == 'alt':
+    #     prev_tool = tool
+    #     tool = 'eyedropper'
+    #     print('tool:', tool)
+    #
+    # if tool == 'eyedropper' and key == 'alt up':
+    #     tool = prev_tool
+    #     print('tool:', tool)
 
     if held_keys['control'] and key == 'z':
         undo()
@@ -210,10 +338,7 @@ def input(key):
         current_color = [255, 0, 0, 255]
 
 
-    if key == 's':
-        smoothing = True
-    elif key == 's up':
-        smoothing = False
+
 
     if key == 'scroll down':
         target_zoom = [e*.9 for e in target_zoom]
@@ -232,120 +357,6 @@ def input(key):
         canvas_entity.lock_x = True
         canvas_entity.lock_y = True
         canvas_entity.dragging = False
-
-def update():
-    canvas_entity.scale_x = lerp(canvas_entity.scale[0], target_zoom[0], .2)
-    canvas_entity.scale_y = lerp(canvas_entity.scale[1], target_zoom[1], .2)
-
-
-def paint():
-    if not drawing and tool == 'eyedropper':
-        return
-    if mouse.hovered_entity != canvas_entity:
-        return
-
-    pos = mouse.point
-
-    # print('PAINT', mouse.point)
-    var x = (pos[0]+.5) * w
-    var y = (pos[1]-.5) * -h
-    if smoothing and prev_pos:
-        x = lerp(prev_pos[0], x, .025)
-        y = lerp(prev_pos[1], y, .025)
-
-    if tool == 'eyedropper':
-        current_color = ctx.getImageData(x, y, 1, 1).data
-        set_color(current_color)
-        return
-
-    # print('--------------', prev_pos)
-    if prev_pos == None:
-        prev_brush_tip += 1
-        if prev_brush_tip >= brush_tips.length:
-            prev_brush_tip = 0
-        img.src = brush_canvases[prev_brush_tip].toDataURL()
-
-        # print('prev_brush_tip', prev_brush_tip, x ,y)
-        # ctx.drawImage(img, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
-        if draw_on_click:
-            invoke(def anon():
-                ctx.drawImage(img, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
-            , delay=0)
-
-        start_position = pos
-        prev_draw_pos = pos
-        prev_pos = [x,y]
-        pixels_traveled = 0
-        return
-
-    if snap_to_hex:
-        y = start_position[1] + (x-start_position[0])
-
-    # print('--------', prev_pos)
-    distance_since_last_frame = distanceApprox(prev_pos, [x,y])
-    pixels_traveled += distance_since_last_frame
-    spacing_in_pixels = brush_size[1]*SPACING
-    steps = floor(pixels_traveled / spacing_in_pixels)
-
-    delta_pos = [x - prev_pos[0], y - prev_pos[1]]
-    radians = -math.atan2(delta_pos[0], delta_pos[1])
-    # if steps:
-    #     print('--------------', steps, spacing_in_pixels, pixels_traveled)
-
-    for i in range(0, steps):
-        prev_brush_tip += 1
-        if prev_brush_tip >= brush_tips.length:
-            prev_brush_tip = 0
-
-        t = i / steps
-        let _x = lerp(prev_pos[0], x, t)
-        let _y = lerp(prev_pos[1], y, t)
-
-        img.src = brush_canvases[prev_brush_tip].toDataURL()
-
-        if not rotate_brush:
-            ctx.drawImage(img, _x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
-
-        else:
-            invoke(def anon():
-                ctx.translate(_x, _y)
-                ctx.rotate(radians)
-                ctx.drawImage(img, -brush_size[0]/2, -brush_size[1]/2)
-                ctx.rotate(-radians)
-                ctx.translate(-_x, -_y)
-            , delay=0)
-
-        prev_draw_pos = [_x, _y]
-
-    pixels_traveled -= steps * spacing_in_pixels
-    prev_pos = [x, y]
-    # prev_pos_for_line_draw_mode = [x, y]
-    # if not held_keys['shift']:
-
-canvas_entity.while_dragging = paint
-
-
-def mouse_up(ev):
-    if drawing:
-        record_undo()
-
-    drawing = false
-    # if not held_keys['shift']:
-    #     prev_pos = None
-    #     print('reset')
-
-
-document.addEventListener("mouseup", mouse_up, false)
-document.addEventListener("touchend", mouse_up, false)
-var canvas_rect = canvas.getBoundingClientRect()
-
-# Approximation by using octagons approach
-def distanceApprox(p1,p2):
-    var x = p2[0]-p1[0]
-    var y = p2[1]-p1[1]
-    return 1.426776695*Math.min(0.7071067812*(Math.abs(x)+Math.abs(y)), Math.max(Math.abs(x), Math.abs(y)))
-
-
 
 color_menu = Entity(parent=camera.ui, visible_self=False, position=[.465,-.451,-1])
 color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=True, scale=.3)
@@ -420,7 +431,6 @@ def set_color(value, move_sliders=True):
     # sat.overlay.color = rgb(color_desaturated[0]/255, color_desaturated[1]/255, color_desaturated[2]/255)
     # sat.overlay.alpha = current_color[3]/255
     if move_sliders:
-        print('aaaaa', current_color)
         hue_slider.indicator.x = -.5 + color_as_hsv[0]/360
         sat_slider.indicator.x = -.5 + color_as_hsv[1]
         val_slider.indicator.x = -.5 + color_as_hsv[2]
@@ -440,7 +450,9 @@ decrease_brush_size_button = Entity(*button_style, y=.1, x=left_button_x, text='
 for i, e in enumerate(brushes):
     let brush = e
     let brush_button = Entity(*button_style, xy=[right_button_x,.05*-i])
-    icon = Entity(roundness=.01, parent=brush_button, texture=e.textures[0], xy=[-.5,-.5], color=color.black, z=-1, scale=.7)
+    icon = Entity(roundness=.01, parent=brush_button, xy=[-.5,-.5], color=color.black, z=-1, scale=.7)
+    if e.textures:
+        icon.texture = e.textures[0]
     icon_aspect = brush.size[0] / brush.size[1]
     if icon_aspect > 1:
         icon.scale = [1, icon_aspect]
@@ -452,10 +464,50 @@ for i, e in enumerate(brushes):
 
 # //     if key == 'i':
 # //         change_to_poke_brush()
+eyedropper = Entity(name='eyedropper', visible_self=False)
+eyedropper.update = def update():
+    if mouse.left:
+        if mouse.hovered_entity == canvas_entity:
+            print('smaple')
+            pos = get_canvas_position()
+            current_color = ctx.getImageData(pos[0], pos[1], 1, 1).data
+            set_color(current_color)
+            return
 
-# window.onfocus = def():
-#     using_eyedropper = False
+        elif mouse.hovered_entity:
+            set_color(mouse.hovered_entity.color)
 
+
+eyedropper_toggler = Entity(visible_self=False)
+eyedropper_toggler.input = def input(key):
+    if key == 'alt':
+        if current_tool != eyedropper:
+            prev_tool = current_tool
+        set_current_tool(eyedropper)
+    elif key == 'alt up' and prev_tool != eyedropper:
+        set_current_tool(prev_tool)
+
+window.onfocus = def():
+    set_current_tool(prev_tool)
+    for key, value in held_keys.items():
+        if value:
+            held_keys[key] = 0
+
+tools = [brush_tool, eyedropper]
+
+current_tool = None
+def set_current_tool(tool):
+    prev_tool = current_tool
+    current_tool = tool
+    for e in tools:
+        if e != tool:
+            print('disable:', e.name)
+            e.enabled = False
+        else:
+            print('enable:', e.name)
+            e.enabled = True
+
+set_current_tool(brush_tool)
 
 save_button = Button(*button_style, y=-.25, scale=[.1,.04], text='save')
 save_button.on_click = def save():
@@ -488,9 +540,9 @@ async def paste(e):
         var pastedImage = new Image();
         pastedImage.src = source
         ctx.drawImage(pastedImage, 0, 0)
-        invoke(def anon():
+        after .01:
             ctx.drawImage(pastedImage, 0, 0)
-        , delay=.1)
+        print('pasted')
 
 window.addEventListener("paste", paste)
 
@@ -602,10 +654,9 @@ lasso_tool.input = def input(key):
         def inside(point, vs):
             # // ray-casting algorithm based on
             # // https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html/pnpoly.html
-
             var x = point[0], y = point[1]
-
             var inside = False
+
             for (var i=0, j=vs.length-1; i < vs.length; j=i++):
                 var xi = vs[i][0], yi = vs[i][1];
                 var xj = vs[j][0], yj = vs[j][1];
@@ -625,7 +676,6 @@ lasso_tool.input = def input(key):
             length = points_on_this_y[-1] - points_on_this_y[0]
 
         lasso_prev_pos = None
-
 
 # def floodfill(matrix, x, y, first=True):
 #     if matrix[y][y] == 1:

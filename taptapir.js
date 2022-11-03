@@ -1074,7 +1074,7 @@ function _step(timestamp) {
     }
 
     for (var e of entities) {
-        if (e.update) {
+        if (e.update && e.enabled) {
             e.update()
         }
     }
