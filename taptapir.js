@@ -6,16 +6,62 @@ var loading_text = document.getElementById('loading_text')
 if (loading_text) {
     loading_text.remove()
 }
+const style = document.createElement('style')
+style.textContent = `
+.entity {
+    touch-action: none;
+    width:100%; height:100%; position:absolute; top:50%; left:50%; will-change: transform;
+    transform:translate(-50%, -50%); color:black; background-size: 100% 100%; padding:0; border-width:0px;
+    visibility: 'visible'; display:inherit; image-rendering: pixelated;
+    background-repeat:repeat;
+    /* font-size: 5vh; */
+    /* padding: .75em; */
+    /* text-align: center; */
+    /* border-radius: 128px; border-style:solid; border-color: white; */
+}
+.entity:focus {
+    outline: 0; -moz-outline-style: none;
+}
+
+#game {margin:auto; background-color: darkgreen; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%); overflow: hidden; pointer-events: none;
+    width:100%; height:100%; outline: 0; box-shadow: 0; touch-action: none; user-select: none;
+}
+fullscreen_button {padding: 4px 4px; width: 64px; height: 64px; background-color: #555; border-radius: .2em; border-width: 0px;
+    text-decoration: none; color: white; font-size: 50.0px; z-index: 1; position: absolute; text-align: center; right: 0%;
+}
+body {
+    margin:0;
+    background-color:'#111';
+    font-family: CerebriSans-Regular,-apple-system,system-ui,Roboto,sans-serif;
+    white-space: pre-wrap;
+    // overscroll-behavior-y: contain;
+}
+#loading_text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    color: white;
+    font-family:monospace;
+    transform: translate(-50%, -5%);
+    text-align: center;
+}
+`
+document.head.append(style)
+
 var game_window = document.getElementById('game')
 if (!game_window) {
     var game_window = document.createElement('game')
     game_window.id = 'game'
+    if (!document.body) {
+        document.body = document.createElement('body')
+    }
     document.body.appendChild(game_window)
 }
 scene = document.createElement('entity')
 scene.className = 'entity'
 scene.id = 'scene'
-// scene.style.backgroundColor = '#ff000022'
 game_window.appendChild(scene)
 
 
@@ -1145,7 +1191,7 @@ document.addEventListener('mousewheel', _input); // modern desktop
 
 
 // triple click in the lower right to enter fullscreen
-hidden_fullscreen_button = new Button({parent:camera.ui, xy:bottom_right, roundness:.5, color:'red', last_pressed_timestamp:-1, sequential_taps:0, visible_self:false})
+hidden_fullscreen_button = new Button({parent:camera.ui, xy:bottom_right, roundness:.5, color:'red', last_pressed_timestamp:-1, sequential_taps:0, visible_self:true})
 hidden_fullscreen_button.on_click = function() {
     // print(time - hidden_fullscreen_button.last_pressed_timestamp)
     if (time - hidden_fullscreen_button.last_pressed_timestamp < .25) {
