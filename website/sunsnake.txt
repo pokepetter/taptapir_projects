@@ -132,3 +132,7 @@ e.on_click = def():
 ## Made with sunsnake
 
 Dustred
+Gem Hunter
+Dreamland Sketcher
+Color Matcher
+Digging Game?

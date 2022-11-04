@@ -35,7 +35,7 @@ body {
     background-color:'#111';
     font-family: CerebriSans-Regular,-apple-system,system-ui,Roboto,sans-serif;
     white-space: pre-wrap;
-    // overscroll-behavior-y: contain;
+    overscroll-behavior-y: contain;
 }
 #loading_text {
     position: absolute;

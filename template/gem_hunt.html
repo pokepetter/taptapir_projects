@@ -1,5 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta charset="utf-8" /><title>taptapir</title><link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir.js"></script><script type='text/sunsnake'>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><meta charset="utf-8" /> -->
+<title>gem hunt</title>
+<script src="../taptapir.js"></script><script type='text/sunsnake'>
 
 set_window_color('rgb(49 72 60)')
 // set_scale(1)
@@ -84,7 +85,7 @@ gem_hunt_play_scene.on_enter = def():
 squares = []
 for y in range(5):
     for x in range(5):
-        let e = Button(parent=gem_hunt_play_scene, scale=.2, xy=[(x/5)-.5, (y/5)-.5], origin=[-.5,-.5], text='?', color='#222', text_color='#fff', text_size=6, value='💎', alpha=.95)
+        let e = Button(parent=gem_hunt_play_scene, scale=.2, xy=[(x/5)-.5, (y/5)-.5], origin=[-.5,-.5], text='?', color='#222', text_color='#fff', text_size=6, value='💎', alpha=.95, X=x, Y=y)
         squares.append(e)
         e.on_click = def():
 
@@ -96,7 +97,7 @@ for y in range(5):
                 lose()
             else:
                 print('win!')
-                impact.xy = [(x/5)-.4, (y/5)-.4]
+                impact.xy = [(e.X/5)-.4, (e.Y/5)-.4]
                 impact.texture = impact.texture
                 impact.enabled = True
                 set_amount_won(amount_won + int(current_bet * multiplier))

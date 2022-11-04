@@ -38,9 +38,7 @@ border: 2px solid #c2beb3;
 
 ## Files
 
-Right click and choose "Save link as..."
-
-
+<a href=" ../sunsnake.js" download, class="button">sunsnake.js</a><br>
 [sunsnake.js, ../sunsnake_compiler.js]
 
 ## Additional Files
@@ -49,5 +47,4 @@ These are not required to use sunsnake, but taptapir is
 useful for making apps/games
 
 [taptapir.js, ../taptapir.js]
-[taptapir.css, ../taptapir.css]
 [empty_project.html, ../empty_project.html]
