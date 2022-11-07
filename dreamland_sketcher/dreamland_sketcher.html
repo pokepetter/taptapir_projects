@@ -55,11 +55,11 @@ def set_brush(brush):
     brush_canvases = None
     if brush.textures:
         brush_tips = [new Image() for e in brush.textures]
-        brush_canvases = [document.createElement('canvas') for e in range(brush_tips)]
-        print('set')
+        brush_canvases = [document.createElement('canvas') for e in brush_tips]
         for i in range(brush_tips.length):
             brush_tips[i].src = brush.textures[i]
 
+    print('set brush', brush)
     brush_size = brush.size
     SPACING = brush.spacing
     using_painterly_brush = brush.painterly_brush
@@ -91,13 +91,18 @@ cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enab
 #
 #     return [Math.floor(x), Math.floor(y)]
 brush_tool = Entity(name='brush_tool', visible_self=False)
+brush_tool.on_enable = def():
+    print('enable brush------------------------------')
+    document.body.style.cursor = 'rainbow.png'
+    mouse.texture='rainbow.png'
+
 brush_tool.input = def input(key):
     if mouse.hovered_entity == canvas_entity and key == 'left mouse down':
         if not held_keys['shift']:
             prev_pos = None
         if not brush_tips:
             return
-
+        drawing = True
         if not using_painterly_brush: # tint the temporary brush tip
             for j in range(brush_tips.length):
                 brush_canvas = brush_canvases[j]
@@ -163,9 +168,13 @@ brush_tool.input = def input(key):
         catch:
             return
 
+    if key == 'left mouse up':
+        if drawing:
+            record_undo()
+        drawing = False
+
 brush_tool.update = def update():
     if mouse.left and mouse.hovered_entity == canvas_entity:
-        print('aaaaaaaaaaaaaaaa', brush_tool.enabled)
         paint()
 
 
@@ -213,6 +222,11 @@ def paint():
 
     if snap_to_hex:
         y = start_position[1] + (x-start_position[0])
+
+    if held_keys['a']:
+        y = prev_pos[1]
+    if held_keys['w']:
+        x = prev_pos[0]
 
     # print('--------', prev_pos)
     distance_since_last_frame = distanceApprox(prev_pos, [x,y])
@@ -263,21 +277,6 @@ def paint():
     # if not held_keys['shift']:
 
 
-
-def mouse_up(ev):
-    if drawing:
-        record_undo()
-
-    drawing = false
-    # if not held_keys['shift']:
-    #     prev_pos = None
-    #     print('reset')
-
-
-document.addEventListener("mouseup", mouse_up, false)
-document.addEventListener("touchend", mouse_up, false)
-var canvas_rect = canvas.getBoundingClientRect()
-
 # Approximation by using octagons approach
 def distanceApprox(p1,p2):
     var x = p2[0]-p1[0]
@@ -327,9 +326,6 @@ def input(key):
 
     if key == 'r':
         current_color = [255, 0, 0, 255]
-
-
-
 
     if key == 'scroll down':
         target_zoom = [e*.9 for e in target_zoom]
@@ -468,37 +464,12 @@ eyedropper.update = def update():
         elif mouse.hovered_entity:
             set_color(mouse.hovered_entity.color)
 
-
-eyedropper_toggler = Entity(visible_self=False)
-eyedropper_toggler.input = def input(key):
-    if key == 'alt':
-        if current_tool != eyedropper:
-            prev_tool = current_tool
-        set_current_tool(eyedropper)
-    elif key == 'alt up' and prev_tool != eyedropper:
-        set_current_tool(prev_tool)
-
 window.onfocus = def():
-    set_current_tool(prev_tool)
+    set_current_tool(brush_tool)
     for key, value in held_keys.items():
         if value:
             held_keys[key] = 0
 
-tools = [brush_tool, eyedropper]
-
-current_tool = None
-def set_current_tool(tool):
-    prev_tool = current_tool
-    current_tool = tool
-    for e in tools:
-        if e != tool:
-            print('disable:', e.name)
-            e.enabled = False
-        else:
-            print('enable:', e.name)
-            e.enabled = True
-
-set_current_tool(brush_tool)
 
 save_button = Button(*button_style, y=-.25, scale=[.1,.04], text='save')
 save_button.on_click = def save():
@@ -544,11 +515,11 @@ download_button.on_click = def download():
     link.download = "untitled.png"
     # download_button.href = canvas.toDataURL()
     link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream")
-    #
+
     link.click()
     print('download')
 
-#
+
 const undo_data = [canvas.toDataURL("image"), ]
 undo_index = 0
 
@@ -580,15 +551,11 @@ def record_undo():
     # print('record undo')
     undo_index += 1
 
-using_lasso_tool = False
+
 selection = {'points':[]}
-lasso_tool = Entity(visible_self=False)
+lasso_tool = Entity(visible_self=False, enabled=False)
 lasso_tool.input = def input(key):
-    if key == 'l':
-        using_lasso_tool = True
-    # elif key == 'l up':
-    #     using_lasso_tool = False
-    if using_lasso_tool and key == 'left mouse down':
+    if key == 'left mouse down':
         pos = mouse.point
         var x = int((pos[0]+.5) * w)
         var y = int((pos[1]-.5) * -h)
@@ -598,8 +565,8 @@ lasso_tool.input = def input(key):
         lasso_tool.start_point = [x,y]
 
 
-    if using_lasso_tool and key == 'left mouse up':
-        print('END SELECTION')
+    elif key == 'left mouse up':
+        # print('END SELECTION')
         start = lasso_tool.start_point
         end = selection.points[len(selection.points)-1]
         dist = distanceApprox(start, end)
@@ -619,8 +586,7 @@ lasso_tool.input = def input(key):
 
         for a in selection.points:
             is_duplicate = False
-            # if a in unique_selection: contine
-            for b in unique_selection:
+            for b in unique_selection: # if a in unique_selection: contine
                 if a[0]===b[0] and a[1]===b[1]:
                     is_duplicate = True
                     break
@@ -664,8 +630,6 @@ lasso_tool.input = def input(key):
                 if inside([x,y], poly):
                     ctx.fillRect(x, y, 1, 1);
 
-            length = points_on_this_y[-1] - points_on_this_y[0]
-
         lasso_prev_pos = None
 
 # def floodfill(matrix, x, y, first=True):
@@ -691,7 +655,7 @@ lasso_tool.input = def input(key):
 lasso_prev_pos = None
 
 lasso_tool.update = def():
-    if not using_lasso_tool or not mouse.left:
+    if not mouse.left:
         return
     pos = mouse.point
     var x = int((pos[0]+.5) * w)
@@ -716,5 +680,35 @@ lasso_tool.update = def():
     #     selection.append([x,y])
     #     ctx.fillStyle = rgb(0/255, 0/255, 0/255, 255/255)
     #     ctx.fillRect(x, y, 2, 2);
+
+
+tools = [brush_tool, eyedropper, lasso_tool]
+
+current_tool = None
+def set_current_tool(tool):
+    prev_tool = current_tool
+    current_tool = tool
+    for e in tools:
+        if e != tool:
+            print('disable:', e.name)
+            e.enabled = False
+        else:
+            print('enable:', e.name)
+            e.enabled = True
+
+set_current_tool(brush_tool)
+
+tool_toggler = Entity(visible_self=False)
+tool_toggler.input = def input(key):
+    if key == 'b':
+        set_current_tool(brush_tool)
+    elif key == 'alt':
+        set_current_tool(eyedropper)
+    elif key == 'alt up':
+        set_current_tool(brush_tool)
+    elif key == 'l':
+        set_current_tool(lasso_tool)
+
+
 
 </script><script src="../sunsnake_compiler.js"></script>

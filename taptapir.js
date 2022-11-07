@@ -180,8 +180,8 @@ class Entity {
         scene.appendChild(this.el)
         this.children = []
         this._enabled = true
-        // this.on_enable = null
-        // this.on_disable = null
+        this.on_enable = null
+        this.on_disable = null
         this.color = 'white'
         this.x = 0
         this.y = 0
@@ -259,21 +259,12 @@ class Entity {
             }
         }
 
-        // if (value && typeof (this.on_enable) === 'function') {
-        // print('a', this.on_enable)
-        // if (typeof this.on_enable !== 'undefined') {
-        //     print('dddddddddddddddddd', this.on_enable)
-        //     // the variable is defined
-        // }
-        // if (value || typeof this.on_enable === 'function') {
-        //     print('enablke', this.on_enable)
-        //     this.on_enable()
-        //     // call(this.enable)
-        // }
-        // else if (!value && this.on_disable != null) {
-        //     this.on_disable()
-        //     // print('disblake')
-        // }
+        if (value && this.on_enable) {
+            this.on_enable()
+        }
+        else if (!value && this.on_disable) {
+            this.on_disable()
+        }
     }
 
     get visible_self() {return this._visible_self}
@@ -766,7 +757,12 @@ class HealthBar extends Entity {
     set bar_color(value) {this.bar.color = value}
 }
 
-mouse = {x:0, y:0, position:[0,0], left:false, middle:false, hovered_entity:null}
+mouse = {x:0, y:0, position:[0,0], left:false, middle:false, hovered_entity:null,
+    set texture(name) {
+        document.body.style.cursor = `url('${name}', auto)`
+        print('spegijseofijseofijseiofddddddddddddddddddddddddddddddd', document.body.style)
+    }
+}
 
 
 function mousedown(event) {
