@@ -17,11 +17,11 @@ text += 'player.on_click = def():\n'
 text += '    print(\'hi :D\')\n'
 text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
 
-text = text.replaceAll('print', '<font color="#3af">print</font>')
-text = text.replaceAll('range(', '<font color="#3af">range</font>(')
-text = text.replaceAll('Entity', '<font color="#fa3">Entity</font>')
-text = text.replaceAll('for ', '<font color="#d6f">for </font>')
-text = text.replaceAll('def(', '<font color="#d6f">def</font>(')
+text = text.replaceAll('print', '<span style="color:#3af">print</span>')
+text = text.replaceAll('range(', '<span style="color:#3af">range</span>(')
+text = text.replaceAll('Entity', '<span style="color:#fa3">Entity</span>')
+text = text.replaceAll('for ', '<span style="color:#d6f">for </span>')
+text = text.replaceAll('def(', '<span style="color:#d6f">def</span>(')
 text_entity = Text(text=text, z=1, color='#000', text_color='#fff', x=-.475, y=(.5*aspect_ratio)-.05, draggable=True, max_x=-.475, min_y=0, max_y=100, scale=[.9,2], origin=[-.5,.5], text_size=1.9, roundness=.02)
 text_entity.el.style.fontFamily = 'monospace'
 # text_entity.el.style.textOverflow = 'clip'
