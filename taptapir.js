@@ -404,7 +404,7 @@ class Entity {
 
     get text() {return this.model.textContent}
     set text(value) {
-        this.model.textContent = value
+        this.model.innerHTML = value
     }
     get text_color() {return this.model.style.color}
     set text_color(value) {
@@ -1005,7 +1005,7 @@ function stop_all_invokes() {
 
 
 function Text(options) {
-    if (!('scale' in options && !'scale_x' in options)) {
+    if (!'scale' in options && !'scale_x' in options) {
         options['scale_x'] = .8
     }
     if ('background' in options && options['background'] && !'color' in options) {

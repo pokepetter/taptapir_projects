@@ -8,8 +8,23 @@ button_size = .1
 button_color = 'smoke'
 
 text = ''
-text = 'print(\'hello world!\')\n\nfor i in range(10):\n    print(i)\n    '
-text_entity = Text(text=text, z=1, color='#000', text_color='#fff', y=(.5*aspect_ratio)-.05, draggable=true, lock_x=true, scale_y=100, origin=[0,.5])
+text =  'print(\'hello world!\')\n\n'
+text += 'for i in range(10):\n'
+text += '    print(i)\n\n'
+
+text += 'player = Button(scale=.25, color=color.azure)\n'
+text += 'player.on_click = def():\n'
+text += '    print(\'hi :D\')\n'
+text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
+
+text = text.replaceAll('print', '<font color="#3af">print</font>')
+text = text.replaceAll('range(', '<font color="#3af">range</font>(')
+text = text.replaceAll('Entity', '<font color="#fa3">Entity</font>')
+text = text.replaceAll('for ', '<font color="#d6f">for </font>')
+text = text.replaceAll('def(', '<font color="#d6f">def</font>(')
+text_entity = Text(text=text, z=1, color='#000', text_color='#fff', x=-.475, y=(.5*aspect_ratio)-.05, draggable=True, max_x=-.475, min_y=0, max_y=100, scale=[.9,2], origin=[-.5,.5], text_size=1.9, roundness=.02)
+text_entity.el.style.fontFamily = 'monospace'
+# text_entity.el.style.textOverflow = 'clip'
 space_bar = Button(scale=[.4,.1], y=(-.5*aspect_ratio) + .1, origin=[0,-.5], color=button_color, on_click=function(){write(' ')})
 keyboard_background = Entity(origin=[0,-.5], scale_y=.52, y=-.5*aspect_ratio, color='#080808', shadow=1, z=1)
 # space_bar.on_click = def():
@@ -20,7 +35,8 @@ y = 1
 for line in ['qwertyuiop', 'asdfghjkl\'', '⇧zxcvbnm,⌫'].reverse():
     x = 0
     for e in line:
-        b = Button(text=e, scale=.1, origin=[-.5,-.5], x=-.5+(.1*x), y=(-.5*aspect_ratio)+.1+(.105*y), color=button_color, on_click=function(){write(e)})
+        let _e = e
+        b = Button(text=e, scale=.1, origin=[-.5,-.5], x=-.5+(.1*x), y=(-.5*aspect_ratio)+.1+(.105*y), color=button_color, on_click=function(){write(_e)})
         # print(i, e)
         x += 1
     y += 1
@@ -67,14 +83,44 @@ def write(key):
         text += key
 
     text_entity.text = text
-    // text_entity.fit_to_text()
-    // text_entity.scale_x = .95
+    # text_entity.fit_to_text()
+    # text_entity.scale_x = .95
 
-text_entity.fit_to_text()
-text_entity.scale_x = .95
+# text_entity.fit_to_text()
+# text_entity.scale_x = .95
 run_button = Button(text='>', scale=.1, origin=[.5,-.5], position=[.5,.5*aspect_ratio])
-// run_button.on_click = def():
-//     pass
+# run_button.on_click = def():
+#     pass
+preview_canvas = Entity(name='preview_canvas', parent=camera.ui, scale=[.9,aspect_ratio*.9], y=.05, z=-1, color=color.black, shadow=1, enabled=False)
+preview_canvas.entity_parent = None
+
+close_button = Button(scale=[.2,.1], origin=[.5,-.5], position=[.5-.2,-.5*aspect_ratio], text='close', color=color.gray, enabled=False, text_size=2.5)
+close_button.on_click = def close():
+    if preview_canvas.entity_parent:
+        destroy(preview_canvas.entity_parent)
+    preview_canvas.enabled = False
+    close_button.enabled = False
+
+preview_button = Button(scale=[.2,.1], origin=[.5,-.5], position=bottom_right, text='preview', color=color.azure, text_color=color.white, text_size=2.5)
+preview_button.on_click = def preview():
+    preview_canvas.enabled = True
+    close_button.enabled = True
+
+    text_to_compile = text_entity.text
+    _original_scene = scene
+    _original_camera_ui = camera.ui
+
+    preview_canvas.entity_parent = Entity(parent=preview_canvas, visible_self=False, scale_y=1/aspect_ratio)
+    fake_camera_ui = Entity(parent=preview_canvas.entity_parent, visible_self=False)
+    scene = preview_canvas.entity_parent.el
+    camera.ui = fake_camera_ui
+    compile(text_to_compile)
+    scene = _original_scene
+    camera.ui = _original_camera_ui
+
+    # eval(text_to_compile)
+
 
 
 </script><script src="../sunsnake_compiler.js"></script>
+<script type='text/sunsnake'>

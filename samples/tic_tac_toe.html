@@ -43,7 +43,7 @@ for y in range(3):
                 player.color = p1_color
 
 
-end_of_game_screen = Button(scale=.5, text_origin=[0,0], background=True, color='black', text_color='white', shadow=True, alpha=.9, z=-1, enabled=1)
+end_of_game_screen = Button(scale=.5, text_origin=[0,0], background=True, color='black', text_color='white', shadow=True, alpha=.9, z=-1, enabled=False)
 restart_button = Button(parent=end_of_game_screen, text='restart', color=hsv(320,.8,.7), text_color=hsv(0,0,.8), scale=[.5,.3], y=-.45, on_click=reset)
 def check_for_victory():
     name = player.name
