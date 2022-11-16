@@ -796,7 +796,7 @@ function handle_mouse_click(e) {
             window_position = game_window.getBoundingClientRect()
             entity.start_offset = [
                 ((((e.clientX - window_position.left) / game_window.clientWidth) - .5) * asp_x) - entity.x,
-                (-(((e.clientY - window_position.top) / game_window.clientHeight ) - .5) * asp_y) - entity.y
+                (-(((e.clientY - window_position.top) / game_window.clientHeight ) - .5) / asp_y) - entity.y
                 ]
             // prinkt(entity.start_offset)
 

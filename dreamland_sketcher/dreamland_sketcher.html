@@ -202,7 +202,11 @@ def paint():
             if not brush_tips: # no, brush texture, so draw a rect
                 invoke(def anon():
                     ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
-                    ctx.fillRect(x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+                    # ctx.fillRect(x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+                    ctx.beginPath()
+                    ctx.arc(x,  y, brush_size[0], 0, 2*Math.PI)
+                    ctx.fill()
+                    ctx.closePath()
                 , delay=0)
             else:
                 prev_brush_tip += 1
@@ -258,8 +262,11 @@ def paint():
                 ctx.drawImage(img, _x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
             else: # draw rect
                 ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
-                ctx.fillRect(_x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
-
+                # ctx.fillRect(_x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
+                ctx.beginPath();
+                ctx.arc(_x,  _y, brush_size[0], 0, 2*Math.PI)
+                ctx.fill()
+                ctx.closePath()
         else:
             invoke(def anon():
                 ctx.translate(_x, _y)
