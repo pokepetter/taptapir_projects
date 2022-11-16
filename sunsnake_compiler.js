@@ -1,6 +1,6 @@
 print = console.log
 
-function compile(poke_script, run=true) {
+function compile(poke_script) {
     // start parsing
     poke_script = poke_script.replaceAll(',\n', ',')
     poke_script = poke_script.replaceAll('(\n', '(')
@@ -239,9 +239,6 @@ function compile(poke_script, run=true) {
     }
 
     print('COMPILED CODE:', compiled_code)
-    if (run) {
-        eval(compiled_code)
-    }
     return compiled_code
 }
 
@@ -355,4 +352,5 @@ function range(start, stop, step) {
 
 
 var poke_script = document.querySelector('script[type="text/sunsnake"]').textContent
-compile(poke_script, run=true)
+compiled_code = compile(poke_script)
+eval(compiled_code)

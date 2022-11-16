@@ -114,7 +114,8 @@ preview_button.on_click = def preview():
     fake_camera_ui = Entity(parent=preview_canvas.entity_parent, visible_self=False)
     scene = preview_canvas.entity_parent.el
     camera.ui = fake_camera_ui
-    compile(text_to_compile)
+    result = compile(text_to_compile)
+    eval(result)
     scene = _original_scene
     camera.ui = _original_camera_ui
 
