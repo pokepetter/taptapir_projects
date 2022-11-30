@@ -84,15 +84,15 @@ function set_orientation(value) {
         asp_x = 1
         asp_y = 9/16
 
-        if (browser_aspect_ratio >= 16/9) { // if the screen is wider than 16/9, like a pc monitor.
+        if (browser_aspect_ratio >= 9/16) { // if the screen is wider than the game, like a pc monitor.
             print('vertical view desktop')
             game_window.style.width = `${width*scale/browser_aspect_ratio/(16/9)}px`
             game_window.style.height =  `${height*scale}px`
         }
-        else {                              // if the screen is taller than 16/9, like a phone screen.
+        else {                              // if the screen is taller than the game, like a phone screen.
             print('vertical view mobile')
-            game_window.style.height = `${height*scale}px`
-            game_window.style.width =  `${width*scale/browser_aspect_ratio*(9/16)}px`
+            game_window.style.height = `${width*scale*(16/9)}px`
+            game_window.style.width =  `${width*scale}px`
         }
         if (camera) {camera.ui.scale = [1, 1/aspect_ratio]}
         top_left =      [-.5, .5*aspect_ratio]

@@ -1,0 +1,135 @@
+
+<!DOCTYPE HTML>
+<!--generated with sswg-->
+
+<html>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head>
+    <link rel="stylesheet" href="sswg.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<left>
+<title>documentation</title>
+<br>
+
+<div style="font-family: arial;max-width: 650px; margin: auto;font-size: 160.0px;font-weight: bold;">
+<a href="sunsnake.html" style="white-space: normal; text-decoration: none; color: inherit"> sunsnake script</a><br>
+<div style="font-size: 60.0px;">
+<div id="Documentation"/><br>
+Documentation<br>
+<div style="font-size: 20.0px;font-weight: normal;">
+<br>
+<div class="code_block" style="margin-left: 0em;"><blue>print</blue>()
+</div><br>
+if-statements<br>
+<div class="code_block" style="margin-left: 0em;"><purple>if</purple> a and b or <purple>not</purple> c:
+    <blue>print</blue>(<green>'success'</green>)
+</div><br>
+functions<br>
+<div class="code_block" style="margin-left: 0em;"><purple>def</purple> my_function():
+    <blue>print</blue>(<green>'hi'</green>)
+</div><br>
+array<br>
+<div class="code_block" style="margin-left: 0em;">my_list = [<yellow>6</yellow>,<yellow>2</yellow>,<yellow>9</yellow>,<yellow>0</yellow>,<yellow>3</yellow>]
+</div><br>
+iterate array<br>
+<div class="code_block" style="margin-left: 0em;"><purple>for</purple> e in my_list:
+    <blue>print</blue>(e)
+</div><br>
+iterate with index<br>
+<div class="code_block" style="margin-left: 0em;"><purple>for</purple> i, e in enumerate(my_list):
+    <blue>print</blue>(i, e)
+</div><br>
+<div class="code_block" style="margin-left: 0em;">Array_<yellow>2</yellow>d(width, height)
+</div><br>
+<br>
+<div style="font-size: 60.0px;font-weight: bold;">
+<div id="taptapir"/><br>
+taptapir<br>
+<div style="font-size: 20.0px;font-weight: normal;">
+<br>
+global functions<br>
+<div class="code_block" style="margin-left: 0em;">set_orientation(<green>'vertical'</green> / <green>'horizontal'</green>)
+set_window_color()
+set_background_color()
+set_scale()   <gray># scale game view</gray>
+set_fullscreen(False / True)
+</div><br>
+global variables<br>
+<div class="code_block" style="margin-left: 0em;">ASSETS_FOLDER = <green>''</green>
+entities = []
+scene       <gray># default parent <purple>for</purple> entities.</gray>
+camera
+camera.ui   <gray># default parent <purple>for</purple> ui elements. Not relevan <purple>if</purple> you never move the camera or change camera.fov.</gray>
+aspect_ratio
+
+top_left =      [-.<yellow>5</yellow>, .<yellow>5</yellow>*aspect_ratio]
+top_right =     [.<yellow>5</yellow>, .<yellow>5</yellow>*aspect_ratio]
+bottom_left =   [-.<yellow>5</yellow>, -.<yellow>5</yellow>*aspect_ratio]
+bottom_right =  [.<yellow>5</yellow>, -.<yellow>5</yellow>*aspect_ratio]
+top =           [<yellow>0</yellow>, .<yellow>5</yellow>*aspect_ratio]
+bottom =        [<yellow>0</yellow>, -.<yellow>5</yellow>*aspect_ratio]
+left =          [-.<yellow>5</yellow>, <yellow>0</yellow>]
+right =         [.<yellow>5</yellow>, <yellow>0</yellow>]
+</div><br>
+<div class="code_block" style="margin-left: 0em;"><olive>Entity</olive>
+.parent
+.children
+.enabled
+.visible_self
+.name
+
+.position / .xy
+.x / .y
+.z   <gray># sorting</gray>
+
+.scale = [<yellow>1</yellow>,<yellow>1</yellow>]
+.scale_x / .scale_y
+.origin
+.look_at()
+
+.color
+.alpha
+.texture = <green>'some_image.png'</green>
+.roundness   <gray># <yellow>0</yellow></gray>
+.padding
+.shadow      <gray># False / True</gray>
+
+.text = <green>''</green>
+.text_color
+.text_size
+.text_origin
+.fit_to_text()
+
+.on_click
+.on_enable
+.on_disable
+
+.ignore_collision
+.draggable    <gray># False / True</gray>
+.dragging     <gray># to check <purple>if</purple> it's being currently dragged.</gray>
+.lock_x / .lock_y
+.min_x / .max_x / .min_y /.max_y
+.snap_x / .snap_y
+
+.tileset_size
+.tile_coordinate
+
+</div><br>
+<div class="code_block" style="margin-left: 0em;">Button
+Text
+Scene
+goto_scene(<green>'name'</green>)
+HealthBar
+</div><br>
+math<br>
+<div class="code_block" style="margin-left: 0em;">lerp()
+clamp()
+random_int()
+random_choice()
+lists_are_equal()
+</div><br>
+
+</body>
+</html>

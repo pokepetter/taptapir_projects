@@ -25,16 +25,12 @@ var w = 1080
 var h = 1920
 var h = 1080*1;
 var w = 1920*1;
-canvas_entity = Entity(color=color.clear, scale_x=aspect_ratio, draggable=True, lock_x=True, lock_y=True)
+bg = Entity(color='#222', scale=[4*canvas_scale*aspect_ratio, 4*canvas_scale], draggable=True, lock_x=True, lock_y=True)
+
+canvas_entity = Entity(parent=bg, color=color.clear, scale=[1/4,1/4], z=-1)
 canvas_entity.el.id = 'canvas_entity'
 canvas_entity.model.appendChild(canvas)
 canvas_entity.origin = [0,0]
-canvas_entity.scale_y = 1 * canvas_scale
-canvas_entity.scale_x = 1 * canvas_scale * aspect_ratio
-# canvas_entity.y = .075
-# set_fullscreen(True)
-# set_scale(.4)
-print('aspect_ratio:', aspect_ratio)
 
 canvas.width = w
 canvas.height = h
@@ -81,15 +77,9 @@ prev_pos = None
 start_position = None
 snap_to_hex = False
 tool = 'brush'
-cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enabled=false)
+cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enabled=False)
 
-# def get_canvas_position():
-#     x = (.5 + (mouse.x / .88)) * w
-#     # y = (.5 -((mouse.y / .88 / aspect_ratio) - .05)) * w*aspect_ratio
-#     y = (.5 -((mouse.y / .88 / aspect_ratio))) * w * aspect_ratio * 2
-#     # cursor.position = [x,y]
-#
-#     return [Math.floor(x), Math.floor(y)]
+
 brush_tool = Entity(name='brush_tool', visible_self=False)
 brush_tool.on_enable = def():
     print('enable brush------------------------------')
@@ -97,7 +87,7 @@ brush_tool.on_enable = def():
     mouse.texture='rainbow.png'
 
 brush_tool.input = def input(key):
-    if mouse.hovered_entity == canvas_entity and key == 'left mouse down':
+    if mouse.hovered_entity == bg and key == 'left mouse down':
         if not held_keys['shift']:
             prev_pos = None
         if not brush_tips:
@@ -158,23 +148,15 @@ brush_tool.input = def input(key):
         if tool == 'eyedropper':
             drawing = True
 
-        if key == 's':
-            smoothing = True
-        elif key == 's up':
-            smoothing = False
-
         try:
             paint()
         catch:
             return
 
-    if key == 'left mouse up':
-        if drawing:
-            record_undo()
-        drawing = False
+
 
 brush_tool.update = def update():
-    if mouse.left and mouse.hovered_entity == canvas_entity:
+    if mouse.left and mouse.hovered_entity == bg:
         paint()
 
 
@@ -183,16 +165,16 @@ def get_canvas_position():
         return [0,0]
 
     pos = mouse.point
-    return [int((pos[0]+.5) * w), int((pos[1]-.5) * -h)]
+    return [int(((pos[0]*4)+.5) * w), int(((pos[1]*4)-.5) * -h)]
 
 def paint():
     if held_keys['alt']:
         return
-    if mouse.hovered_entity != canvas_entity:
+    if mouse.hovered_entity != bg:
         return
 
     [x, y] = get_canvas_position()
-    if smoothing and prev_pos:
+    if held_keys['s'] and prev_pos:
         x = lerp(prev_pos[0], x, .025)
         y = lerp(prev_pos[1], y, .025)
 
@@ -240,8 +222,6 @@ def paint():
 
     delta_pos = [x - prev_pos[0], y - prev_pos[1]]
     radians = -math.atan2(delta_pos[0], delta_pos[1])
-    # if steps:
-    #     print('--------------', steps, spacing_in_pixels, pixels_traveled)
 
     for i in range(0, steps):
         if brush_tips:
@@ -291,11 +271,11 @@ def distanceApprox(p1,p2):
     return 1.426776695*Math.min(0.7071067812*(Math.abs(x)+Math.abs(y)), Math.max(Math.abs(x), Math.abs(y)))
 
 opacity_keys = '|1234567890'.split('')
-target_zoom = canvas_entity.scale
+target_zoom = bg.scale
 zoom_label = Button(text='100%', scale=[.075,.04], origin=[.5,.5], xy=[(.5*aspect_ratio)-.005,.495], color=hsv(0,0,0), text_color=hsv(0,0,.8), text_size=2, on_click=def():target_zoom=[aspect_ratio,1])
 zoom_label.update = def update():
-    canvas_entity.scale_x = lerp(canvas_entity.scale[0], target_zoom[0], .2)
-    canvas_entity.scale_y = lerp(canvas_entity.scale[1], target_zoom[1], .2)
+    bg.scale_x = lerp(bg.scale[0], target_zoom[0], .2)
+    bg.scale_y = lerp(bg.scale[1], target_zoom[1], .2)
 
 def input(key):
     # print(key)
@@ -303,15 +283,6 @@ def input(key):
         if key == e:
             current_color[3] = int(255/10 * i)
             print(current_color)
-
-    # if tool == 'brush' and key == 'alt':
-    #     prev_tool = tool
-    #     tool = 'eyedropper'
-    #     print('tool:', tool)
-    #
-    # if tool == 'eyedropper' and key == 'alt up':
-    #     tool = prev_tool
-    #     print('tool:', tool)
 
     if held_keys['control'] and key == 'z':
         undo()
@@ -342,15 +313,15 @@ def input(key):
         zoom_label.text = `${int(target_zoom[1]*100)}%`
 
     if key == 'middle mouse down' or key == 'space':
-        canvas_entity.lock_x = False
-        canvas_entity.lock_y = False
-        canvas_entity.start_offset = [mouse.x-canvas_entity.x , mouse.y-canvas_entity.y]
-        canvas_entity.dragging = True
+        bg.lock_x = False
+        bg.lock_y = False
+        bg.start_offset = [mouse.x-bg.x , mouse.y-bg.y]
+        bg.dragging = True
 
     if key == 'middle mouse up' or key == 'space up':
-        canvas_entity.lock_x = True
-        canvas_entity.lock_y = True
-        canvas_entity.dragging = False
+        bg.lock_x = True
+        bg.lock_y = True
+        bg.dragging = False
 
 color_menu = Entity(parent=camera.ui, visible_self=False, position=[.465,-.451,-1])
 color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=True, scale=.3)
@@ -361,7 +332,7 @@ color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=True, sc
 # color_menu.input = color_menu_input
 
 slider_height = .075
-bg = Entity(parent=color_menu.menu, x=.15, scale=[1.05+.3, (slider_height*1.1*3)+.05], color='#000f', alpha=.8, roundness=.05, z=2)
+color_menu_bg = Entity(parent=color_menu.menu, x=.15, scale=[1.05+.3, (slider_height*1.1*3)+.05], color='#000f', alpha=.8, roundness=.05, z=2)
 color_preview = Entity(parent=color_menu.menu, scale=slider_height*3*1.1, x=.55, origin=[-.5,0], roundness=.5)
 
 compiler.define(*slider_style, scale_y=.075, roundness=.15, draggable=True, lock_x=True, lock_y=True)
@@ -456,12 +427,11 @@ for i, e in enumerate(brushes):
     brush_button.on_click = def():
         set_brush(brush)
 
-# //     if key == 'i':
-# //         change_to_poke_brush()
+
 eyedropper = Entity(name='eyedropper', visible_self=False)
 eyedropper.update = def update():
     if mouse.left:
-        if mouse.hovered_entity == canvas_entity:
+        if mouse.hovered_entity == bg:
             print('smaple')
             pos = get_canvas_position()
             current_color = ctx.getImageData(pos[0], pos[1], 1, 1).data
@@ -483,7 +453,7 @@ save_button.on_click = def save():
     dataURL = canvas.toDataURL("image")
     window.localStorage.setItem("image", dataURL)
 save_button.input = def input(key):
-    if key == 's':
+    if held_keys['shift'] and key == 's':
         save_button.on_click()
 
 
@@ -559,17 +529,27 @@ def record_undo():
     undo_index += 1
 
 
-selection = {'points':[]}
+selection = {'points':[], 'matrix':Array_2d(w,h)}
+
+def render_selection():
+    for y in range(h):
+        for x in range(w):
+            if selection['matrix'][x][y]:
+                if not selection['matrix'][x-1][y] or not selection['matrix'][x+1][y] or not selection['matrix'][x][y-1] or not selection['matrix'][x][y+1]:
+                    ctx.fillStyle = rgb(0/255, 0/255, 0/255, 255/255)
+                    ctx.fillRect(x, y, 1, 1);
+
+
 lasso_tool = Entity(visible_self=False, enabled=False)
 lasso_tool.input = def input(key):
     if key == 'left mouse down':
-        pos = mouse.point
-        var x = int((pos[0]+.5) * w)
-        var y = int((pos[1]-.5) * -h)
-        lasso_prev_pos = [x,y]
+        pos = get_canvas_position()
+        lasso_prev_pos = pos
+        selection.points = []
         if not held_keys['shift']:
-            selection.points = []
-        lasso_tool.start_point = [x,y]
+            selection.matrix = Array_2d(w,h)
+            # print('clear selection')
+        lasso_tool.start_point = pos
 
 
     elif key == 'left mouse up':
@@ -586,8 +566,9 @@ lasso_tool.input = def input(key):
             let _y = int(lerp(start[1], end[1], t))
             if not [_x,_y] in selection.points:
                 selection.points.append([_x,_y])
-                ctx.fillStyle = rgb(0/255, 0/255, 0/255, 255/255)
-                ctx.fillRect(_x, _y, 1, 1);
+                # ctx.fillStyle = rgb(0/255, 0/255, 0/255, 255/255)
+                # ctx.fillRect(_x, _y, 1, 1);
+                selection.matrix[_x][_y] = 1
 
         unique_selection = []
 
@@ -635,9 +616,10 @@ lasso_tool.input = def input(key):
         for y in range(selection.min_y, selection.min_y+selection.height):
             for x in range(selection.min_x, selection.min_x+selection.width):
                 if inside([x,y], poly):
-                    ctx.fillRect(x, y, 1, 1);
+                    selection.matrix[x][y] = 1
 
         lasso_prev_pos = None
+        render_selection()
 
 # def floodfill(matrix, x, y, first=True):
 #     if matrix[y][y] == 1:
@@ -664,32 +646,52 @@ lasso_prev_pos = None
 lasso_tool.update = def():
     if not mouse.left:
         return
-    pos = mouse.point
-    var x = int((pos[0]+.5) * w)
-    var y = int((pos[1]-.5) * -h)
 
-    dist = distanceApprox(lasso_prev_pos, [x,y])
-    # dist = abs(y - lasso_prev_pos[1])
+    pos = get_canvas_position()
+    dist = distanceApprox(lasso_prev_pos, pos)
     if not dist:
         return
 
     for i in range(0, dist):
         t = i / dist
-        let _x = int(lerp(lasso_prev_pos[0], x, t))
-        let _y = int(lerp(lasso_prev_pos[1], y, t))
+        let _x = int(lerp(lasso_prev_pos[0], pos[0], t))
+        let _y = int(lerp(lasso_prev_pos[1], pos[1], t))
         if not [_x,_y] in selection.points:
             selection.points.append([_x,_y])
+            selection.matrix[_x][_y] = 1
             ctx.fillStyle = rgb(0/255, 0/255, 0/255, 255/255)
             ctx.fillRect(_x, _y, 1, 1);
 
-    lasso_prev_pos = [x,y]
+    lasso_prev_pos = pos
     # if not [x,y] in selection:
     #     selection.append([x,y])
     #     ctx.fillStyle = rgb(0/255, 0/255, 0/255, 255/255)
     #     ctx.fillRect(x, y, 2, 2);
 
+rect_select_tool = Entity(name='rect_select_tool', visible_self=False, enabled=False)
+rect_select_tool.input = def input(key):
+    if key == 'left mouse down':
+        self.start_pos = get_canvas_position()
+        if not held_keys['shift']:
+            selection.points = []
+            selection.matrix = Array_2d(w,h)
+            # print('clear selection')
 
-tools = [brush_tool, eyedropper, lasso_tool]
+    if key == 'left mouse up' and self.start_pos:
+        self.end_pos = get_canvas_position()
+        start_y = min(self.start_pos[1], self.end_pos[1])
+        end_y =  max(self.start_pos[1], self.end_pos[1])
+        start_x = min(self.start_pos[0], self.end_pos[0])
+        end_x =  max(self.start_pos[0], self.end_pos[0])
+
+        for y in range(start_y, end_y):
+            for x in range(start_x, end_x):
+                selection.matrix[x][y] = 1
+
+        render_selection()
+
+
+tools = [brush_tool, eyedropper, lasso_tool, rect_select_tool]
 
 current_tool = None
 def set_current_tool(tool):
@@ -715,6 +717,8 @@ tool_toggler.input = def input(key):
         set_current_tool(brush_tool)
     elif key == 'l':
         set_current_tool(lasso_tool)
+    elif key == 'm':
+        set_current_tool(rect_select_tool)
 
 
 

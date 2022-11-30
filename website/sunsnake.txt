@@ -1,48 +1,14 @@
-<style>
-a.button {background-color: #2f5dd1;}
-a.button:hover {background-color: #ab1579}
-body{background-color:#c2beb3; color:#333;}
-.code_block {background-color:#3c3c3c; color:#cfcfcf}
-olive  {color: #dec533;}
-blue   {color: hsl(210deg 73% 61%);}
-purple {color: hsl(289deg 76% 62%);}
-green  {color: #37b764;}
-yellow {color: #d69e13;}
-/* ===== Scrollbar CSS ===== */
-/* Firefox */
-* {
-scrollbar-width: auto;
-scrollbar-color: #3c3c3c #c2beb3;
-}
-
-/* Chrome, Edge, and Safari */
-*::-webkit-scrollbar {
-width: 16px;
-}
-
-*::-webkit-scrollbar-track {
-background: #c2beb3;
-}
-
-*::-webkit-scrollbar-thumb {
-background-color: #3c3c3c;
-border-radius: 10px;
-border: 2px solid #c2beb3;
-}
-</style>
-# arial, width 650, center, size 8, bold
+# arial, width 650, left, size 8, bold
 sunsnake script
 # size 1.5, normal
 
 A Programming Language for the Web
 
-# right
 
-# center
-[Download, download.html]   [Documentation, link.html]   [GitHub, link.html]
+[Download, download.html]   [Documentation, documentation.html]   [GitHub, link.html]
 
 
-# left
+
 ## A Programming Language for the Web
 
 • Can be run in web browsers.
