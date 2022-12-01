@@ -1,6 +1,7 @@
 print = console.log
 
 function compile(poke_script) {
+    t = performance.now()
     // start parsing
     poke_script = poke_script.replaceAll(',\n', ',')
     poke_script = poke_script.replaceAll('(\n', '(')
@@ -239,6 +240,7 @@ function compile(poke_script) {
     }
 
     print('COMPILED CODE:', compiled_code)
+    print('compiled in', performance.now() - t, 'ms')
     return compiled_code
 }
 

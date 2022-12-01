@@ -20,28 +20,28 @@ var w = 1920*1;
 bg = Entity(color='#222', scale=[4*canvas_scale*aspect_ratio, 4*canvas_scale], draggable=True, lock_x=True, lock_y=True)
 
 canvas = document.createElement('canvas');
-canvas.style = 'width:100%; height:100%; top:0%; bottom:10%; pointer-events:none; box-shadow:3px 10px 20px #111;'
-
-selection_canvas = document.createElement('canvas');
-selection_canvas.style = 'position:relative; width:100%; height:100%; top:0; bottom:0; pointer-events:none;'
-
-canvas_entity = Entity(parent=bg, color=color.clear, scale=[1/4,1/4], z=-1)
-canvas_entity.el.id = 'canvas_entity'
-canvas_entity.model.appendChild(canvas)
-canvas_entity.el.appendChild(selection_canvas)
-
+canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none; box-shadow:3px 10px 20px #111;'
 canvas.width = w
 canvas.height = h
-selection_canvas.width = w
-selection_canvas.height = h
+
+canvas_entity = Entity(name='canvas_entity', parent=bg, color=color.clear, scale=[1/4,1/4], z=-1)
+canvas_entity.model.appendChild(canvas)
 
 ctx = canvas.getContext('2d')
 ctx.fillStyle = rgb(128/255, 128/255, 128/255, 255/255)
 ctx.fillRect(0, 0, canvas.width, canvas.height)
 
+selection_canvas = document.createElement('canvas');
+selection_canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
+selection_canvas.width = w
+selection_canvas.height = h
+
+selection_canvas_entity = Entity(parent=canvas_entity, color=color.clear, z=-1)
+selection_canvas_entity.model.appendChild(selection_canvas)
+
 selection_ctx = selection_canvas.getContext('2d')
-selection_ctx.fillStyle = rgb(128/255, 0/255, 0/255, 0/255)
-selection_ctx.clearRect(0, 0, w, h)
+selection_ctx.fillStyle = rgb(128/255, 0/255, 0/255, 255/255)
+selection_ctx.clearRect(0, 0, canvas.width, canvas.height)
 
 square_brush = {'textures':None, 'size':[5, 5], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 round_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.5, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
@@ -157,6 +157,8 @@ brush_tool.input = def input(key):
         catch:
             return
 
+    # if key == 'left mouse up':
+
 
 
 brush_tool.update = def update():
@@ -171,15 +173,24 @@ def get_canvas_position():
     pos = mouse.point
     return [int(((pos[0]*4)+.5) * w), int(((pos[1]*4)-.5) * -h)]
 
-def draw_circle(x, y):
-    brush_w = brush_size[0]
-    brush_h = brush_size[1]
 
-    for _y in range(y, y+brush_h):
-        for _x in range(x, x+brush_w):
-            # if selection.active and selection.matrix[_x][_y]:
-            ctx.fillRect(_x, _y, 1, 1);
-            # print('lol')
+def draw_circle(x, y):
+    if not selection.active:
+        ctx.fillRect(x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+        ctx.beginPath()
+        ctx.arc(x,  y, brush_size[0], 0, 2*Math.PI)
+        ctx.fill()
+        ctx.closePath()
+        return
+
+
+    brush_half_w = brush_size[0] / 2
+    brush_half_h = brush_size[1] / 2
+
+    for _y in range(clamp(y-brush_half_h, 0, h-1), clamp(y+brush_half_h, 0, h-1)):
+        for _x in range(clamp(x-brush_half_w, 0, w-1), clamp(x+brush_half_w, 0, w-1)):
+            if selection.active and selection.matrix[int(_x)][int(_y)]:
+                ctx.fillRect(_x, _y, 1, 1);
 
 
 def paint():
@@ -202,11 +213,6 @@ def paint():
             if not brush_tips: # no, brush texture, so draw a rect
                 invoke(def anon():
                     ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
-                    # ctx.fillRect(x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
-                    # ctx.beginPath()
-                    # ctx.arc(x,  y, brush_size[0], 0, 2*Math.PI)
-                    # ctx.fill()
-                    # ctx.closePath()
                     draw_circle(x, y)
                 , delay=0)
             else:
@@ -319,8 +325,9 @@ def input(key):
         brush_size = [e / 1.5 for e in brush_size]
 
     if key == 'h':
-        print(event)
-        snap_to_hex = True
+        selection_canvas_entity.enabled = not selection_canvas_entity.enabled
+        # print(event)
+        # snap_to_hex = True
 
     if key == 'r':
         current_color = [255, 0, 0, 255]
@@ -558,7 +565,10 @@ def render_selection():
         for x in range(w):
             if selection['matrix'][x][y]:
                 selection.active = True
+                if x == 0 or x == w or y == 0 or y == h:
+                    continue
                 # selection_ctx.fillRect(x, y, 1, 1);
+
                 if not selection['matrix'][x-1][y] or not selection['matrix'][x+1][y] or not selection['matrix'][x][y-1] or not selection['matrix'][x][y+1]:
                     if x % 2 == 0:
                         selection_ctx.fillStyle = 'cyan'
@@ -592,6 +602,9 @@ lasso_tool.input = def input(key):
             t = i / dist
             let _x = int(lerp(start[0], end[0], t))
             let _y = int(lerp(start[1], end[1], t))
+            if _x < 0 or _y < 0 or _x > w-1 or _y > h-1:
+                continue
+
             if not [_x,_y] in selection.points:
                 selection.points.append([_x,_y])
                 selection.matrix[_x][_y] = not held_keys['alt']
@@ -683,6 +696,10 @@ lasso_tool.update = def():
         t = i / dist
         let _x = int(lerp(lasso_prev_pos[0], pos[0], t))
         let _y = int(lerp(lasso_prev_pos[1], pos[1], t))
+
+        if _x < 0 or _y < 0 or _x > w-1 or _y > h-1:
+            continue
+
         if not [_x,_y] in selection.points:
             selection.points.append([_x,_y])
             selection.matrix[_x][_y] = not held_keys['alt']
@@ -713,6 +730,10 @@ rect_select_tool.input = def input(key):
         end_y =  max(self.start_pos[1], self.end_pos[1])
         start_x = min(self.start_pos[0], self.end_pos[0])
         end_x =  max(self.start_pos[0], self.end_pos[0])
+        start_y = clamp(start_y, 0, h-1)
+        end_y = clamp(end_y, 0, h-1)
+        start_x = clamp(start_x, 0, w-1)
+        end_x = clamp(end_x, 0, w-1)
 
         for y in range(start_y, end_y):
             for x in range(start_x, end_x):
@@ -749,10 +770,6 @@ tool_toggler.input = def input(key):
         set_current_tool(lasso_tool)
     elif key == 'm':
         set_current_tool(rect_select_tool)
-
-def update():
-    print(selection.active)
-
 
 
 </script><script src="../sunsnake_compiler.js"></script>
