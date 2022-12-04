@@ -148,6 +148,8 @@ function compile(poke_script) {
         lines[i] = lines[i].replaceAll('for i, e in enumerate(', 'for [i, e] in enumerate(')
         lines[i] = lines[i].replaceAll('for y, line in enumerate(', 'for [y, line] in enumerate(')
         lines[i] = lines[i].replaceAll('for x, char in enumerate(', 'for [x, char] in enumerate(')
+        lines[i] = lines[i].replaceAll(' # ', ' //')   // comments
+
 
         // ifs
         if (lines[i].trim().startsWith('if ') && lines[i].trim().endsWith(' {')) {
@@ -193,7 +195,7 @@ function compile(poke_script) {
             if (lines[i].includes(`${class_name}({`)) {
                 continue
             }
-            if (lines[i].includes(`${class_name}(`)) {
+            if (lines[i].startsWith(`${class_name}(`) || lines[i].includes(` ${class_name}(`)) {
                 lines[i] = convert_arguments(lines[i], class_name)
 
                 // if (func) {
@@ -313,7 +315,6 @@ abs = Math.abs
 floor = Math.floor
 ceil = Math.ceil
 math = Math
-int = parseInt
 round = Math.round
 sqrt = Math.sqrt
 
@@ -323,6 +324,12 @@ function enumerate(list) {
 
 function str(value) {
     return value.map(function(i){return String.fromCharCode(i)}).join("")
+}
+
+function int(value) {
+    if (value === true) {return 1}
+    if (value === false) {return 0}
+    return parseInt(value)
 }
 
 function Array_2d(w, h) {

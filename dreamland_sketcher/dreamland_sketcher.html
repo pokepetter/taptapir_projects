@@ -90,7 +90,7 @@ brush_tool.on_enable = def():
     document.body.style.cursor = 'rainbow.png'
     mouse.texture='rainbow.png'
 
-brush_tool.input = def input(key):
+brush_tool.input = def brush_tool_input(key):
     if mouse.hovered_entity == bg and key == 'left mouse down':
         if not held_keys['shift']:
             prev_pos = None
@@ -316,6 +316,16 @@ def input(key):
     if held_keys['control'] and key == 'y':
         redo()
 
+    if key == 'a':
+        for y in range(h/2):
+            for x in range(w/2):
+                selection['matrix'][x][y] = True
+        render_selection()
+
+    if held_keys['control'] and key == 'c':
+        copy_image_from_canvas()
+
+
     if key == 'd':
         # brush_size *= 1.5
         brush_size = [e * 1.5 for e in brush_size]
@@ -494,11 +504,46 @@ def load_image_to_canvas(image):
     loaded_image.onload = def on_load():
         ctx.drawImage(loaded_image, 0, 0)
 
+local_image_data = None
+
+def copy_image_from_canvas():
+    if selection.active:
+        selection_x = selection.bounds[0]
+        selection_y = selection.bounds[1]
+        selection_width = selection.bounds[2] - selection.bounds[0]
+        selection_height = selection.bounds[3] - selection.bounds[1]
+
+        _image_data = ctx.getImageData(selection_x, selection_y, selection_width, selection_height)
+        local_image_data = Uint8ClampedArray.from(_image_data.data)
+        flat_selection = selection.matrix.flat()
+        # print(flat_selection[0] === true)
+        print('ffffffffff', int(flat_selection[0]))
+        # print(local_image_data[0], int(flat_selection[0]))
+        for i in range(0, len(local_image_data), 4):
+            local_image_data[i+3] = int(flat_selection[i+3]) * 255
+        # print('--------', local_image_data)
+        navigator.clipboard.writeText(`local_image:${JSON.stringify([selection_x, selection_y, selection_width, selection_height])}`)
+
 
 async def paste(e):
     e.preventDefault()
     e.stopPropagation()
-    let file = e.clipboardData.items[0].getAsFile()
+    paste_data = e.clipboardData.items[0]
+    # print('paste data', paste_data)
+
+    if paste_data.kind == 'string':
+        paste_data.getAsString(def anon(value):
+            # print('paste local data', value)
+            if value.startsWith('local_image:'):
+                [_x, _y, _w, _h] = JSON.parse(value.split('local_image:')[1])
+                print('-----------', _x, _y, _w, _h)
+            ctx.putImageData(new ImageData(local_image_data, _w, _h), _x, _y)
+        )
+
+        return False
+
+
+    file = paste_data.getAsFile()
     if file.name == 'image.png':
         var URLObj = window.URL || window.webkitURL;
         var source = URLObj.createObjectURL(file);
@@ -556,14 +601,20 @@ def record_undo():
     undo_index += 1
 
 
-selection = {'active':False, 'points':[], 'matrix':Array_2d(w,h)}
+selection = {'active':False, 'points':[], 'matrix':Array_2d(w,h), 'bounds':[w,h,0,0]}
 
 def render_selection():
     selection.active = False
     selection_ctx.clearRect(0, 0, w, h)
+    selection.bounds = [w,h,0,0]
     for y in range(h):
         for x in range(w):
             if selection['matrix'][x][y]:
+                selection.bounds[0] = min(x, selection.bounds[0]) # min x
+                selection.bounds[2] = max(x, selection.bounds[2]) # max x
+                selection.bounds[1] = min(y, selection.bounds[1]) # min y
+                selection.bounds[3] = max(y, selection.bounds[3]) # max y
+
                 selection.active = True
                 if x == 0 or x == w or y == 0 or y == h:
                     continue
@@ -576,10 +627,10 @@ def render_selection():
                         selection_ctx.fillStyle = 'violet'
 
                     selection_ctx.fillRect(x, y, 1, 1);
-
+    # print('selection bounds', selection.bounds)
 
 lasso_tool = Entity(visible_self=False, enabled=False)
-lasso_tool.input = def input(key):
+lasso_tool.input = def lasso_tool_input(key):
     if key == 'left mouse down':
         pos = get_canvas_position()
         lasso_prev_pos = pos
@@ -716,7 +767,7 @@ lasso_tool.update = def():
     #     ctx.fillRect(x, y, 2, 2);
 
 rect_select_tool = Entity(name='rect_select_tool', visible_self=False, enabled=False)
-rect_select_tool.input = def input(key):
+rect_select_tool.input = def rect_select_tool_input(key):
     if key == 'left mouse down':
         self.start_pos = get_canvas_position()
         if not held_keys['shift'] and not held_keys['alt']:
@@ -759,7 +810,7 @@ def set_current_tool(tool):
 set_current_tool(brush_tool)
 
 tool_toggler = Entity(visible_self=False)
-tool_toggler.input = def input(key):
+tool_toggler.input = def tool_toggler_input(key):
     if key == 'b':
         set_current_tool(brush_tool)
     # elif key == 'alt' and current_tool == brush_tool:
