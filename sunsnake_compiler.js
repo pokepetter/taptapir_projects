@@ -359,7 +359,11 @@ function range(start, stop, step) {
     return result;
 };
 
-
-var poke_script = document.querySelector('script[type="text/sunsnake"]').textContent
-compiled_code = compile(poke_script)
-eval(compiled_code)
+var scripts = document.getElementsByTagName("script")
+for (var script of scripts) {
+    if (script.type == 'text/sunsnake') {
+        print('compile:', script)
+        compiled_code = compile(script.textContent)
+        eval(compiled_code)
+    }
+}

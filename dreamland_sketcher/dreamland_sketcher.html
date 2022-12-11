@@ -43,6 +43,7 @@ selection_ctx = selection_canvas.getContext('2d')
 selection_ctx.fillStyle = rgb(128/255, 0/255, 0/255, 255/255)
 selection_ctx.clearRect(0, 0, canvas.width, canvas.height)
 
+
 square_brush = {'textures':None, 'size':[5, 5], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 round_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.5, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 poke_brush = {'textures':["pokebrush.png", ], 'size':[256, 256], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
@@ -297,11 +298,11 @@ def distanceApprox(p1,p2):
     return 1.426776695*Math.min(0.7071067812*(Math.abs(x)+Math.abs(y)), Math.max(Math.abs(x), Math.abs(y)))
 
 opacity_keys = '|1234567890'.split('')
-target_zoom = bg.scale
-zoom_label = Button(text='100%', scale=[.075,.04], origin=[.5,.5], xy=[(.5*aspect_ratio)-.005,.495], color=hsv(0,0,0), text_color=hsv(0,0,.8), text_size=2, on_click=def():target_zoom=[aspect_ratio,1])
+target_zoom = bg.scale_y
+zoom_label = Button(text='100%', scale=[.075,.04], origin=[.5,.5], xy=[(.5*aspect_ratio)-.005,.495], color=hsv(0,0,0), text_color=hsv(0,0,.8), text_size=2, on_click=def():target_zoom=1)
 zoom_label.update = def update():
-    bg.scale_x = lerp(bg.scale[0], target_zoom[0], .2)
-    bg.scale_y = lerp(bg.scale[1], target_zoom[1], .2)
+    bg.scale_x = lerp(bg.scale[0], target_zoom*aspect_ratio, .2)
+    bg.scale_y = lerp(bg.scale[1], target_zoom, .2)
 
 def input(key):
     # print(key)
@@ -343,11 +344,11 @@ def input(key):
         current_color = [255, 0, 0, 255]
 
     if key == 'scroll down':
-        target_zoom = [e*.9 for e in target_zoom]
-        zoom_label.text = `${int(target_zoom[1]*100)}%`
+        target_zoom = target_zoom*.9
+        zoom_label.text = `${int(target_zoom*100)}%`
     if key == 'scroll up':
-        target_zoom = [e*1/.9 for e in target_zoom]
-        zoom_label.text = `${int(target_zoom[1]*100)}%`
+        target_zoom = target_zoom*1/.9
+        zoom_label.text = `${int(target_zoom*100)}%`
 
     if key == 'middle mouse down' or key == 'space':
         bg.lock_x = False
@@ -823,4 +824,55 @@ tool_toggler.input = def tool_toggler_input(key):
         set_current_tool(rect_select_tool)
 
 
-</script><script src="../sunsnake_compiler.js"></script>
+</script>
+
+<script src="https://cdn.cde.run/Joycon.min.js"></script>
+# <script type="text/javascript">
+# const controllers = Joycon.controllers;
+# print(controllers)
+# controllers.on.connect((controller) => {
+#   console.log('controller connected!', controller);
+#
+# });
+# controllers.on.move('right-joystick', (value) => {
+#     console.log('moved right joystick!', value.x, value.y); //# value is -1 to 1 down/right
+#     held_keys['right joystick x'] = value.x
+#     held_keys['right joystick y'] = value.y
+# });
+# </script>
+<script type="text/sunsnake">
+held_keys['right joystick x'] = 0
+held_keys['right joystick y'] = 0
+# gamepad_1 = gamepads[0]
+
+joycon_handler = Entity(visible_self=False)
+joycon_handler.update = def joycon_update():
+    const gamepads = navigator.getGamepads()
+    if not gamepads or not gamepads[0]:
+        return
+
+    gamepad = gamepads[0]
+    # gamepad_1 = gamepads[0]
+    held_keys['right joystick x'] = gamepads[0].axes[0]
+    held_keys['right joystick y'] = gamepads[0].axes[1]
+    # for i, e in enumerate(gamepad.buttons):
+    #     print(i, e)
+
+    if not gamepad.buttons[5].pressed:
+        if abs(held_keys['right joystick y']) > .05:
+            target_zoom -= held_keys['right joystick y'] * .08
+            target_zoom = clamp(target_zoom, .5, 30)
+        if abs(held_keys['right joystick x']) > .05:
+            bg.x -= held_keys['right joystick x'] * .01
+
+    else:
+        if abs(held_keys['right joystick x']) > .05:
+            bg.x -= held_keys['right joystick x'] * .01
+        if abs(held_keys['right joystick y']) > .05:
+            bg.y += held_keys['right joystick y'] * .01
+
+
+
+</script>
+
+<script src="../sunsnake_compiler.js"></script>

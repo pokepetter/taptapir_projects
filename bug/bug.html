@@ -3,21 +3,21 @@
 <script type='text/sunsnake'>
 
 // set_orientation('vertical')
-set_window_color('rgb(49 72 60)')
+// set_window_color('rgb(49 72 60)')
 // set_scale(1)
 // set_orientation('horizontal')
 
-rocks = {
-    'level_1': [0,],
-    'level_2': [0,],
-}
-
-t = 1
-
-if t in rocks['level_1']:
-    print('a')
-
-Text(text='yay', text_origin=[0,0])
+// rocks = {
+//     'level_1': [0,],
+//     'level_2': [0,],
+// }
+//
+// t = 1
+//
+// if t in rocks['level_1']:
+//     print('a')
+//
+// Text(text='yay', text_origin=[0,0])
 
 
 // e = Button(scale=.2, color='red', shadow=1, draggable=True)
@@ -30,6 +30,19 @@ Text(text='yay', text_origin=[0,0])
 
 // my_dict = {'name': 'Petter', 'age': '5'}
 // print(my_dict.name)
+
+Text(text='aaa')
+# def copy_image_from_canvas():
+#     if 1:
+        # _image_data = ctx.getImageData(selection.bounds[0], selection.bounds[1], selection.bounds[2]-selection.bounds[0], selection.bounds[3]-selection.bounds[1])
+        # local_image_data = Uint8ClampedArray.from(_image_data.data)
+        # flat_selection = selection.matrix.flat()
+        # for i in range(0, len(local_image_data), 4):
+        #     local_image_data[i+3] = flat_selection[i+3]
+        # print('--------', _image_data)
+navigator.clipboard.writeText('paste_local_image_data')
+
+
 
 </script>
 <script src="../sunsnake_compiler.js"></script>
