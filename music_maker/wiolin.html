@@ -1,0 +1,43 @@
+<html><title>wiolin</title><body>
+<script src="../taptapir.js"></script>
+
+<script type='text/sunsnake'>
+set_orientation('horizontal')
+var audio = new Audio()
+# audio.src = 'violin[n72][f100].wav'
+audio.src = 'sine_440hz.wav'
+audio.preservesPitch  = False
+audio.loop = True
+audio.volume = 0
+# audio.playbackRate = 0.5
+def input(key):
+    if key == 'left mouse down':
+        audio.play()
+
+
+octave = 0
+n = 12
+Entity(origin=[-.5,0], color=color.red)
+# audio.playbackRate = 2 ** ((n - (0 + 12*octave)) / 12)
+
+
+prev_x = 0
+prev_y = 0
+target_volume = 0
+
+def update():
+    velocity = (mouse.x - prev_x) + (mouse.y - prev_y)
+
+    if mouse.left and mouse.x > 0:
+        # target_volume =abs(velocity * 10)
+        target_volume = clamp(mouse.y, 0, .5) * 2
+
+    print(target_volume)
+    audio.volume = target_volume
+
+    prev_x = mouse.x
+    prev_y = mouse.y
+
+
+
+</script><script src="../sunsnake_compiler.js"></script>
