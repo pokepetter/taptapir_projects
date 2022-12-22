@@ -1,6 +1,6 @@
 <html><title>dreamland sketcher</title><body>
 <script src="color_conversion.js"></script>
-<script src="../taptapir.js"></script>
+<script src="../taptapir/taptapir.js"></script>
 <script type='text/sunsnake'>
 
 set_window_color('#222')
@@ -373,7 +373,7 @@ slider_height = .075
 color_menu_bg = Entity(parent=color_menu.menu, x=.15, scale=[1.05+.3, (slider_height*1.1*3)+.05], color='#000f', alpha=.8, roundness=.05, z=2)
 color_preview = Entity(parent=color_menu.menu, scale=slider_height*3*1.1, x=.55, origin=[-.5,0], roundness=.5)
 
-compiler.define(*slider_style, scale_y=.075, roundness=.15, draggable=True, lock_x=True, lock_y=True)
+sunsnake.define(*slider_style, scale_y=.075, roundness=.15, draggable=True, lock_x=True, lock_y=True)
 
 hue_slider = Entity(*slider_style, parent=color_menu.menu, y=slider_height*1.1, texture='rainbow.png')
 hue_slider.indicator = Entity(parent=hue_slider, scale_x=.01, color=color.black, z=-2)
@@ -442,7 +442,7 @@ menu_parent = Entity(parent=camera.ui, visible_self=False, name='menu_parent')
 # Entity(parent=menu_parent, origin=[-.5,0], color=hsv(0,0,.1), x=(.5*aspect_ratio)-.125)
 # Entity(parent=menu_parent, origin=[0, .5], color=hsv(0,0,.1), y=-.5+.1, scale_x=2)
 
-compiler.define(*button_style, parent=menu_parent, roundness=.01, origin=[.5,.5], text_origin=[0,0], x=(.5*aspect_ratio)-.0125, scale=[.05,.05], z=-1, text_size=1.5, color=hsv(0,0,.05), text_color=hsv(0,.0,.8))
+sunsnake.define(*button_style, parent=menu_parent, roundness=.01, origin=[.5,.5], text_origin=[0,0], x=(.5*aspect_ratio)-.0125, scale=[.05,.05], z=-1, text_size=1.5, color=hsv(0,0,.05), text_color=hsv(0,.0,.8))
 right_button_x = (.5*aspect_ratio)-.0125
 left_button_x = right_button_x-.05
 
@@ -875,4 +875,4 @@ joycon_handler.update = def joycon_update():
 
 </script>
 
-<script src="../sunsnake_compiler.js"></script>
+<script src="../taptapir/sunsnake_compiler.js"></script>

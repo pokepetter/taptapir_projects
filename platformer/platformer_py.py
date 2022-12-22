@@ -1,4 +1,4 @@
-# <!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>platformer</title><link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir.js"></script>
+# <!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>platformer</title><link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir/taptapir.js"></script>
 # <script type='text/sunsnake'>
 
 # set_window_color('rgb(50 50 50)')
@@ -171,4 +171,4 @@ def input(key):
         player.xy = target.xy
 
 app.run()
-# </script><script src="../sunsnake_compiler.js"></script></html>
+# </script><script src="../taptapir/sunsnake_compiler.js"></script></html>
