@@ -129,6 +129,10 @@ for i, e in enumerate(blocks):
         clone = Entity(text=e, position=mouse.position, draggable=True, dragging=True)
         clone.fit_to_text()
         clone.z = -1
+    b.update = def():
+        if not self.dragging:
+            return
+        b.position = mouse.position 
 
 </script><script src="../taptapir/sunsnake_compiler.js"></script>
 <script type='text/sunsnake'>
