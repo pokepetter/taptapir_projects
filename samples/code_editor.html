@@ -123,7 +123,7 @@ preview_button.on_click = def preview():
 
 blocks = ['Ent', 'sca', 'xy', 'tex']
 for i, e in enumerate(blocks):
-    let b = Button(text=e, xy=[-.5,.5-(i*.055)])
+    let b = Button(text=e, xy=[-.5,.5-(i*.065)], origin=[-.5,0])
     b.fit_to_text()
     b.on_click = def():
         clone = Entity(text=text, xy=b.xy, draggable=True, dragging=True)
