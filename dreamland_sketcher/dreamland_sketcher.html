@@ -15,8 +15,8 @@ set_scale(1)
 canvas_scale = .8
 var w = 1080
 var h = 1920
-var h = 1080*1;
-var w = 1920*1;
+var h = int(1080*.5);
+var w = int(1920*.5);
 bg = Entity(color='#222', scale=[4*canvas_scale*aspect_ratio, 4*canvas_scale], draggable=True, lock_x=True, lock_y=True)
 
 canvas = document.createElement('canvas');
@@ -27,7 +27,7 @@ canvas.height = h
 canvas_entity = Entity(name='canvas_entity', parent=bg, color=color.clear, scale=[1/4,1/4], z=-1)
 canvas_entity.model.appendChild(canvas)
 
-ctx = canvas.getContext('2d')
+ctx = canvas.getContext('2d', {willReadFrequently: true})
 ctx.fillStyle = rgb(128/255, 128/255, 128/255, 255/255)
 ctx.fillRect(0, 0, canvas.width, canvas.height)
 
@@ -35,23 +35,27 @@ selection_canvas = document.createElement('canvas');
 selection_canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
 selection_canvas.width = w
 selection_canvas.height = h
+selection_canvas.willReadFrequently = True
 
 selection_canvas_entity = Entity(parent=canvas_entity, color=color.clear, z=-1)
 selection_canvas_entity.model.appendChild(selection_canvas)
 
-selection_ctx = selection_canvas.getContext('2d')
+selection_ctx = selection_canvas.getContext('2d', {willReadFrequently: true})
 selection_ctx.fillStyle = rgb(128/255, 0/255, 0/255, 255/255)
 selection_ctx.clearRect(0, 0, canvas.width, canvas.height)
 
 
-square_brush = {'textures':None, 'size':[5, 5], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
+square_brush = {'textures':None, 'shape':'rect', 'size':[1, 1], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
+round_brush = {'textures':None, 'shape':'circle', 'size':[1, 1], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 round_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.5, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 poke_brush = {'textures':["pokebrush.png", ], 'size':[256, 256], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 painterly_brush = {'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[178, 400], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':False}
 
 brushes = [square_brush, round_brush, poke_brush, painterly_brush]
+current_brush = None
 
 def set_brush(brush):
+    current_brush = brush
     brush_tips = None
     brush_canvases = None
     if brush.textures:
@@ -75,7 +79,7 @@ using_painterly_brush = True
 prev_brush_tip = -1
 set_brush(square_brush)
 img = new Image()
-current_color = [255, 0, 128, 255]
+current_color = [32, 32, 32, 255]
 drawing = False
 smoothing = False
 prev_pos = None
@@ -172,7 +176,7 @@ def get_canvas_position():
         return [0,0]
 
     pos = mouse.point
-    return [int(((pos[0]*4)+.5) * w), int(((pos[1]*4)-.5) * -h)]
+    return [int(((pos[0]*4)+.51) * w), int(((pos[1]*4)-.51) * -h)]
 
 
 def draw_circle(x, y):
@@ -197,8 +201,8 @@ def draw_circle(x, y):
 def paint():
     if held_keys['alt']:
         pos = get_canvas_position()
-        current_color = ctx.getImageData(pos[0], pos[1], 1, 1).data
-        set_color(current_color)
+        sampled_color = ctx.getImageData(pos[0], pos[1], 1, 1).data
+        set_color(sampled_color)
         return
     if mouse.hovered_entity != bg:
         return
@@ -212,10 +216,16 @@ def paint():
     if prev_pos == None:
         if draw_on_click:
             if not brush_tips: # no, brush texture, so draw a rect
-                invoke(def anon():
-                    ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
-                    draw_circle(x, y)
-                , delay=0)
+                if current_brush.shape == 'rect':
+                    invoke(def anon():
+                        ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
+                        ctx.fillRect(int(x-(brush_size[0]/2)), int(y-(brush_size[1]/2)), brush_size[0], brush_size[1])
+                    , delay=0)
+                elif current_brush.shape == 'circle':
+                    invoke(def anon():
+                        ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
+                        draw_circle(x, y)
+                    , delay=0)
             else:
                 prev_brush_tip += 1
                 if prev_brush_tip >= brush_tips.length:
@@ -268,12 +278,10 @@ def paint():
                 ctx.drawImage(img, _x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
             else: # draw rect
                 ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
-                # ctx.fillRect(_x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
-                draw_circle(_x, _y)
-                # ctx.beginPath();
-                # ctx.arc(_x,  _y, brush_size[0], 0, 2*Math.PI)
-                # ctx.fill()
-                # ctx.closePath()
+                if current_brush.shape == 'rect':
+                    ctx.fillRect(int(_x-(brush_size[0]/2)), int(_y-(brush_size[1]/2)), brush_size[0], brush_size[1])
+                elif current_brush.shape == 'circle':
+                    draw_circle(_x, _y)
         else:
             invoke(def anon():
                 ctx.translate(_x, _y)
@@ -425,6 +433,7 @@ val_slider.while_dragging = val_slider.on_click
 
 def set_color(value, move_sliders=True):
     current_color = value
+    # print('current_color:', value)
     color_preview.color = rgb(current_color[0]/255, current_color[1]/255, current_color[2]/255)
     color_as_hsv = rgb_to_hsv(current_color)
     color_saturated = hsv(color_as_hsv[0], 1, color_as_hsv[2])
@@ -713,24 +722,45 @@ lasso_tool.input = def lasso_tool_input(key):
         lasso_prev_pos = None
         render_selection()
 
-# def floodfill(matrix, x, y, first=True):
-#     if matrix[y][y] == 1:
-#         return
-#
-#     if first:
-#         fill_target = matrix[x][y]
-#
-#     if matrix[x][y] == fill_target:
-#         matrix[x][y] = 1
-#         # recursively invoke flood fill on all surrounding cells
-#         if x > 0:
-#             self.floodfill(matrix, x-1, y, False)
-#         if x < selection.width-1:
-#             self.floodfill(matrix, x+1, y, False)
-#         if y > 0:
-#             self.floodfill(matrix, x, y-1, False)
-#         if y < selection.height-1:
-#             self.floodfill(matrix, x, y+1, False)
+def get_pixel(x, y):
+    return ctx.getImageData(x, y, 1, 1).data
+def set_pixel(x, y, color):
+    ctx.fillRect(x, y, 1, 1);
+
+paint_bucket = Entity(visible_self=False)
+paint_bucket.input = def paint_bucket_input(key):
+    if key == 'g' and mouse.hovered_entity == bg:
+        ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
+        pixel_grid = Array_2d(w, h)
+        for _y in range(h):
+            for _x in range(w):
+                pixel_grid[_x][_y] = get_pixel(_x, _y)
+
+        [x, y] = get_canvas_position()
+        floodfill(x, y)
+
+
+def floodfill(x, y, first=True):
+    if pixel_grid[x][y][0] == current_color[0] and pixel_grid[x][y][1] == current_color[1] and pixel_grid[x][y][2] == current_color[2] and pixel_grid[x][y][3] == current_color[3]:
+        return
+
+    if first:
+        print(current_color)
+        color_to_replace = pixel_grid[x][y]
+        # set_pixel(x, y, current_color)
+
+    if pixel_grid[x][y][0] == color_to_replace[0] and pixel_grid[x][y][1] == color_to_replace[1] and pixel_grid[x][y][2] == color_to_replace[2] and pixel_grid[x][y][3] == color_to_replace[3]:
+        pixel_grid[x][y] = current_color
+        set_pixel(x, y, current_color)
+
+        if x > 0:
+            floodfill(x-1, y, False)
+        if x < w-1:
+            floodfill(x+1, y, False)
+        if y > 0:
+            floodfill(x, y-1, False)
+        if y < h-1:
+            floodfill(x, y+1, False)
 
 
 lasso_prev_pos = None
