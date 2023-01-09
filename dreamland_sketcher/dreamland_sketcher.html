@@ -20,7 +20,7 @@ bg = Entity(color='#222', scale=[2*canvas_scale*aspect_ratio, 2*canvas_scale], d
 layers = []
 def add_layer():
     layer = Entity(name='canvas_entity', parent=bg, color=color.clear, scale=[1/2,1/2], z=-1)
-    layers.append(canvas_entity)
+    layers.append(layer)
 
     layer.canvas = document.createElement('canvas');
     layer.canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none; box-shadow:3px 10px 20px #111;'
@@ -34,7 +34,12 @@ def add_layer():
     return layer
 
 
-current_layer = add_layer()
+var current_layer = add_layer()
+sketch_layer = add_layer()
+sketch_layer.name = 'sketch_layer'
+sketch_layer.enabled = False
+layers = [e for e in layers if e != sketch_layer]
+print('----------------', layers)
 
 selection_canvas = document.createElement('canvas');
 selection_canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
@@ -52,11 +57,11 @@ selection_ctx.clearRect(0, 0, w, h)
 
 square_brush = {'textures':None, 'shape':'rect', 'size':[1, 1], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 round_brush = {'textures':None, 'shape':'circle', 'size':[1, 1], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
-# round_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.5, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
+round_bitmap_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.5, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 poke_brush = {'textures':["pokebrush.png", ], 'size':[256, 256], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 painterly_brush = {'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[178, 400], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':False}
 
-brushes = [square_brush, round_brush, poke_brush, painterly_brush]
+brushes = [square_brush, round_brush, round_bitmap_brush, poke_brush, painterly_brush]
 current_brush = None
 
 def set_brush(brush):
@@ -204,6 +209,9 @@ def draw_circle(x, y):
 
 
 def paint():
+    if not current_layer:
+        return
+
     if held_keys['alt']:
         pos = get_canvas_position()
         sampled_color = current_layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
@@ -283,7 +291,7 @@ def paint():
                 current_layer.ctx.drawImage(img, _x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
             else: # draw rect
                 current_layer.ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
-                print(current_color, `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`)
+                # print(current_color, `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`)
                 if current_brush.shape == 'rect':
                     current_layer.ctx.fillRect(int(_x-(brush_size[0]/2)), int(_y-(brush_size[1]/2)), brush_size[0], brush_size[1])
                 elif current_brush.shape == 'circle':
@@ -433,13 +441,13 @@ sunsnake.define(*button_style, parent=menu_parent, roundness=.01, origin=[.5,.5]
 right_button_x = (.5*aspect_ratio)-.0125
 left_button_x = right_button_x-.05
 
-increase_brush_size_button = Entity(*button_style, y=.1, text='+', on_click=def():brush_size = [e*1.5 for e in brush_size])
-decrease_brush_size_button = Entity(*button_style, y=.1, x=left_button_x, text='-', on_click=def():brush_size = [e*1/1.5 for e in brush_size])
+increase_brush_size_button = Entity(*button_style, y=.36, text='+', on_click=def():brush_size = [e*1.5 for e in brush_size])
+decrease_brush_size_button = Entity(*button_style, y=.36, x=left_button_x, text='-', on_click=def():brush_size = [e*1/1.5 for e in brush_size])
 
 
 for i, e in enumerate(brushes):
     let brush = e
-    let brush_button = Entity(*button_style, xy=[right_button_x,.05*-i])
+    let brush_button = Entity(*button_style, xy=[right_button_x-((i%2)*.05), .3+(.05*-floor(i/2))])
     if not e.textures:
         brush_button.text = e.shape
     else:
@@ -706,15 +714,18 @@ lasso_tool.input = def lasso_tool_input(key):
 def get_pixel(x, y):
     return current_layer.ctx.getImageData(x, y, 1, 1).data
 def set_pixel(x, y, color):
+    # current_layer.ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3]})`
     current_layer.ctx.fillRect(x, y, 1, 1);
 
 paint_bucket = Entity(visible_self=False)
 margin = 3
+pixel_grid = None
 paint_bucket.input = def paint_bucket_input(key):
     if key == 'g' and mouse.hovered_entity == bg:
         current_layer.ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
 
         if held_keys['shift']:
+            print('fill')
             pixel_grid = Array_2d(w, h)
             for _y in range(h):
                 for _x in range(w):
@@ -732,28 +743,31 @@ paint_bucket.input = def paint_bucket_input(key):
                     if abs(pixel[0]-color_to_replace[0]) <= margin and abs(pixel[1]-color_to_replace[1]) <= margin and abs(pixel[2]-color_to_replace[2]) <= margin:
                         current_layer.ctx.fillRect(x, y, 1, 1);
 
-def floodfill(x, y, first=True):
-    pixel = pixel_grid[x][y][0]
-    if pixel[0] == current_color[0] and pixel[1] == current_color[1] and pixel[2] == current_color[2] and pixel[3] == current_color[3]:
-        return
+fill_stack = []
+def floodfill(x, y):
+    fill_stack.push([x, y])
+    color_to_replace = pixel_grid[x][y]
 
-    if first:
-        color_to_replace = pixel
-        # set_pixel(x, y, current_color)
+    while (fill_stack.length > 0):
+        # if held_keys['escape']:
+        #     break
 
-    # print('-----', pixel_grid, color_to_replace[0])
-    if abs(pixel[0]-color_to_replace[0]) <= margin and abs(pixel[1]-color_to_replace[1]) <= margin and abs(pixel[2]-color_to_replace[2]) <= margin:
+        var [x, y] = fill_stack.pop();
+
+        if x < 0 or x >= w or y < 0 or y >= h:
+            continue
+
+        pixel = pixel_grid[x][y]
+        if abs(pixel[0]-color_to_replace[0]) > margin or abs(pixel[1]-color_to_replace[1]) > margin or abs(pixel[2]-color_to_replace[2]) > margin:
+            continue
+
         pixel_grid[x][y] = current_color
         set_pixel(x, y, current_color)
 
-        if x > 0:
-            floodfill(x-1, y, False)
-        if x < w-1:
-            floodfill(x+1, y, False)
-        if y > 0:
-            floodfill(x, y-1, False)
-        if y < h-1:
-            floodfill(x, y+1, False)
+        fill_stack.push([x + 1, y]);
+        fill_stack.push([x - 1, y]);
+        fill_stack.push([x, y + 1]);
+        fill_stack.push([x, y - 1]);
 
 
 lasso_prev_pos = None
@@ -845,6 +859,20 @@ tool_toggler.input = def tool_toggler_input(key):
         set_current_tool(lasso_tool)
     elif key == 'm':
         set_current_tool(rect_select_tool)
+
+    if key == 'r':
+        current_layer.enabled = False
+        current_layer = sketch_layer
+        sketch_layer.enabled = True
+        # current_layer = None
+        print(current_layer)
+
+    elif key == 'r up':
+        sketch_layer.enabled = False
+        current_layer = layers[0]
+        current_layer.enabled = True
+        print(current_layer)
+
 
 
 </script>
