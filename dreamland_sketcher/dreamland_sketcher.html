@@ -5,10 +5,6 @@
 
 set_window_color('#222')
 set_background_color('#111')
-
-
-
-
 set_orientation('horizontal')
 # set_scale(.66)
 set_scale(1)
@@ -17,19 +13,28 @@ var w = 1080
 var h = 1920
 var h = int(1080*.5);
 var w = int(1920*.5);
-bg = Entity(color='#222', scale=[4*canvas_scale*aspect_ratio, 4*canvas_scale], draggable=True, lock_x=True, lock_y=True)
 
-canvas = document.createElement('canvas');
-canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none; box-shadow:3px 10px 20px #111;'
-canvas.width = w
-canvas.height = h
 
-canvas_entity = Entity(name='canvas_entity', parent=bg, color=color.clear, scale=[1/4,1/4], z=-1)
-canvas_entity.model.appendChild(canvas)
+bg = Entity(color='#222', scale=[2*canvas_scale*aspect_ratio, 2*canvas_scale], draggable=True, lock_x=True, lock_y=True, name='bg')
 
-ctx = canvas.getContext('2d', {willReadFrequently: true})
-ctx.fillStyle = rgb(128/255, 128/255, 128/255, 255/255)
-ctx.fillRect(0, 0, canvas.width, canvas.height)
+layers = []
+def add_layer():
+    layer = Entity(name='canvas_entity', parent=bg, color=color.clear, scale=[1/2,1/2], z=-1)
+    layers.append(canvas_entity)
+
+    layer.canvas = document.createElement('canvas');
+    layer.canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none; box-shadow:3px 10px 20px #111;'
+    layer.canvas.width = w
+    layer.canvas.height = h
+    layer.model.appendChild(layer.canvas)
+
+    layer.ctx = layer.canvas.getContext('2d', {willReadFrequently: true})
+    layer.ctx.fillStyle = rgb(128/255, 128/255, 128/255, 255/255)
+    layer.ctx.fillRect(0, 0, w, h)
+    return layer
+
+
+current_layer = add_layer()
 
 selection_canvas = document.createElement('canvas');
 selection_canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
@@ -37,17 +42,17 @@ selection_canvas.width = w
 selection_canvas.height = h
 selection_canvas.willReadFrequently = True
 
-selection_canvas_entity = Entity(parent=canvas_entity, color=color.clear, z=-1)
+selection_canvas_entity = Entity(name='selection_canvas', parent=bg, color=color.clear, scale=[1/2,1/2], z=-1)
 selection_canvas_entity.model.appendChild(selection_canvas)
 
 selection_ctx = selection_canvas.getContext('2d', {willReadFrequently: true})
 selection_ctx.fillStyle = rgb(128/255, 0/255, 0/255, 255/255)
-selection_ctx.clearRect(0, 0, canvas.width, canvas.height)
+selection_ctx.clearRect(0, 0, w, h)
 
 
 square_brush = {'textures':None, 'shape':'rect', 'size':[1, 1], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 round_brush = {'textures':None, 'shape':'circle', 'size':[1, 1], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
-round_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.5, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
+# round_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.5, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 poke_brush = {'textures':["pokebrush.png", ], 'size':[256, 256], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 painterly_brush = {'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[178, 400], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':False}
 
@@ -86,7 +91,7 @@ prev_pos = None
 start_position = None
 snap_to_hex = False
 tool = 'brush'
-cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enabled=False)
+# cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enabled=False)
 
 
 brush_tool = Entity(name='brush_tool', visible_self=False)
@@ -176,16 +181,16 @@ def get_canvas_position():
         return [0,0]
 
     pos = mouse.point
-    return [int(((pos[0]*4)+.51) * w), int(((pos[1]*4)-.51) * -h)]
+    return [int(((pos[0]*2)+.5) * w), int(((pos[1]*2)-.5) * -h)]
 
 
 def draw_circle(x, y):
     if not selection.active:
-        ctx.fillRect(x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
-        ctx.beginPath()
-        ctx.arc(x,  y, brush_size[0], 0, 2*Math.PI)
-        ctx.fill()
-        ctx.closePath()
+        current_layer.ctx.fillRect(x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+        current_layer.ctx.beginPath()
+        current_layer.ctx.arc(x,  y, brush_size[0], 0, 2*Math.PI)
+        current_layer.ctx.fill()
+        current_layer.ctx.closePath()
         return
 
 
@@ -195,13 +200,13 @@ def draw_circle(x, y):
     for _y in range(clamp(y-brush_half_h, 0, h-1), clamp(y+brush_half_h, 0, h-1)):
         for _x in range(clamp(x-brush_half_w, 0, w-1), clamp(x+brush_half_w, 0, w-1)):
             if selection.active and selection.matrix[int(_x)][int(_y)]:
-                ctx.fillRect(_x, _y, 1, 1);
+                current_layer.ctx.fillRect(_x, _y, 1, 1);
 
 
 def paint():
     if held_keys['alt']:
         pos = get_canvas_position()
-        sampled_color = ctx.getImageData(pos[0], pos[1], 1, 1).data
+        sampled_color = current_layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
         set_color(sampled_color)
         return
     if mouse.hovered_entity != bg:
@@ -218,12 +223,12 @@ def paint():
             if not brush_tips: # no, brush texture, so draw a rect
                 if current_brush.shape == 'rect':
                     invoke(def anon():
-                        ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
-                        ctx.fillRect(int(x-(brush_size[0]/2)), int(y-(brush_size[1]/2)), brush_size[0], brush_size[1])
+                        current_layer.ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
+                        current_layer.ctx.fillRect(int(x-(brush_size[0]/2)), int(y-(brush_size[1]/2)), brush_size[0], brush_size[1])
                     , delay=0)
                 elif current_brush.shape == 'circle':
                     invoke(def anon():
-                        ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
+                        current_layer.ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
                         draw_circle(x, y)
                     , delay=0)
             else:
@@ -233,7 +238,7 @@ def paint():
                 img.src = brush_canvases[prev_brush_tip].toDataURL()
 
                 invoke(def anon():
-                    ctx.drawImage(img, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+                    current_layer.ctx.drawImage(img, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
                 , delay=0)
 
         start_position = pos
@@ -275,20 +280,21 @@ def paint():
 
         if not rotate_brush:
             if brush_tips:
-                ctx.drawImage(img, _x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
+                current_layer.ctx.drawImage(img, _x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
             else: # draw rect
-                ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
+                current_layer.ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
+                print(current_color, `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`)
                 if current_brush.shape == 'rect':
-                    ctx.fillRect(int(_x-(brush_size[0]/2)), int(_y-(brush_size[1]/2)), brush_size[0], brush_size[1])
+                    current_layer.ctx.fillRect(int(_x-(brush_size[0]/2)), int(_y-(brush_size[1]/2)), brush_size[0], brush_size[1])
                 elif current_brush.shape == 'circle':
                     draw_circle(_x, _y)
         else:
             invoke(def anon():
-                ctx.translate(_x, _y)
-                ctx.rotate(radians)
-                ctx.drawImage(img, -brush_size[0]/2, -brush_size[1]/2)
-                ctx.rotate(-radians)
-                ctx.translate(-_x, -_y)
+                current_layer.ctx.translate(_x, _y)
+                current_layer.ctx.rotate(radians)
+                current_layer.ctx.drawImage(img, -brush_size[0]/2, -brush_size[1]/2)
+                current_layer.ctx.rotate(-radians)
+                current_layer.ctx.translate(-_x, -_y)
             , delay=0)
 
         prev_draw_pos = [_x, _y]
@@ -336,20 +342,14 @@ def input(key):
 
 
     if key == 'd':
-        # brush_size *= 1.5
-        brush_size = [e * 1.5 for e in brush_size]
+        brush_size = [clamp(int(e*2), 1, 2048) for e in brush_size]
 
     if key == 'x':
-        # brush_size /= 1.5
-        brush_size = [e / 1.5 for e in brush_size]
+        brush_size = [clamp(int(e/2), 1, 2048) for e in brush_size]
 
     if key == 'h':
         selection_canvas_entity.enabled = not selection_canvas_entity.enabled
-        # print(event)
         # snap_to_hex = True
-
-    if key == 'r':
-        current_color = [255, 0, 0, 255]
 
     if key == 'scroll down':
         target_zoom = target_zoom*.9
@@ -383,62 +383,40 @@ color_preview = Entity(parent=color_menu.menu, scale=slider_height*3*1.1, x=.55,
 
 sunsnake.define(*slider_style, scale_y=.075, roundness=.15, draggable=True, lock_x=True, lock_y=True)
 
-hue_slider = Entity(*slider_style, parent=color_menu.menu, y=slider_height*1.1, texture='rainbow.png')
-hue_slider.indicator = Entity(parent=hue_slider, scale_x=.01, color=color.black, z=-2)
-hue_slider.on_click = def():
-    hue_slider.indicator.x = mouse.point[0]
+def move_color_slider(slider):
+    slider.indicator.x = mouse.point[0]
+    set_color(hsv(int((hue_slider.indicator.x+.5)*360), (sat_slider.indicator.x+.5)*1, (val_slider.indicator.x+.5)*1), move_sliders=False)
 
-    _curr_color = rgb_to_hsv(current_color)
-    value = (mouse.point[0]+.5) * 360
-    color_as_rgb = hsv(value, _curr_color[1], _curr_color[2])
-    current_color[0] = color_as_rgb[0]
-    current_color[1] = color_as_rgb[1]
-    current_color[2] = color_as_rgb[2]
-    # print('----------------', current_color)
-    set_color(current_color, False)
-    # print('set hue:', value)
-hue_slider.while_dragging = hue_slider.on_click
+hue_slider = Entity(*slider_style, parent=color_menu.menu, y=slider_height*1.1, texture='rainbow.png', name='hue_slider')
+hue_slider.indicator = Entity(parent=hue_slider, scale_x=.01, color=color.black, z=-2)
+hue_slider.while_dragging = def():
+    move_color_slider(hue_slider)
+hue_slider.on_click = hue_slider.while_dragging
 
 sat_slider = Entity(*slider_style, parent=color_menu.menu, y=0)
 sat_slider.overlay = Entity(parent=sat_slider, texture='horizontal_gradient.png', y=0, z=-1, roundness=.15)
 sat_slider.indicator = Entity(parent=sat_slider, scale_x=.01, color=color.black, z=-2)
-sat_slider.on_click = def():
-    sat_slider.indicator.x = mouse.point[0]
+sat_slider.while_dragging = def():
+    move_color_slider(sat_slider)
+sat_slider.on_click = sat_slider.while_dragging
 
-    _curr_color = rgb_to_hsv(current_color)
-    value = (mouse.point[0]+.5)
-    color_as_rgb = hsv(_curr_color[0], value, _curr_color[2])
-
-    current_color[0] = color_as_rgb[0]
-    current_color[1] = color_as_rgb[1]
-    current_color[2] = color_as_rgb[2]
-    set_color(current_color, False)
-sat_slider.while_dragging = sat_slider.on_click
-    # print('set sat:', value, current_color)
 val_slider = Entity(*slider_style, parent=color_menu.menu, y=-slider_height*1.1)
 val_slider.overlay = Entity(parent=val_slider, texture='horizontal_gradient.png', color=color.black, rotation=180, y=0, z=-1, roundness=.15)
 val_slider.indicator = Entity(parent=val_slider, scale_x=.01, color=color.black, z=-2)
-val_slider.on_click = def():
-    val_slider.indicator.x = mouse.point[0]
-
-    color_as_hsv = rgb_to_hsv(current_color)
-    value = (mouse.point[0]+.5)
-    color_as_rgb = hsv(color_as_hsv[0], color_as_hsv[1], value)
-    current_color[0] = color_as_rgb[0]
-    current_color[1] = color_as_rgb[1]
-    current_color[2] = color_as_rgb[2]
-    set_color(current_color, False)
-    # print('set value:', value)
-val_slider.while_dragging = val_slider.on_click
+val_slider.while_dragging = def():
+    move_color_slider(val_slider)
+val_slider.on_click = val_slider.while_dragging
 
 def set_color(value, move_sliders=True):
+    if len(value) == 3:
+        value.append(255)
+
+    print('set color:', value)
     current_color = value
-    # print('current_color:', value)
     color_preview.color = rgb(current_color[0]/255, current_color[1]/255, current_color[2]/255)
     color_as_hsv = rgb_to_hsv(current_color)
     color_saturated = hsv(color_as_hsv[0], 1, color_as_hsv[2])
     color_desaturated = hsv(color_as_hsv[0], 0, color_as_hsv[2])
-    # print(rgb(val[0]/255, val[1]/255, val[2]/255))
     sat_slider.color = rgb(color_saturated[0]/255, color_saturated[1]/255, color_saturated[2]/255)
     # sat.overlay.color = rgb(color_desaturated[0]/255, color_desaturated[1]/255, color_desaturated[2]/255)
     # sat.overlay.alpha = current_color[3]/255
@@ -462,14 +440,16 @@ decrease_brush_size_button = Entity(*button_style, y=.1, x=left_button_x, text='
 for i, e in enumerate(brushes):
     let brush = e
     let brush_button = Entity(*button_style, xy=[right_button_x,.05*-i])
-    icon = Entity(roundness=.01, parent=brush_button, xy=[-.5,-.5], color=color.black, z=-1, scale=.7)
-    if e.textures:
-        icon.texture = e.textures[0]
-    icon_aspect = brush.size[0] / brush.size[1]
-    if icon_aspect > 1:
-        icon.scale = [1, icon_aspect]
+    if not e.textures:
+        brush_button.text = e.shape
     else:
-        icon.scale = [icon_aspect, 1]
+        icon = Entity(roundness=.01, parent=brush_button, xy=[-.5,-.5], color=color.black, z=-1, scale=.7)
+        icon.texture = e.textures[0]
+        icon_aspect = brush.size[0] / brush.size[1]
+        if icon_aspect > 1:
+            icon.scale = [1, icon_aspect]
+        else:
+            icon.scale = [icon_aspect, 1]
 
     brush_button.on_click = def():
         set_brush(brush)
@@ -481,7 +461,7 @@ eyedropper.update = def update():
         if mouse.hovered_entity == bg:
             print('smaple')
             pos = get_canvas_position()
-            current_color = ctx.getImageData(pos[0], pos[1], 1, 1).data
+            current_color = current_layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
             set_color(current_color)
             return
 
@@ -509,10 +489,10 @@ if saved_image:
     load_image_to_canvas(saved_image)
 
 def load_image_to_canvas(image):
-    var loaded_image = new Image
+    var loaded_image = new Image()
     loaded_image.src = image
     loaded_image.onload = def on_load():
-        ctx.drawImage(loaded_image, 0, 0)
+        current_layer.ctx.drawImage(loaded_image, 0, 0)
 
 local_image_data = None
 
@@ -523,7 +503,7 @@ def copy_image_from_canvas():
         selection_width = selection.bounds[2] - selection.bounds[0]
         selection_height = selection.bounds[3] - selection.bounds[1]
 
-        _image_data = ctx.getImageData(selection_x, selection_y, selection_width, selection_height)
+        _image_data = current_layer.ctx.getImageData(selection_x, selection_y, selection_width, selection_height)
         local_image_data = Uint8ClampedArray.from(_image_data.data)
         flat_selection = selection.matrix.flat()
         # print(flat_selection[0] === true)
@@ -547,7 +527,8 @@ async def paste(e):
             if value.startsWith('local_image:'):
                 [_x, _y, _w, _h] = JSON.parse(value.split('local_image:')[1])
                 print('-----------', _x, _y, _w, _h)
-            ctx.putImageData(new ImageData(local_image_data, _w, _h), _x, _y)
+                current_layer = add_layer()
+                current_layer.ctx.putImageData(new ImageData(local_image_data, _w, _h), _x, _y)
         )
 
         return False
@@ -560,9 +541,9 @@ async def paste(e):
         print('-----', source)
         var pastedImage = new Image();
         pastedImage.src = source
-        ctx.drawImage(pastedImage, 0, 0)
+        current_layer.ctx.drawImage(pastedImage, 0, 0)
         after .01:
-            ctx.drawImage(pastedImage, 0, 0)
+            current_layer.ctx.drawImage(pastedImage, 0, 0)
         print('pasted')
 
 window.addEventListener("paste", paste)
@@ -579,7 +560,7 @@ download_button.on_click = def download():
     print('download')
 
 
-const undo_data = [canvas.toDataURL("image"), ]
+const undo_data = [current_layer.canvas.toDataURL("image"), ]
 undo_index = 0
 
 def undo():
@@ -589,7 +570,7 @@ def undo():
     var loaded_image = new Image
     loaded_image.src = undo_data[undo_index]
     loaded_image.onload = def on_load():
-        ctx.drawImage(loaded_image, 0, 0)
+        current_layer.ctx.drawImage(loaded_image, 0, 0)
 
 def redo()
     if undo_index < undo_data.length:
@@ -598,7 +579,7 @@ def redo()
     var loaded_image = new Image
     loaded_image.src = undo_data[undo_index]
     loaded_image.onload = def():
-        ctx.drawImage(loaded_image, 0, 0)
+        current_layer.ctx.drawImage(loaded_image, 0, 0)
 
 
 def record_undo():
@@ -723,33 +704,45 @@ lasso_tool.input = def lasso_tool_input(key):
         render_selection()
 
 def get_pixel(x, y):
-    return ctx.getImageData(x, y, 1, 1).data
+    return current_layer.ctx.getImageData(x, y, 1, 1).data
 def set_pixel(x, y, color):
-    ctx.fillRect(x, y, 1, 1);
+    current_layer.ctx.fillRect(x, y, 1, 1);
 
 paint_bucket = Entity(visible_self=False)
+margin = 3
 paint_bucket.input = def paint_bucket_input(key):
     if key == 'g' and mouse.hovered_entity == bg:
-        ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
-        pixel_grid = Array_2d(w, h)
-        for _y in range(h):
-            for _x in range(w):
-                pixel_grid[_x][_y] = get_pixel(_x, _y)
+        current_layer.ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
 
-        [x, y] = get_canvas_position()
-        floodfill(x, y)
+        if held_keys['shift']:
+            pixel_grid = Array_2d(w, h)
+            for _y in range(h):
+                for _x in range(w):
+                    pixel_grid[_x][_y] = get_pixel(_x, _y)
 
+            [x, y] = get_canvas_position()
+            floodfill(x, y)
+
+        else:
+            [x, y] = get_canvas_position()
+            color_to_replace = get_pixel(x, y)
+            for y in range(h):
+                for x in range(w):
+                    pixel = get_pixel(x, y)
+                    if abs(pixel[0]-color_to_replace[0]) <= margin and abs(pixel[1]-color_to_replace[1]) <= margin and abs(pixel[2]-color_to_replace[2]) <= margin:
+                        current_layer.ctx.fillRect(x, y, 1, 1);
 
 def floodfill(x, y, first=True):
-    if pixel_grid[x][y][0] == current_color[0] and pixel_grid[x][y][1] == current_color[1] and pixel_grid[x][y][2] == current_color[2] and pixel_grid[x][y][3] == current_color[3]:
+    pixel = pixel_grid[x][y][0]
+    if pixel[0] == current_color[0] and pixel[1] == current_color[1] and pixel[2] == current_color[2] and pixel[3] == current_color[3]:
         return
 
     if first:
-        print(current_color)
-        color_to_replace = pixel_grid[x][y]
+        color_to_replace = pixel
         # set_pixel(x, y, current_color)
 
-    if pixel_grid[x][y][0] == color_to_replace[0] and pixel_grid[x][y][1] == color_to_replace[1] and pixel_grid[x][y][2] == color_to_replace[2] and pixel_grid[x][y][3] == color_to_replace[3]:
+    # print('-----', pixel_grid, color_to_replace[0])
+    if abs(pixel[0]-color_to_replace[0]) <= margin and abs(pixel[1]-color_to_replace[1]) <= margin and abs(pixel[2]-color_to_replace[2]) <= margin:
         pixel_grid[x][y] = current_color
         set_pixel(x, y, current_color)
 
@@ -857,19 +850,7 @@ tool_toggler.input = def tool_toggler_input(key):
 </script>
 
 <script src="https://cdn.cde.run/Joycon.min.js"></script>
-# <script type="text/javascript">
-# const controllers = Joycon.controllers;
-# print(controllers)
-# controllers.on.connect((controller) => {
-#   console.log('controller connected!', controller);
-#
-# });
-# controllers.on.move('right-joystick', (value) => {
-#     console.log('moved right joystick!', value.x, value.y); //# value is -1 to 1 down/right
-#     held_keys['right joystick x'] = value.x
-#     held_keys['right joystick y'] = value.y
-# });
-# </script>
+
 <script type="text/sunsnake">
 held_keys['right joystick x'] = 0
 held_keys['right joystick y'] = 0
@@ -900,7 +881,6 @@ joycon_handler.update = def joycon_update():
             bg.x -= held_keys['right joystick x'] * .01
         if abs(held_keys['right joystick y']) > .05:
             bg.y += held_keys['right joystick y'] * .01
-
 
 
 </script>
