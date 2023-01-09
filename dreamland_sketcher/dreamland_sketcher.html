@@ -18,6 +18,16 @@ var w = int(1920*.5);
 bg = Entity(color='#222', scale=[2*canvas_scale*aspect_ratio, 2*canvas_scale], draggable=True, lock_x=True, lock_y=True, name='bg')
 
 layers = []
+menu_parent = Entity(parent=camera.ui, visible_self=False, name='menu_parent')
+right_button_x = (.5*aspect_ratio)-.0125
+left_button_x = right_button_x-.05
+sunsnake.define(*button_style, parent=menu_parent, roundness=.01, origin=[.5,.5], text_origin=[0,0], x=(.5*aspect_ratio)-.0125, scale=[.05,.05], z=-1, text_size=1.5, color=hsv(0,0,.05), text_color=hsv(0,.0,.8))
+
+# Entity(parent=menu_parent, origin=[-.5,0], color=hsv(0,0,.1), x=(.5*aspect_ratio)-.125)
+# Entity(parent=menu_parent, origin=[0, .5], color=hsv(0,0,.1), y=-.5+.1, scale_x=2)
+
+# sunsnake.define(*layer_button_defaults, parent=layer_menu, scale=[.1,.05], origin=[.5,-.5], draggable=True)
+layer_menu = Entity(*button_style, scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.05, y=-.45+.05, text='layers', visible_self=True, roundness=.005, color=hsv(0,0,.03))
 def add_layer():
     layer = Entity(name='canvas_entity', parent=bg, color=color.clear, scale=[1/2,1/2], z=-1)
     layers.append(layer)
@@ -31,10 +41,14 @@ def add_layer():
     layer.ctx = layer.canvas.getContext('2d', {willReadFrequently: true})
     layer.ctx.fillStyle = rgb(128/255, 128/255, 128/255, 255/255)
     layer.ctx.fillRect(0, 0, w, h)
+
+    layer.layer_button = Entity(*button_style, scale=[.1,.03], roundness=.005, origin=[.5,-.5], y=layer_menu.y+((len(layers)-1)*1.01*.03), text=`layer ${len(layers)}`,
+        draggable=True, lock_x=True, min_y=layer_menu.y-.015, max_y=layer_menu.y+layer_menu.scale_y+.015)
+
     return layer
 
 
-var current_layer = add_layer()
+current_layer = add_layer()
 sketch_layer = add_layer()
 sketch_layer.name = 'sketch_layer'
 sketch_layer.enabled = False
@@ -190,14 +204,14 @@ def get_canvas_position():
 
 
 def draw_circle(x, y):
+    current_layer.ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
     if not selection.active:
-        current_layer.ctx.fillRect(x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+        # current_layer.ctx.fillRect(x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
         current_layer.ctx.beginPath()
-        current_layer.ctx.arc(x,  y, brush_size[0], 0, 2*Math.PI)
+        current_layer.ctx.arc(x, y, brush_size[0], 0, 2*Math.PI)
         current_layer.ctx.fill()
         current_layer.ctx.closePath()
         return
-
 
     brush_half_w = brush_size[0] / 2
     brush_half_h = brush_size[1] / 2
@@ -205,8 +219,21 @@ def draw_circle(x, y):
     for _y in range(clamp(y-brush_half_h, 0, h-1), clamp(y+brush_half_h, 0, h-1)):
         for _x in range(clamp(x-brush_half_w, 0, w-1), clamp(x+brush_half_w, 0, w-1)):
             if selection.active and selection.matrix[int(_x)][int(_y)]:
-                current_layer.ctx.fillRect(_x, _y, 1, 1);
+                current_layer.ctx.fillRect(int(_x), int(_y), 1, 1);
 
+def draw_rect(x, y):
+    current_layer.ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
+    if not selection.active:
+        current_layer.ctx.fillRect(int(x-(brush_size[0]/2)), int(y-(brush_size[1]/2)), brush_size[0], brush_size[1])
+        return
+
+    brush_half_w = brush_size[0] / 2
+    brush_half_h = brush_size[1] / 2
+
+    for _y in range(clamp(y-brush_half_h, 0, h-1), int(clamp(y+brush_half_h, 0, h-1))):
+        for _x in range(clamp(x-brush_half_w, 0, w-1), int(clamp(x+brush_half_w, 0, w-1))):
+            if selection.active and selection.matrix[int(_x)][int(_y)]:
+                current_layer.ctx.fillRect(int(_x), int(_y), 1, 1);
 
 def paint():
     if not current_layer:
@@ -230,15 +257,10 @@ def paint():
         if draw_on_click:
             if not brush_tips: # no, brush texture, so draw a rect
                 if current_brush.shape == 'rect':
-                    invoke(def anon():
-                        current_layer.ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
-                        current_layer.ctx.fillRect(int(x-(brush_size[0]/2)), int(y-(brush_size[1]/2)), brush_size[0], brush_size[1])
-                    , delay=0)
+                    draw_rect(x, y)
+
                 elif current_brush.shape == 'circle':
-                    invoke(def anon():
-                        current_layer.ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
-                        draw_circle(x, y)
-                    , delay=0)
+                    draw_circle(x, y)
             else:
                 prev_brush_tip += 1
                 if prev_brush_tip >= brush_tips.length:
@@ -290,10 +312,9 @@ def paint():
             if brush_tips:
                 current_layer.ctx.drawImage(img, _x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
             else: # draw rect
-                current_layer.ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
                 # print(current_color, `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`)
                 if current_brush.shape == 'rect':
-                    current_layer.ctx.fillRect(int(_x-(brush_size[0]/2)), int(_y-(brush_size[1]/2)), brush_size[0], brush_size[1])
+                    draw_rect(_x, _y)
                 elif current_brush.shape == 'circle':
                     draw_circle(_x, _y)
         else:
@@ -433,13 +454,6 @@ def set_color(value, move_sliders=True):
         sat_slider.indicator.x = -.5 + color_as_hsv[1]
         val_slider.indicator.x = -.5 + color_as_hsv[2]
 
-menu_parent = Entity(parent=camera.ui, visible_self=False, name='menu_parent')
-# Entity(parent=menu_parent, origin=[-.5,0], color=hsv(0,0,.1), x=(.5*aspect_ratio)-.125)
-# Entity(parent=menu_parent, origin=[0, .5], color=hsv(0,0,.1), y=-.5+.1, scale_x=2)
-
-sunsnake.define(*button_style, parent=menu_parent, roundness=.01, origin=[.5,.5], text_origin=[0,0], x=(.5*aspect_ratio)-.0125, scale=[.05,.05], z=-1, text_size=1.5, color=hsv(0,0,.05), text_color=hsv(0,.0,.8))
-right_button_x = (.5*aspect_ratio)-.0125
-left_button_x = right_button_x-.05
 
 increase_brush_size_button = Entity(*button_style, y=.36, text='+', on_click=def():brush_size = [e*1.5 for e in brush_size])
 decrease_brush_size_button = Entity(*button_style, y=.36, x=left_button_x, text='-', on_click=def():brush_size = [e*1/1.5 for e in brush_size])
@@ -483,7 +497,7 @@ window.onfocus = def():
             held_keys[key] = 0
 
 
-save_button = Button(*button_style, y=-.25, scale=[.1,.04], text='save')
+save_button = Button(*button_style, y=-.46, scale=[.1,.04], text='save')
 save_button.on_click = def save():
     dataURL = canvas.toDataURL("image")
     window.localStorage.setItem("image", dataURL)
@@ -557,7 +571,7 @@ async def paste(e):
 window.addEventListener("paste", paste)
 
 
-download_button = Button(*button_style, text='download', scale=[.1,.04], origin=[.5,.5], x=(.5*aspect_ratio)-.0125, y=-.2)
+download_button = Button(*button_style, text='download', scale=[.1,.04], origin=[.5,.5], x=(.5*aspect_ratio)-.0125, y=-.42)
 var link = document.createElement('a');
 download_button.on_click = def download():
     link.download = "untitled.png"
