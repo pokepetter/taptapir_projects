@@ -28,8 +28,8 @@ sunsnake.define(*button_style, parent=menu_parent, roundness=.01, origin=[.5,.5]
 
 # sunsnake.define(*layer_button_defaults, parent=layer_menu, scale=[.1,.05], origin=[.5,-.5], draggable=True)
 layer_menu = Entity(*button_style, scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.05, y=-.45+.05, text='layers', visible_self=True, roundness=.005, color=hsv(0,0,.03))
-def add_layer():
-    layer = Entity(name='canvas_entity', parent=bg, color=color.clear, scale=[1/2,1/2], z=-1)
+def add_layer(name='layer'):
+    let layer = Entity(name=name, parent=bg, color=color.clear, scale=[1/2,1/2], z=-1)
     layers.append(layer)
 
     layer.canvas = document.createElement('canvas');
@@ -42,17 +42,30 @@ def add_layer():
     layer.ctx.fillStyle = rgb(128/255, 128/255, 128/255, 255/255)
     layer.ctx.fillRect(0, 0, w, h)
 
-    layer.layer_button = Entity(*button_style, scale=[.1,.03], roundness=.005, origin=[.5,-.5], y=layer_menu.y+((len(layers)-1)*1.01*.03), text=`layer ${len(layers)}`,
+    layer.layer_button = Entity(*button_style, scale=[.1,.03], roundness=.005, origin=[.5,-.5], y=layer_menu.y+((len(layers)-1)*1.01*.03), text=name,
         draggable=True, lock_x=True, min_y=layer_menu.y-.015, max_y=layer_menu.y+layer_menu.scale_y+.015)
+    layer.layer_button.original_color = layer.layer_button.color
+    layer.layer_button.on_click = def():
+        set_layer(layer.layer_button)
 
     return layer
 
 
-current_layer = add_layer()
-sketch_layer = add_layer()
+first_layer = add_layer()
+sketch_layer = add_layer('sketch_layer')
 sketch_layer.name = 'sketch_layer'
 sketch_layer.enabled = False
 layers = [e for e in layers if e != sketch_layer]
+
+def set_layer(layer):
+    current_layer = layer
+    print('current_layer:', current_layer)
+    for layer in layers:
+        layer.layer_button.color = layer.layer_button.original_color
+    layer.layer_button.color = color.azure
+
+set_layer(first_layer)
+
 print('----------------', layers)
 
 selection_canvas = document.createElement('canvas');
