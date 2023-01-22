@@ -1,0 +1,188 @@
+<html><title>illustraptor</title><body>
+<script src="../taptapir/taptapir.js"></script>
+<script type='text/sunsnake'>
+
+set_orientation('horizontal')
+set_background_color("#111")
+set_window_color("#222")
+# set_scale(.8)
+
+shapes = []
+selection = []
+camera.target_fov = 1
+bg = Entity(visible_self=False, alpha=.1, draggable=True, lock_x=True, lock_y=True, min_x=-5, max_x=5, min_y=-5, max_y=5, on_click=render_selection)
+# grid = Entity(parent=bg, scale=10, z=999, color='#222', name='grid', alpha=1, texture=)
+# for y in range(10):
+#     for x in range(10):
+#         Entity(parent=bg, xy=[-.5 + x*.1, -.5 + y*.1], z=999, scale=.1, roundness=.05, color=random_color(), alpha=.1)
+
+
+sunsnake.define(SideGizmo(, Entity(parent=rect.gizmo, color=color.azure, alpha=.3, original_color=color.azure, draggable=True, while_dragging=rect.update_scale, )
+sunsnake.define(CornerGizmo(, Entity(parent=rect.gizmo, scale=.015, color=hsv(180,.5,.8), alpha=.3, original_color=hsv(180,.5,.8), draggable=True, roundness=.5, )
+
+def add_shape():
+    let rect = Entity(parent=bg, scale=.1, draggable=True, alpha=.4, min_x=-9999, max_x=9999, min_y=-9999, max_y=9999)
+
+    rect.update_scale = def update_scale(type='|'):
+        rect.gizmo.enabled = False
+        if type == '|':
+            rect.x = lerp(rect.left.x, rect.right.x, .5)
+            rect.y = lerp(rect.bot.y, rect.top.y, .5)
+            rect.scale_x = rect.right.x - rect.left.x
+            rect.scale_y = rect.top.y - rect.bot.y
+
+        elif type == '/':
+            rect.x = lerp(rect.bot_left.x, rect.top_right.x, .5)
+            rect.y = lerp(rect.bot_left.y, rect.top_right.y, .5)
+            rect.scale_x = rect.top_right.x - rect.bot_left.x
+            rect.scale_y = rect.top_right.y - rect.bot_left.y
+
+        elif type == '\\':
+            rect.x = lerp(rect.top_left.x, rect.bot_right.x, .5)
+            rect.y = lerp(rect.top_left.y, rect.bot_right.y, .5)
+            rect.scale_x = rect.bot_right.x - rect.top_left.x
+            rect.scale_y = rect.top_left.y - rect.bot_right.y
+
+    rect.gizmo = Entity(parent=bg, enabled=False, visible_self=False)
+    rect.left =  SideGizmo(scale_x=.01, lock_y=True)
+    rect.right = SideGizmo(scale_x=.01, lock_y=True)
+    rect.top =   SideGizmo(scale_y=.01, lock_x=True)
+    rect.bot =   SideGizmo(scale_y=.01, lock_x=True)
+
+    rect.top_right = CornerGizmo()
+    rect.top_left = CornerGizmo()
+    rect.bot_right = CornerGizmo()
+    rect.bot_left = CornerGizmo()
+
+
+    gizmos = [rect.left, rect.right, rect.top, rect.bot, rect.top_right, rect.top_left, rect.bot_right, rect.bot_left]
+    for e in gizmos:
+        let giz = e
+        giz.el.addEventListener('mouseenter', e => {giz.color = color.white})
+        giz.el.addEventListener('mouseleave', e => {giz.color = giz.original_color})
+        giz.drop = def drop():
+            rect.gizmo.enabled = True
+            rect.update_gizmos()
+
+
+    rect.top_right.while_dragging = def anon():
+        rect.update_scale('/')
+    rect.bot_left.while_dragging = def anon():
+        rect.update_scale('/')
+
+    rect.top_left.while_dragging = def anon():
+        rect.update_scale('\\')
+    rect.bot_right.while_dragging = def anon():
+        rect.update_scale('\\')
+
+    rect.update_gizmos = def():
+        # print('render selection gizmos')
+        rect.left.x = rect.x - (rect.scale_x/2)
+        rect.left.y = rect.y
+        rect.left.scale_y = rect.scale_y
+
+        rect.right.x = rect.x + (rect.scale_x/2)
+        rect.right.y = rect.y
+        rect.right.scale_y = rect.scale_y
+
+        rect.top.y = rect.y + (rect.scale_y/2)
+        rect.top.x = rect.x
+        rect.top.scale_x = rect.scale_x
+
+        rect.bot.y = rect.y - (rect.scale_y/2)
+        rect.bot.x = rect.x
+        rect.bot.scale_x = rect.scale_x
+
+        rect.top_right.xy = [rect.right.x, rect.top.y]
+        rect.top_left.xy = [rect.left.x, rect.top.y]
+        rect.bot_right.xy = [rect.right.x, rect.bot.y]
+        rect.bot_left.xy = [rect.left.x, rect.bot.y]
+
+
+    rect.while_dragging = rect.update_gizmos
+    rect.update_gizmos()
+
+    shapes.append(rect)
+    selection = [rect, ]
+    # update_menu()
+
+
+
+hierarchy_menu = Entity(parent=camera.ui, origin=[-.5,.5], xy=top_left, scale=[.1,.03], visible_self=False)
+hierarchy_menu.bg = Entity(parent=hierarchy_menu, origin=[-.5,.5], scale=[1,10], color=color.black, alpha=.9, z=1)
+hierarchy_menu.buttons = []
+for i in range(24):
+    b = Entity(parent=hierarchy_menu, origin=[-.5,.5], text=`${i}`, text_size=2, y=-i, roundness=.1, enabled=False)
+    hierarchy_menu.buttons.append(b)
+
+add_button = Button(parent=hierarchy_menu, text='+', origin=[-.5,.5], on_click=add_shape)
+
+# def update_menu():
+#     [e.enabled = False for e in hierarchy_menu.buttons]
+#
+#     for i, e in enumerate(shapes):
+#         hierarchy_menu.buttons[i].enabled = True
+#
+#     add_button.y = -len(shapes)
+
+
+
+def input(key):
+    if key == 'a':
+        add_shape()
+
+    if key == 'left mouse down':
+        if mouse.hovered_entity == bg and not held_keys['control']:
+            print('clear selection')
+            selection = []
+            render_selection()
+
+        if mouse.hovered_entity in shapes:
+            if not held_keys['control']:
+                selection = [mouse.hovered_entity, ]
+                print('aaaa')
+                render_selection()
+
+
+def render_selection():
+    for e in shapes:
+        e.gizmo.enabled = False
+
+    if len(selection) > 0:
+        selection[-1].gizmo.enabled = True
+        selection[-1].update_gizmos()
+    #     print('aaa')
+
+
+
+target_zoom = 1
+zoom_label = Button(text='100%', scale=[.075,.04], origin=[.5,.5], xy=[(.5*aspect_ratio)-.005,.495], color=hsv(0,0,0), text_color=hsv(0,0,.8), text_size=2, on_click=def():target_zoom=1)
+zoom_label.update = def update():
+    camera.fov = lerp(camera.fov, target_zoom, .1)
+
+
+zoom_label.input = def zoom_input(key):
+    if key == 'scroll up' and target_zoom > .3:
+        target_zoom = target_zoom*.9
+        # print(bg)
+        zoom_label.text = `${int(target_zoom*100)}%`
+    if key == 'scroll down' and target_zoom < 10:
+        target_zoom = target_zoom*1/.9
+        zoom_label.text = `${int(target_zoom*100)}%`
+
+    if key == 'middle mouse down' or key == 'space':
+        bg.lock_x = False
+        bg.lock_y = False
+        bg.start_offset = [(mouse.x*camera.fov)-bg.x , (mouse.y*camera.fov)-bg.y]
+        bg.dragging = True
+
+    if key == 'middle mouse up' or key == 'space up':
+        bg.lock_x = True
+        bg.lock_y = True
+        bg.dragging = False
+
+
+add_shape()
+
+
+</script><script src="../taptapir/sunsnake_compiler.js"></script>
