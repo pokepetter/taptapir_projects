@@ -28,20 +28,20 @@ def add_shape():
         if type == '|':
             rect.x = lerp(rect.left.x, rect.right.x, .5)
             rect.y = lerp(rect.bot.y, rect.top.y, .5)
-            rect.scale_x = rect.right.x - rect.left.x
-            rect.scale_y = rect.top.y - rect.bot.y
+            rect.scale_x = abs(rect.right.x - rect.left.x)
+            rect.scale_y = abs(rect.top.y - rect.bot.y)
 
         elif type == '/':
             rect.x = lerp(rect.bot_left.x, rect.top_right.x, .5)
             rect.y = lerp(rect.bot_left.y, rect.top_right.y, .5)
-            rect.scale_x = rect.top_right.x - rect.bot_left.x
-            rect.scale_y = rect.top_right.y - rect.bot_left.y
+            rect.scale_x = abs(rect.top_right.x - rect.bot_left.x)
+            rect.scale_y = abs(rect.top_right.y - rect.bot_left.y)
 
         elif type == '\\':
             rect.x = lerp(rect.top_left.x, rect.bot_right.x, .5)
             rect.y = lerp(rect.top_left.y, rect.bot_right.y, .5)
-            rect.scale_x = rect.bot_right.x - rect.top_left.x
-            rect.scale_y = rect.top_left.y - rect.bot_right.y
+            rect.scale_x = abs(rect.bot_right.x - rect.top_left.x)
+            rect.scale_y = abs(rect.top_left.y - rect.bot_right.y)
 
     rect.gizmo = Entity(parent=bg, enabled=False, visible_self=False)
     rect.left =  SideGizmo(scale_x=.01, lock_y=True)
