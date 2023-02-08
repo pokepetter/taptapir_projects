@@ -1,0 +1,20 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>taptapir</title><link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir/taptapir.js"></script><script type='text/sunsnake'>
+
+set_window_color('rgb(49 72 60)')
+
+
+card_parent = Entity(visible_self=False, scale=.98, xy=[-.5+(1/5/2),(-.5*aspect_ratio)+.1])
+
+for i in range(5):
+    let card = Entity(parent=card_parent, scale=[.18,.3], x=i*.2, roundness=.1, origin=[0,-.5], text=i, draggable=True, shadow=True, color='#ddd')
+    card.original_xy = card.xy
+
+    card.drop = def():
+        card.xy = card.original_xy
+        destroy(card)
+        print(card_parent.children)
+        for i, e in enumerate(card_parent.children):
+            // e.animate('x', i*.2)
+            e.x = i*.2
+
+</script><script src="../taptapir/sunsnake_compiler.js"></script></html>
