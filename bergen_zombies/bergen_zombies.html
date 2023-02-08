@@ -3,18 +3,71 @@
 set_window_color('rgb(49 72 60)')
 
 
-card_parent = Entity(visible_self=False, scale=.98, xy=[-.5+(1/5/2),(-.5*aspect_ratio)+.1])
+card_parent = Entity(visible_self=False, scale=.98)
 
 for i in range(5):
-    let card = Entity(parent=card_parent, scale=[.18,.3], x=i*.2, roundness=.1, origin=[0,-.5], text=i, draggable=True, shadow=True, color='#ddd')
-    card.original_xy = card.xy
+    after i*.1:
+        draw_card()
+
+    a =2
+
+deck = ['revolver', 'grenade', 'rifle', 'stone', 'rifle']
+tooltip = Text(text='tooltip', scale=[.4,.3], z=-2, enabled=False, origin=[0,-.5], roundness=.1, color=color.black, alpha=.9, text_color='#eee')
+
+def draw_card():
+    if len(card_parent >= 5):
+        return
+
+    let card = Entity(parent=card_parent, text_size=2, text_origin=[0,0], scale=[.18,.3], xy=[(i*.2), (-.5*aspect_ratio)+.1], roundness=.1, origin=[0,-.5], text='?', draggable=True, shadow=True, color='#ddd')
+    card.text = random_choice(deck)
+
+    reorder_cads()
+    y_limit = -.35
+
+    card.on_click = def():
+        after .2s:
+            tooltip.text = card.text
+            move_tooltip_to_card(card)
+            tooltip.enabled = True
+        print('drag')
+        card.z = -1
 
     card.drop = def():
-        card.xy = card.original_xy
-        destroy(card)
-        print(card_parent.children)
-        for i, e in enumerate(card_parent.children):
-            // e.animate('x', i*.2)
-            e.x = i*.2
+        print(mouse.y)
+        tooltip.enabled = False
+        if mouse.y > y_limit:
+            destroy(card)
+            after .1s:
+                draw_card()
+
+            reorder_cads()
+        else:
+            card.xy = card.original_xy
+            card.z = 0
+
+    card.while_dragging = def():
+
+        if mouse.y > y_limit:
+            card.color = color.pink
+            tooltip.enabled = False
+        else:
+            card.color = '#ddd'
+            move_tooltip_to_card(card)
+
+
+def move_tooltip_to_card(card):
+    tooltip.xy = card.xy
+    tooltip.y = card.y +.35
+    tooltip.x = clamp(tooltip.x, -.45+(tooltip.scale_x/2), .45-(tooltip.scale_x/2))
+
+
+def reorder_cads():
+    for i, e in enumerate(card_parent.children):
+        e.original_xy = [-.5+(1/5/2) + i*.2, e.y]
+        e.animate('x', -.5+(1/5/2) + i*.2)
+        # e.text = `${i+1}`
+
+
+enemy = Entity(scale=[.3,.4], color=color.azure, z=1, name='entity')
 
 </script><script src="../taptapir/sunsnake_compiler.js"></script></html>
