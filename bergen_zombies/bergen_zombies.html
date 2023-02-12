@@ -3,19 +3,27 @@
 set_window_color('rgb(49 72 60)')
 
 
-card_parent = Entity(visible_self=False, scale=.98)
+
+menu = Scene('textures/bergen_003')
+Button(parent=menu, text='Bergen\n Zombies', text_size=10, y=.4, text_color=color.blue, color=color.clear)
+Button(parent=menu, text='Play', scale=[.35,.15], y=-.2, on_click=def():goto_scene(battle))
+
+battle = Scene('textures/bergen_005')
+card_parent = Entity(parent=battle, visible_self=False, scale=.98, z=-1)
+enemy = Entity(parent=battle, scale=[.4,.6], color=color.azure, name='entity', value=20, text='zombie', y=-.0)
+enemy.hp_bar = HealthBar(parent=battle, max=30, y=.35, scale=[.6,.075])
 
 for i in range(5):
     after i*.1:
         draw_card()
+    print('start')
 
-    a =2
-
+a =2
 deck = ['revolver', 'grenade', 'rifle', 'stone', 'rifle']
 tooltip = Text(text='tooltip', scale=[.4,.3], z=-2, enabled=False, origin=[0,-.5], roundness=.1, color=color.black, alpha=.9, text_color='#eee')
 
 def draw_card():
-    if len(card_parent >= 5):
+    if len(card_parent.children >= 5):
         return
 
     let card = Entity(parent=card_parent, text_size=2, text_origin=[0,0], scale=[.18,.3], xy=[(i*.2), (-.5*aspect_ratio)+.1], roundness=.1, origin=[0,-.5], text='?', draggable=True, shadow=True, color='#ddd')
@@ -25,19 +33,16 @@ def draw_card():
     y_limit = -.35
 
     card.on_click = def():
-        after .2s:
-            tooltip.text = card.text
-            move_tooltip_to_card(card)
-            tooltip.enabled = True
-        print('drag')
         card.z = -1
 
     card.drop = def():
-        print(mouse.y)
         tooltip.enabled = False
         if mouse.y > y_limit:
             destroy(card)
+            enemy.hp_bar.value -= 5
             after .1s:
+                // print(card_parent.children)
+                // reorder_cads()
                 draw_card()
 
             reorder_cads()
@@ -46,19 +51,10 @@ def draw_card():
             card.z = 0
 
     card.while_dragging = def():
-
         if mouse.y > y_limit:
             card.color = color.pink
-            tooltip.enabled = False
         else:
             card.color = '#ddd'
-            move_tooltip_to_card(card)
-
-
-def move_tooltip_to_card(card):
-    tooltip.xy = card.xy
-    tooltip.y = card.y +.35
-    tooltip.x = clamp(tooltip.x, -.45+(tooltip.scale_x/2), .45-(tooltip.scale_x/2))
 
 
 def reorder_cads():
@@ -68,6 +64,6 @@ def reorder_cads():
         # e.text = `${i+1}`
 
 
-enemy = Entity(scale=[.3,.4], color=color.azure, z=1, name='entity')
 
+// goto_scene(menu)
 </script><script src="../taptapir/sunsnake_compiler.js"></script></html>
