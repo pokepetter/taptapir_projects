@@ -10,26 +10,36 @@ Button(parent=menu, text='Play', scale=[.35,.15], y=-.2, on_click=def():goto_sce
 
 battle = Scene('textures/bergen_005')
 card_parent = Entity(parent=battle, visible_self=False, scale=.98, z=-1)
-enemy = Entity(parent=battle, scale=[.4,.6], color=color.azure, name='entity', value=20, text='zombie', y=-.0)
-enemy.hp_bar = HealthBar(parent=battle, max=30, y=.35, scale=[.6,.075])
+enemy = Entity(parent=battle, scale=[.4,.6], color=color.azure, name='entity', value=20, text='zombie', y=.3)
+enemy.hp_bar = HealthBar(parent=battle, max=30, y=.65, scale=[.6,.075])
 
-for i in range(5):
+for i in range(10):
     after i*.1:
         draw_card()
     print('start')
 
-a =2
-deck = ['revolver', 'grenade', 'rifle', 'stone', 'rifle']
+# a = 2
+deck = ['triple\n\n***', `square\n\n**\n**`, 'penta\n\n*****', 'double\n\n*\n*', 'dragon\n\n*** *\n* ***', 'all\n\n*****\n*****']
+# deck = ['3', `square`, '5', 'double', 'dragon']
 tooltip = Text(text='tooltip', scale=[.4,.3], z=-2, enabled=False, origin=[0,-.5], roundness=.1, color=color.black, alpha=.9, text_color='#eee')
 
 def draw_card():
-    if len(card_parent.children >= 5):
+    if len(card_parent.children >= 10):
+        print('full')
         return
 
-    let card = Entity(parent=card_parent, text_size=2, text_origin=[0,0], scale=[.18,.3], xy=[(i*.2), (-.5*aspect_ratio)+.1], roundness=.1, origin=[0,-.5], text='?', draggable=True, shadow=True, color='#ddd')
+    print('draw card', len(card_parent.children))
+    # let i = len(card_parent.children)
+    let card = Entity(parent=card_parent, text_size=2, text_origin=[0,0], scale=[.18,.25], roundness=.1, origin=[0,-.5], text='?', draggable=True, shadow=True, color='#ddd')
+    # card.x = -.5 + (1/5/2) + (i*.2)
+    # card.y = .4
+    card.xy = window.bottom_right
+    # if len(card_parent.children > 5):
+    #     card.y -= .2
+
     card.text = random_choice(deck)
 
-    reorder_cads()
+    reorder_cards()
     y_limit = -.35
 
     card.on_click = def():
@@ -39,13 +49,12 @@ def draw_card():
         tooltip.enabled = False
         if mouse.y > y_limit:
             destroy(card)
-            enemy.hp_bar.value -= 5
             after .1s:
                 # print(card_parent.children)
                 # reorder_cads()
                 draw_card()
 
-            reorder_cads()
+            # reorder_cards()
         else:
             card.xy = card.original_xy
             card.z = 0
@@ -57,13 +66,21 @@ def draw_card():
             card.color = '#ddd'
 
 
-def reorder_cads():
+def reorder_cards():
+    print('reorder_cards')
     for i, e in enumerate(card_parent.children):
-        e.original_xy = [-.5+(1/5/2) + i*.2, e.y]
-        e.animate('x', -.5+(1/5/2) + i*.2)
-        # e.text = `${i+1}`
+        # if i > 5:
+        #     e.y = -.0
+
+        x = -.5 + (1/5/2) + (i%5)*.2
+        y = -.45 - int(i>=5)*.27
+        e.original_xy = [x,y]
+        # e.xy = e.original_xy
+        # e.x = .5
+        e.animate('x', x, duration=.2)
+        e.animate('y', y, duration=.2)
+            # e.text = `${i+1}`
 
 
 
-// goto_scene(menu)
 </script><script src="../taptapir/sunsnake_compiler.js"></script></html>

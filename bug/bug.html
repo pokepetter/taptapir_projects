@@ -1,48 +1,45 @@
 <html><title>bug</title><body>
 <script src="../taptapir/taptapir.js"></script>
 <script type='text/sunsnake'>
+#
+# set_orientation('vertical')
+# set_window_color('rgb(49 72 60)')
+# set_scale(1)
+# set_orientation('horizontal')
+#
+# rocks = {
+#     'level_1': [0,],
+#     'level_2': [0,],
+# }
+#
+# t = 1
+#
+# if t in rocks['level_1']:
+#     print('a')
+#
+# Text(text='yay', text_origin=[0,0])
+#
+#
+# e = Button(scale=.2, color='red', shadow=1, draggable=True)
+def update():
+    camera.x += (held_keys['d'] - held_keys['a']) *.01
+    camera.y += (held_keys['w'] - held_keys['s']) *.01
+    if camera.y > 0:
+        print('a')
+#
+#
+# e = Button(scale=.1, color='red', shadow=1, xy=top_right)
+#
+# my_dict = {'name': 'Petter', 'age': '5'}
+# print(my_dict.name)
+after 1s:
+    print('aa')
+b=2
 
-// set_orientation('vertical')
-// set_window_color('rgb(49 72 60)')
-// set_scale(1)
-// set_orientation('horizontal')
+after 1s:
+    print('aa')
+    b = 1
 
-// rocks = {
-//     'level_1': [0,],
-//     'level_2': [0,],
-// }
-//
-// t = 1
-//
-// if t in rocks['level_1']:
-//     print('a')
-//
-// Text(text='yay', text_origin=[0,0])
-
-
-// e = Button(scale=.2, color='red', shadow=1, draggable=True)
-// def update():
-//     camera.x += (held_keys['d'] - held_keys['a']) *.01
-//     camera.y += (held_keys['w'] - held_keys['s']) *.01
-//
-//
-// e = Button(scale=.1, color='red', shadow=1, xy=top_right)
-
-// my_dict = {'name': 'Petter', 'age': '5'}
-// print(my_dict.name)
-
-Text(text='aaa')
-# def copy_image_from_canvas():
-#     if 1:
-        # _image_data = ctx.getImageData(selection.bounds[0], selection.bounds[1], selection.bounds[2]-selection.bounds[0], selection.bounds[3]-selection.bounds[1])
-        # local_image_data = Uint8ClampedArray.from(_image_data.data)
-        # flat_selection = selection.matrix.flat()
-        # for i in range(0, len(local_image_data), 4):
-        #     local_image_data[i+3] = flat_selection[i+3]
-        # print('--------', _image_data)
-navigator.clipboard.writeText('paste_local_image_data')
-
-
-
+set_window_color('yellow')
 </script>
 <script src="../taptapir/sunsnake_compiler.js"></script>

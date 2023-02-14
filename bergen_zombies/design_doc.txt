@@ -1,0 +1,15 @@
+inventory tetris
+
+
+bottle
+jaktrifle + ammo
+
+shovel
+axe
+lance
+
+medkit
+canned food
+
+wooden shield
+police shield

@@ -5,10 +5,10 @@ set_orientation('landscape')
 player = Entity(color=color.green,scale=0.1)
 block = Entity(color=color.red,scale=0.1,position=[0.3,0.5])
 block_2 = Entity(color=color.red,scale=0.1,position=[0.3,2])
-class Block(Entity):
-    def __init__(self,position):
-        super().__init__(color=color.red,scale=0.1,position=position)
-Block([4,5])
+// class Block(Entity):
+//     def __init__(self,position):
+//         super().__init__(color=color.red,scale=0.1,position=position)
+// Block([4,5])
 def update():
     camera.position = player.position
     if held_keys['w']:
