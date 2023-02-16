@@ -1,23 +1,33 @@
 <html><title>taptapir_3d</title><body>
 
-<script src="../gl-matrix-min.js"></script>
+<script src="gl-matrix-min.js"></script>
 <script src="../taptapir/taptapir.js"></script>
 <script src="taptapir_3d.js"></script>
 <script type='text/sunsnake'>
 
 set_orientation('horizontal')
 # Entity(color='yellow')
+// glMatrix.mat4.translate(engine_3d.modelViewMatrix, engine_3d.modelViewMatrix, [0.0, 0.0, -4.0])
+render()
+
 // load_3d()
 // Button(text='lol')
 
 
-// def input(key):
-//     if key == 'd':
-//         glMatrix.mat4.rotateX(engine_3d.modelViewMatrix, engine_3d.modelViewMatrix, .05);
-//         # glMatrix.mat4.translate(engine_3d.modelViewMatrix, engine_3d.modelViewMatrix, [-1.0, 0.0, 0.0]);
-//         engine_3d.render()
+def input(key):
+    render()
 
+glMatrix.mat4.rotateX(model_matrix, model_matrix, .5);
+glMatrix.mat4.rotateY(model_matrix, model_matrix, .5);
 
+def update():
+    // view_matrix = glMatrix.mat4.translate(view_matrix, view_matrix, [held_keys['d']-held_keys['a'], 0.0, held_keys['w']-held_keys['s']])
+    view_matrix[14] += held_keys['w']-held_keys['s']
+    view_matrix[12] -= held_keys['d']-held_keys['a']
+
+    // glMatrix.mat4.rotateX(model_matrix, model_matrix, .01);
+    model_matrix[14] -= .02
+    // model_matrix[6] += .1
 
 </script>
 <script src="../taptapir/sunsnake_compiler.js"></script>
