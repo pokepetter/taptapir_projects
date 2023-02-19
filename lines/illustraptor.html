@@ -16,7 +16,7 @@ camera.target_fov = 1
 #     for x in range(10):
 #         Entity(parent=bg, xy=[-.5 + x*.1, -.5 + y*.1], z=999, scale=.1, roundness=.05, color=random_color(), alpha=.1)
 
-
+scene_parent = Entity(visible_self=False)
 gizmo = Entity(enabled=False, visible_self=False, z=-100)
 sunsnake.define(SideGizmo(, Entity(parent=gizmo, color=color.azure, alpha=.3, original_color=color.azure, draggable=True, while_dragging=update_scale, )
 sunsnake.define(CornerGizmo(, Entity(parent=gizmo, scale=.015, color=hsv(180,.5,.8), alpha=.3, original_color=hsv(180,.5,.8), draggable=True, roundness=.5, )
@@ -33,6 +33,12 @@ gizmo.top_left = CornerGizmo(while_dragging=def():update_scale('\\'))
 gizmos = [gizmo.left, gizmo.right, gizmo.top, gizmo.bot, gizmo.top_right, gizmo.top_left, gizmo.bot_right, gizmo.bot_left]
 
 def update_gizmo():
+    for e in scene_parent.children:
+        if e in selection:
+            e.el.style.outline = "4px dashed magenta";
+        else:
+            e.el.style.outline = 'none'
+
     if not selection or len(selection) == 0 or dragger.is_placing_clone:
         gizmo.enabled = False
         return
@@ -60,6 +66,8 @@ def update_gizmo():
     gizmo.top_left.xy = [gizmo.left.x, gizmo.top.y]
     gizmo.bot_right.xy = [gizmo.right.x, gizmo.bot.y]
     gizmo.bot_left.xy = [gizmo.left.x, gizmo.bot.y]
+
+
 
 for e in gizmos:
     let giz = e
@@ -95,8 +103,9 @@ def update_scale(type='|'):
         rect.scale_x = abs(gizmo.bot_right.x - gizmo.top_left.x)
         rect.scale_y = abs(gizmo.top_left.y - gizmo.bot_right.y)
 
+
 def add_shape(select=True):
-    let rect = Entity(scale=.1, draggable=True, alpha=.4, min_x=-9999, max_x=9999, min_y=-9999, max_y=9999, while_dragging=update_gizmo)
+    let rect = Entity(parent=scene_parent, scale=.1, draggable=True, alpha=1, min_x=-9999, max_x=9999, min_y=-9999, max_y=9999, while_dragging=update_gizmo)
 
     shapes.append(rect)
     if select:
@@ -131,49 +140,79 @@ def input(key):
         add_shape()
 
     if key == 'left mouse down':
-        if not mouse.hovered_entity and not held_keys['control']:
-            print('clear selection')
+        if not mouse.hovered_entity and not held_keys['shift']:
             selection = []
+            print('clear selection')
             update_gizmo()
-        else:
-            print(mouse.hovered_entity)
 
-        if mouse.hovered_entity and mouse.hovered_entity in shapes:
-            if not held_keys['control']:
+        elif mouse.hovered_entity and mouse.hovered_entity in shapes:
+            if not held_keys['shift']:
                 selection = [mouse.hovered_entity, ]
-                update_gizmo()
+            elif not mouse.hovered_entity in selection:
+                selection.append(mouse.hovered_entity)
+
+        update_gizmo()
+
+    if key == 'x' and selection:
+        for e in selection:
+            destroy(e)
+        selection = []
+        update_gizmo()
+
+    if key == 'w' and selection:
+        for e in selection:
+            print(e, e.z)
+            e.z += 1
+
+    if key == 's' and selection:
+        for e in selection:
+            print(e.z)
+            e.z -= 1
+
+    if key == 'e':
+        for e in selection:
+            e.roundness += .05
+    if key == 'q':
+        for e in selection:
+            e.roundness -= .05
+
+colorizer = Entity(visible_self=False)
+colors = [color.white, color.gray, color.light_gray, color.dark_gray, color.black, color.lime]
+colorizer.input = def input(key):
+    if key in '123456':
+        i = int(key) - 1
+        for e in selection:
+            e.color = colors[i]
 
 
-dragger = Entity(visible_self=True, alpha=.1, is_placing_clone=False, drop=def():position=[0,0,0] )
+dragger = Entity(visible_self=True, alpha=.0, roundness=.5, is_placing_clone=False, drop=def():position=[0,0,0] )
 dragger.input = def dragger_input(key):
     if key == 'd' and selection:
         original = selection[-1]
-        # dragger.position = [mouse.x+bg.x, mouse.y+bg.y]
+        dragger.position = original.position
 
         clone = add_shape(select=False)
         clone.parent = dragger
-        clone.scale = original.scale
         clone.rotation = original.rotation
+        clone.scale = original.scale
         clone.color = original.color
-        clone.radius = original.radius
+        clone.roundness = original.roundness
 
         dragger.lock_x = False
         dragger.lock_y = False
-        # dragger.start_offset = [mouse.x-dragger.x-bg.x , mouse.y-dragger.y-bg.x]
+        dragger.start_offset = [mouse.x-dragger.x, mouse.y-dragger.y]
         dragger.dragging = True
         dragger.is_placing_clone = True
 
     elif dragger.is_placing_clone and key == 'left mouse up':
-        clone.parent = scene
+        clone.parent = scene_parent
         clone.x = dragger.x
         clone.y = dragger.y
+        dragger.dragging = False
         dragger.is_placing_clone = False
         dragger.position = [0,0,0]
         selection = [clone, ]
         update_gizmo()
-
-
-
 
 
 target_zoom = 1
@@ -185,54 +224,34 @@ zoom_label.update = def update():
 zoom_label.input = def zoom_input(key):
     if key == 'scroll up' and target_zoom > .3:
         target_zoom = target_zoom*.9
-        # print(bg)
         zoom_label.text = `${int(target_zoom*100)}%`
     if key == 'scroll down' and target_zoom < 10:
         target_zoom = target_zoom*1/.9
         zoom_label.text = `${int(target_zoom*100)}%`
 
     if key == 'middle mouse down' or key == 'space':
-        # mouse.start_drag_position = [mouse.x+camera.x*camera.fov, mouse.y+camera.y*camera.fov]
-        # mouse.start_x = mouse.x
-        # mouse.start_y = mouse.y
-        # camera.start_x = camera.x
-        # mouse.velocity = [0,0]
+        mouse.prev_x = mouse.x
         mouse.prev_y = mouse.y
-        mouse.velocity = [0, mouse.y-mouse.prev_y]
         panning = True
 
-    #     bg.lock_x = False
-    #     bg.lock_y = False
-    #     bg.start_offset = [(mouse.x*camera.fov)-bg.x , (mouse.y*camera.fov)-bg.y]
-    #     bg.dragging = True
-    #
     if key == 'middle mouse up' or key == 'space up':
+        mouse.prev_x = None
         mouse.prev_y = None
-        # mouse.delta_drag = [0,0]
         panning = False
 
-    #     mouse.start_drag_position = None
+    if key == 'f':
+        camera.xy = [0,0]
 
-    #     bg.lock_x = True
-    #     bg.lock_y = True
-    #     bg.dragging = False
+
 panning = False
 camera.y = .1
-mouse.prev_y = mouse.y
-mouse.velocity = [mouse.y-mouse.prev_y, 0]
-t = Button(text=`${mouse.velocity[0]}`)
 panner = Entity(visible_self=False)
 panner.update = def pan_update():
     if mouse.middle and panning:
-        # mouse.delta_drag = [(mouse.x-mouse.start_x), mouse.y-mouse.start_y]
-        mouse.velocity = [0, (mouse.y-mouse.prev_y)*camera.fov]
-        t.text = `${mouse.velocity[1]}`
-        print(mouse.velocity)
-        t.fit_to_text()
-        # camera.x = camera.start_x - (mouse.delta_drag[0]*camera.fov)
-        camera.y = camera.y + 0
-        # camera.x = mouse.start_drag_position[0] - (mouse.x+camera.x * camera.fov)
-        # camera.y = mouse.start_drag_position[1] - (mouse.y+camera.y * camera.fov)
+        mouse.velocity = [(mouse.x-mouse.prev_x)*camera.fov, (mouse.y-mouse.prev_y)*camera.fov]
+        camera.x -= mouse.velocity[0]
+        camera.y -= mouse.velocity[1]
+        mouse.prev_x = mouse.x
         mouse.prev_y = mouse.y
 
 

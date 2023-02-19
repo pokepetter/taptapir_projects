@@ -1,68 +1,96 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>taptapir</title><link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir/taptapir.js"></script><script type='text/sunsnake'>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>taptapir</title><link rel="stylesheet" href="../taptapir.css"></head><body></body>
+<script src="../taptapir/taptapir.js"></script>
+<script src="spells.js"></script>
+<script type='text/sunsnake'>
+
 
 set_window_color('rgb(49 72 60)')
-
+set_background_color('#050505')
 
 
 menu = Scene('textures/bergen_003')
 Button(parent=menu, text='Bergen\n Zombies', text_size=10, y=.4, text_color=color.blue, color=color.clear)
 Button(parent=menu, text='Play', scale=[.35,.15], y=-.2, on_click=def():goto_scene(battle))
 
-battle = Scene('textures/bergen_005')
-card_parent = Entity(parent=battle, visible_self=False, scale=.98, z=-1)
-enemy = Entity(parent=battle, scale=[.4,.6], color=color.azure, name='entity', value=20, text='zombie', y=-.0)
-enemy.hp_bar = HealthBar(parent=battle, max=30, y=.35, scale=[.6,.075])
 
-for i in range(5):
-    after i*.1:
-        draw_card()
-    print('start')
+battle = Scene('textures/bergen_005')
+bg_overlay = Entity(parent=battle, scale=2, color=color.dark_gray, alpha=.75)
+card_parent = Entity(parent=battle, visible_self=False, z=-1)
+enemy = Entity(parent=battle, scale=[.4,.6], color=color.azure, name='entity', value=20, text='zombie', y=.1)
+enemy.hp_bar = HealthBar(parent=battle, max=30, y=.5, scale=[.6,.075], bar_color=hsv(320,1,.8), shadow='#f00')
+
+
+energy_bar = HealthBar(parent=battle, max=10, y=-(.5*aspect_ratio)+.115, z=-2, scale=[.9,.04], bar_color=color.orange, shadow=True)
+energy_bar.value = 5
+
+hp_bar = HealthBar(parent=battle, max=100, y=-(.5*aspect_ratio)+.05, z=-3, scale=[.9,.075], bar_color=hsv(320,1,.8), shadow=True)
+
 
 a =2
-deck = ['revolver', 'grenade', 'rifle', 'stone', 'rifle']
-tooltip = Text(text='tooltip', scale=[.4,.3], z=-2, enabled=False, origin=[0,-.5], roundness=.1, color=color.black, alpha=.9, text_color='#eee')
+tooltip = Text(text='tooltip', scale=[.4,.2], z=-2, enabled=0, origin=[0,-.5], roundness=.1, color=color.black, alpha=.9, text_color='#eee', text_size=2)
 
-def draw_card():
-    if len(card_parent.children >= 5):
-        return
+for i in range(8):
+    x = -.5 + .17 + (i%4)*.22
+    y = -.35 - int(i>=4)*.22
+    let slot = Entity(parent=card_parent, xy=[x,y], roundness=.02, color=hsv(0,0,.1,.8), shadow=0, z=1, scale=.2)
+    let card = Entity(parent=card_parent, xy=[x,y], original_xy=[x,y], scale=[.18,.18], roundness=.1, draggable=True, shadow=True, color=random_color())
+    card.cooldown_overlay = Entity(parent=card, roundness=.5, enabled=False, text='3', text_origin=[0,0], scale=.8, alpha=.75, color=color.light_gray)
+    card.spell = random_choice(spells)
+    card.energy_cost_icon = Entity(parent=card, roundness=.5, scale=.25, color=color.orange, xy=[.45,-.45], shadow=1, text=`${card.spell.cost}`, text_origin=[0,0], text_size=2, text_color=color.dark_gray)
+    card.enabled = False
+    update_can_use_card(card)
 
-    let card = Entity(parent=card_parent, text_size=2, text_origin=[0,0], scale=[.18,.3], xy=[(i*.2), (-.5*aspect_ratio)+.1], roundness=.1, origin=[0,-.5], text='?', draggable=True, shadow=True, color='#ddd')
-    card.text = random_choice(deck)
-
-    reorder_cads()
-    y_limit = -.35
+    after .1*(i+1):
+        card.enabled = True
 
     card.on_click = def():
-        card.z = -1
+        tooltip.text = `${card.spell.constructor.name}\n${card.spell.description}`
 
-    card.drop = def():
-        tooltip.enabled = False
-        if mouse.y > y_limit:
-            destroy(card)
-            enemy.hp_bar.value -= 5
-            after .1s:
-                # print(card_parent.children)
-                # reorder_cads()
-                draw_card()
-
-            reorder_cads()
-        else:
-            card.xy = card.original_xy
-            card.z = 0
 
     card.while_dragging = def():
-        if mouse.y > y_limit:
-            card.color = color.pink
+        card.z = -5
+        tooltip.enabled = True
+        tooltip.x = card.x - .325 -  .65* int(card.original_xy[0] < 0)*-1
+        tooltip.y = card.y - .1
+        if card.y < -.25:
+            card.color = color.white
         else:
-            card.color = '#ddd'
+            card.color = color.green
 
+    card.drop = def drop():
+        card.xy = card.original_xy
+        card.z = 0
+        tooltip.enabled = False
+        if card.y < -.25:
+            card.use()
 
-def reorder_cads():
-    for i, e in enumerate(card_parent.children):
-        e.original_xy = [-.5+(1/5/2) + i*.2, e.y]
-        e.animate('x', -.5+(1/5/2) + i*.2)
-        # e.text = `${i+1}`
+    card.use = def():
+        card.cooldown = card.spell.cooldown
+        card.cooldown_overlay.enabled = True
+        card.alpha=.5
+        energy_bar.value -= card.spell.cost
+        enemy.hp_bar.value -= card.spell.damage
+        update_can_use_card(card)
 
+for spell in spells:
+    print('spell:', spell.constructor.name)
+    print(spell.description)
+    print(spell.damage)
+    print(spell.use)
+    print('spell.cost:', spell.cost)
+    print()
+
+def update_can_use_card(card):
+    card.draggable = energy_bar.value >= card.spell.cost
+
+    if energy_bar.value < card.spell.cost:
+        card.energy_cost_icon.color = hsv(0,.1,.5)
+        card.energy_cost_icon.text_color = hsv(0,1,.2)
+    else:
+        card.energy_cost_icon.color = hsv(30,1,.9)
+        card.energy_cost_icon.text_color = hsv(0,0,.2)
+
+goto_scene(battle)
 
 
 // goto_scene(menu)
