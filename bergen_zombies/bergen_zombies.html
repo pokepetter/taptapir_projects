@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>taptapir</title><link rel="stylesheet" href="../taptapir.css"></head><body></body>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>Bergen Zombies</title><link rel="stylesheet" href="../taptapir.css"></head><body></body>
 <script src="../taptapir/taptapir.js"></script>
 <script src="spells.js"></script>
 <script type='text/sunsnake'>
@@ -31,13 +31,13 @@ end_turn_button = Button(parent=battle, scale=[.15,.1], position=[.35,-.15],text
 end_turn_button.on_click = def next_turn():
     for card in cards:
         card.alpha = .25
-    // cover.enabled = True
+    cover.enabled = True
     end_turn_button.enabled = False
     after .5s:
         start_turn()
 
 def start_turn():
-    // cover.enabled = False
+    cover.enabled = False
     end_turn_button.enabled = True
     energy_bar.value += 3
 
@@ -48,97 +48,92 @@ def start_turn():
 
 
 tooltip = Text(text='tooltip', scale=[.4,.2], z=-2, enabled=0, origin=[0,-.5], roundness=.1, color='#eee', alpha=.9, text_color='#222', text_size=2)
+tooltip.title = Text(parent=tooltip, text=' Shotgun', scale_y=.25, scale_x=1.1, roundness=1, color=color.pink, x=-.00, y=1.35, text_size=2.5, padding=.2)
 
 spell_names = ['Flamethrower', 'Shotgun', 'Bat', 'Rope', 'Nail_Gun', 'Bandages', 'Plank', 'Hunting_Rifle']
 deck = [spells[e] for e in spell_names]
-cards = []
 // print('-------------', spells, deck)
+cards = []
 
-for i in range(8):
-    x = -.5 + .17 + (i%4)*.22
-    y = -.35 - int(i>=4)*.22
-    let slot = Entity(parent=card_parent, xy=[x,y], roundness=.02, color=hsv(0,0,.1,.8), shadow=0, z=1, scale=.2)
-    let card = Entity(parent=card_parent, xy=[x,y], original_xy=[x,y], scale=[.18,.18], roundness=.1, draggable=True, shadow=True, color=random_color(), text_size=2, text_origin=[0,0], spell=None)
-    cards.append(card)
-    card.spell = deck[i]
-    card.cooldown_left = 0
-    card.cooldown_overlay = Entity(parent=card, roundness=.5, enabled=False, text=`?`, text_origin=[0,0], scale=.8, alpha=.75, color=color.light_gray)
-    card.energy_cost_icon = Entity(parent=card, roundness=.5, scale=.25, color=color.orange, xy=[.45,-.45], shadow=1, text=`${card.spell.cost}`, text_origin=[0,0], text_size=2, text_color=color.dark_gray)
-    card.enabled = False
-    // print('aaaaaaaaaaaaaaaaaaaaaaaa', card.spell)
-    if card.spell.icon:
-        card.texture = card.spell.icon
-    else:
-        // card.texture = `textures/${card.spell.constructor.name}.png`.toLowerCase()
-        card.text = card.spell.constructor.name.toLowerCase()
+battle.on_enter = def():
+    enemy.hp_bar.value = 30
+    energy_bar.value = 10
+    cover.enabled = False
 
-    after .1*(i+1):
-        card.enabled = True
-        update_can_use_card(card)
-
-    card.on_click = def():
-        // if not card.draggable:
-        //     return
-        dmg = ''
-        heal = ''
-        if card.spell.damage > 0:
-            dmg = card.spell.damage
-        elif card.spell.damage < 0:
-            heal = -card.spell.damage
-
-        tooltip.text = `${card.spell.constructor.name}\n${card.spell.description}\n damage: ${dmg}\n cooldown: ${card.spell.cooldown}`
-        tooltip.enabled = True
-        tooltip.x = card.x - .325 -  .65* int(card.original_xy[0] < 0)*-1
-        tooltip.y = card.y - .1
-
-    // card.el.onmouseover = card.on_click
-
-    card.while_dragging = def():
-        card.z = -5
-        tooltip.x = card.x - .325 -  .65* int(card.original_xy[0] < 0)*-1
-        tooltip.y = card.y - .1
-        if card.y > -.25:
-            card.color = color.green
+    cards = []
+    for i in range(8):
+        x = -.5 + .17 + (i%4)*.22
+        y = -.35 - int(i>=4)*.22
+        let slot = Entity(parent=card_parent, xy=[x,y], roundness=.02, color=hsv(0,0,.1,.8), shadow=0, z=1, scale=.2)
+        let card = Entity(parent=card_parent, xy=[x,y], original_xy=[x,y], scale=[.18,.18], roundness=.1, draggable=True, shadow=True, color=random_color(), text_size=2, text_origin=[0,0], spell=None)
+        cards.append(card)
+        card.spell = deck[i]
+        card.cooldown_left = 0
+        card.cooldown_overlay = Entity(parent=card, roundness=.5, enabled=False, text=`?`, text_origin=[0,0], scale=.8, alpha=.75, color=color.light_gray)
+        card.energy_cost_icon = Entity(parent=card, roundness=.5, scale=.25, color=color.orange, xy=[.45,-.45], shadow=1, text=`${card.spell.cost}`, text_origin=[0,0], text_size=2, text_color=color.dark_gray)
+        card.enabled = False
+        // print('aaaaaaaaaaaaaaaaaaaaaaaa', card.spell)
+        if card.spell.icon:
+            card.texture = card.spell.icon
         else:
+            // card.texture = `textures/${card.spell.constructor.name}.png`.toLowerCase()
+            card.text = card.spell.constructor.name.toLowerCase()
+
+        after .1*(i+1):
+            card.enabled = True
+            update_can_use_card(card)
+
+        card.on_click = def():
+            // if not card.draggable:
+            //     return
+            dmg = ''
+            heal = ''
+            if card.spell.damage > 0:
+                dmg = card.spell.damage
+            elif card.spell.damage < 0:
+                heal = -card.spell.damage
+
+            tooltip.title.text = ` ${card.spell.constructor.name.replace('_', ' ')}`
+            tooltip.text = `damage: ${dmg}\ncooldown: ${card.spell.cooldown}\n${card.spell.description}`
+            tooltip.enabled = True
+            tooltip.x = card.x - .325 -  .65* int(card.original_xy[0] < 0)*-1
+            tooltip.y = card.y - .1
+
+        card.el.onmouseover = card.on_click
+
+        card.while_dragging = def():
+            card.z = -5
+            tooltip.x = card.x - .325 -  .65* int(card.original_xy[0] < 0)*-1
+            tooltip.y = card.y - .1
+            if card.y > -.25:
+                card.color = color.green
+            else:
+                card.color = color.white
+
+        card.drop = def drop():
+            print('drop')
+            if card.y > -.25:
+                print('USE')
+                card.use()
+            card.xy = card.original_xy
+            card.z = 0
             card.color = color.white
+            tooltip.enabled = False
 
-    card.drop = def drop():
-        print('drop')
-        if card.y > -.25:
+        card.el.addEventListener("mouseleave", card.drop, false);
+
+        card.use = def():
             print('USE')
-            card.use()
-        card.xy = card.original_xy
-        card.z = 0
-        card.color = color.white
-        tooltip.enabled = False
+            card.cooldown_left = card.spell.cooldown
+            energy_bar.value -= card.spell.cost
+            enemy.hp_bar.value -= card.spell.damage
+            if enemy.hp_bar.value <= 0:
+                win()
 
-    // card.el.mouseleave = card.drop
-    // card.el.mouseout = card.drop
+            update_can_use_card(card)
 
-    card.use = def():
-        print('USE')
-        card.cooldown_left = card.spell.cooldown
-        energy_bar.value -= card.spell.cost
-        enemy.hp_bar.value -= card.spell.damage
-        if enemy.hp_bar.value <= 0:
-            win()
-
-        update_can_use_card(card)
-
-// for card in cards:
-//     update_can_use_card(card)
-
-
-// for spell in spells:
-//     print('spell:', spell.constructor.name)
-//     print(spell.description)
-//     print(spell.damage)
-//     print(spell.use)
-//     print('spell.cost:', spell.cost)
-//     print()
 
 def update_can_use_card(card):
-    print('--------------', card)
     active = energy_bar.value >= card.spell.cost and card.cooldown_left <= 0
     card.lock_x = not active
     card.lock_y = not active
@@ -156,7 +151,6 @@ def update_can_use_card(card):
         card.alpha=.5
 
 
-
     if energy_bar.value < card.spell.cost:
         card.energy_cost_icon.color = hsv(0,.1,.5)
         card.energy_cost_icon.text_color = hsv(0,1,.2)
@@ -164,12 +158,59 @@ def update_can_use_card(card):
         card.energy_cost_icon.color = hsv(30,1,.9)
         card.energy_cost_icon.text_color = hsv(0,0,.2)
 
+// battle.on_exit = def():
+
+
+
 def win():
     battle.enabled = False
+    // tooltip.enabled = False
     goto_scene(menu)
 
+city_scene = Scene('city')
+possible_tiles = [
+    ['zombie', 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/shambling-zombie.svg'],
+    ['house', 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/house.svg'],
+    ['crate', 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/wooden-crate.svg'],
+]
+// bg = Entity(texture='https://game-icons.net/icons/ffffff/000000/1x1/skoll/balkenkreuz.svg', tileset_size=[.2,.2], alpha=.5)
+grid = Array_2d(5,5)
+for _y in range(5):
+    for _x in range(5):
+        let x = _x
+        let y = _y
+        let tile = Entity(scale=.1, origin=[-.5,0], xy=[-.45 + x*.2,-.3 + y*.2], shadow=1, roundness=.1, enabled=False, revealed=False)
+        grid[y][x] = tile
 
-goto_scene(battle)
+        // tile.activate = def():
+        //     tile.text = '?'
+        //     tile.texture = 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/perspective-dice-six-faces-random.svg'
+
+        tile.reveal = def():
+            if tile.revealed:
+                return
+            tile.enabled = True
+            i = random_int(0,2)
+            tile.text = possible_tiles[i][0]
+            tile.texture = possible_tiles[i][1]
+            tile.revealed = True
+
+        tile.on_click = def():
+            tile.texture = None
+            tile.color = color.lime
+
+            offsets = [[1,0], [-1,0], [0,1], [0,-1]]
+            for offset in offsets:
+                print(offset)
+                try:
+                    grid[y+offset[0]][x+offset[1]].reveal()
+                catch:
+                    print('a')
+                // after .2s:
+// grid[0][2].texture = ''
+grid[0][2].reveal()
+
+goto_scene(city_scene)
 // goto_scene(menu)
 
 
