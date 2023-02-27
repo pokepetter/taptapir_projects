@@ -165,7 +165,7 @@ def update_can_use_card(card):
 def win():
     battle.enabled = False
     // tooltip.enabled = False
-    goto_scene(menu)
+    goto_scene(city_scene)
 
 city_scene = Scene('city')
 possible_tiles = [
@@ -179,7 +179,7 @@ for _y in range(5):
     for _x in range(5):
         let x = _x
         let y = _y
-        let tile = Entity(scale=.1, origin=[-.5,0], xy=[-.45 + x*.2,-.3 + y*.2], shadow=1, roundness=.1, enabled=False, revealed=False)
+        let tile = Entity(parent=city_scene, scale=.1, origin=[-.5,0], xy=[-.45 + x*.2,-.3 + y*.2], shadow=1, roundness=.1, enabled=False, revealed=False)
         grid[y][x] = tile
 
         // tile.activate = def():
@@ -191,13 +191,16 @@ for _y in range(5):
                 return
             tile.enabled = True
             i = random_int(0,2)
-            tile.text = possible_tiles[i][0]
+            tile.type = possible_tiles[i][0]
+            tile.text = tile.type
             tile.texture = possible_tiles[i][1]
             tile.revealed = True
 
         tile.on_click = def():
             tile.texture = None
             tile.color = color.lime
+            if tile.type == 'zombie':
+                goto_scene(battle)
 
             offsets = [[1,0], [-1,0], [0,1], [0,-1]]
             for offset in offsets:
