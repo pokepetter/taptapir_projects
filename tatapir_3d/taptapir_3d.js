@@ -1,5 +1,7 @@
 // 3D
 engine_3d = new Object();
+mat4 = glMatrix.mat4
+vec3 = glMatrix.vec3
 
 gl_canvas = document.createElement('canvas')
 gl_canvas.name = "gl_canvas"
@@ -41,24 +43,21 @@ const programInfo = {
     mvp: gl.getUniformLocation(shaderProgram, 'mvp'),
   },
 };
-const buffers = initBuffers(gl);
 
 function render() {
-    // print('render')
-    drawScene(gl, programInfo, buffers);
+    render_entities();
     requestAnimationFrame(render);
 }
+const quad = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+var verts = [1.0,1.0,   -1.0,1.0,   1.0,-1.0,   -1.0,-1.0,];
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
 
+const triangle = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, triangle);
+var tri_verts = [1.0,1.0, -1.0,1.0,  1.0,-1.0];
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(tri_verts), gl.STATIC_DRAW);
 
-function initBuffers(gl) {
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
-    const verts = [1.0,1.0,   -1.0,1.0,   1.0,-1.0,   -1.0,-1.0,];
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
-
-    return {position: positionBuffer};
-}
 // Initialize a shader program, so WebGL knows how to draw our data
 function initShaderProgram(gl, vsSource, fsSource) {
     const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
@@ -98,30 +97,51 @@ const zFar = 100.0;
 
 // note: glmatrix.js always has the first argument
 // as the destination to receive the result.
-var projection_matrix = glMatrix.mat4.create();
-var projection_matrix = glMatrix.mat4.perspective(projection_matrix, fieldOfView, aspect, zNear, zFar);
+var projection_matrix = mat4.create();
+var projection_matrix = mat4.perspective(projection_matrix, fieldOfView, aspect, zNear, zFar);
 
-var view_matrix = glMatrix.mat4.create()
-view_matrix = glMatrix.mat4.lookAt(view_matrix,
-    glMatrix.vec3.create(0,0,-13.0), // origin
-    glMatrix.vec3.create(0,0,1.0), // target
-    glMatrix.vec3.create(0,1,0), // up
+var view_matrix = mat4.create()
+view_matrix = mat4.lookAt(view_matrix,
+    vec3.create(0,0,-13.0), // origin
+    vec3.create(0,0,1.0), // target
+    vec3.create(0,1,0), // up
     )
 view_matrix[14] = -14
 print('view matrinx-------------------', view_matrix)
 
-var model_matrix = glMatrix.mat4.create(1.0)
-var mvp = glMatrix.mat4.create(0.0)
+// var model_matrix = glMatrix.mat4.create(1.0)
+// var mvp = glMatrix.mat4.create(0.0)
 
-print('model_matrix:', model_matrix)
+// print('model_matrix:', model_matrix)
 print('view_matrix:', view_matrix)
 print('projection_matrix:', projection_matrix)
 // projection_matrix * view_matrix * model_matrix
-drawScene(gl, programInfo, buffers);
-requestAnimationFrame(render);
+
+entities = []
+class Entity3D {
+    constructor(settings=null) {
+        this.model_matrix = mat4.create()
+        // this.model_matrix = glMatrix.mat4.lookAt(this.model_matrix, vec3.create(0,0,-13.0), vec3.create(0,0,1.0), vec3.create(0,1,0))
+        this.model = quad
+        this.vertex_count = 4
+
+        this.parent = null
+
+        entities.push(this)
+    }
+    get x() {return this.model_matrix[12]}
+    set x(value) {this.model_matrix[12] = value}
+
+    rotate(x, y, z) {
+        mat4.rotateX(this.model_matrix, this.model_matrix, x);
+        mat4.rotateY(this.model_matrix, this.model_matrix, y);
+        mat4.rotateZ(this.model_matrix, this.model_matrix, z);
+    }
+
+}
 
 
-function drawScene(gl, programInfo, buffers) {
+function render_entities() {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
     gl.clearDepth(1.0);                 // Clear everything
     gl.enable(gl.DEPTH_TEST);           // Enable depth testing
@@ -133,16 +153,24 @@ function drawScene(gl, programInfo, buffers) {
     const normalize = false;
     const stride = 0;
     const offset = 0;
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
-    gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, numComponents, type, normalize, stride, offset);
-    gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
-    gl.useProgram(programInfo.program);
 
-    mvp = glMatrix.mat4.multiply(mvp, projection_matrix, view_matrix)
-    mvp = glMatrix.mat4.multiply(mvp, mvp, model_matrix)
-    gl.uniformMatrix4fv(programInfo.uniformLocations.mvp, false, mvp);
-    const _offset = 0;
-    const vertexCount = 4;
-    gl.drawArrays(gl.TRIANGLE_STRIP, _offset, vertexCount);
-    // print('--------------------', mvp)
+    for (const e of entities) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, e.model);
+        gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, numComponents, type, normalize, stride, offset);
+        gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
+        gl.useProgram(programInfo.program);
+        var mvp = mat4.create(0.0)
+        mvp = mat4.multiply(mvp, projection_matrix, view_matrix)
+        mvp = mat4.multiply(mvp, mvp, e.model_matrix)
+        if (e.parent) {
+            mvp = mat4.multiply(mvp, mvp, e.parent.model_matrix)
+        }
+        gl.uniformMatrix4fv(programInfo.uniformLocations.mvp, false, mvp);
+        const _offset = 0;
+        gl.drawArrays(gl.TRIANGLE_STRIP, _offset, e.vertex_count);
+
+    }
 }
+
+render_entities();
+requestAnimationFrame(render);
