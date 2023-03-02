@@ -18,18 +18,31 @@
 #     print('a')
 #
 # Text(text='yay', text_origin=[0,0])
-#
-#
+
+# camera
 # e = Button(scale=.2, color='red', shadow=1, draggable=True)
 # def update():
 #     camera.x += (held_keys['d'] - held_keys['a']) *.01
 #     camera.y += (held_keys['w'] - held_keys['s']) *.01
 #     if camera.y > 0:
 #         print('a')
-#
-#
-# e = Button(scale=.1, color='red', shadow=1, xy=top_right)
-#
+
+
+e = Entity(scale=.1, color='red', shadow=1, on_click=def():print('click'))
+e.on_click = def():
+    e.color = color.blue
+    for t in [1,2,3]:
+        print(t)
+
+t = 0
+cards = ['a', 'b', 'c']
+def start_turn():
+    t += 3
+    for i, e in enumerate(cards):
+        print(e)
+    #     update_can_use_card(e)
+
+
 # my_dict = {'name': 'Petter', 'age': '5'}
 # print(my_dict.name)
 # after 1s:
@@ -39,9 +52,9 @@
 # after 1s:
 #     print('aa')
 #     b = 1
-
-
-# test list comp and auto enumerate
+#
+#
+# # test list comp and auto enumerate
 l = [1,2,3,4]
 l = [e+1 for e in l]
 
@@ -59,6 +72,9 @@ for i, e in l:
 
 for i, e in [1,2,3,4]:
     print(i, e)
+
+if 1 in l:
+    print('1')
 
 
 set_window_color('yellow')

@@ -9,24 +9,25 @@ set_orientation('horizontal')
 # set_scale(.66)
 set_scale(1)
 canvas_scale = .8
-var w = 1080
-var h = 1920
-// var h = int(1080*.5);
-// var w = int(1920*.5);
+var w = 1920
+var h = 1080
+# var h = int(1080*.5);
+# var w = int(1920*.5);
+canvas_aspect = w/h
 
 
-bg = Entity(color='#222', scale=[2*canvas_scale*aspect_ratio, 2*canvas_scale], draggable=True, lock_x=True, lock_y=True, name='bg')
+bg = Entity(color='#222', scale=[2*canvas_scale*canvas_aspect, 2*canvas_scale], draggable=True, lock_x=True, lock_y=True, name='bg')
 
 layers = []
 menu_parent = Entity(parent=camera.ui, visible_self=False, name='menu_parent')
 right_button_x = (.5*aspect_ratio)-.0125
 left_button_x = right_button_x-.05
-sunsnake.define(*Button(, Entity(parent=menu_parent, roundness=.01, origin=[.5,.5], text_origin=[0,0], x=(.5*aspect_ratio)-.0125, scale=[.05,.05], z=-1, text_size=1.5, color=hsv(0,0,.05), text_color=hsv(0,.0,.8),)
+sunsnake.define(*Button(,Entity(parent=menu_parent, roundness=.01, origin=[.5,.5], text_origin=[0,0], x=(.5*aspect_ratio)-.0125, scale=[.05,.05], z=-1, text_size=1.5, color=hsv(0,0,.05), text_color=hsv(0,.0,.8),)
 
 
-# canvas_sizes = [[512,512], [1024,1024], [2048,2048], [1920,1080], [1920*2,1080*2]]
+canvas_sizes = [[512,512], [1024,1024], [2048,2048], [1920,1080], [1920*2,1080*2]]
 menu = Entity(enabled=False, visible_self=False, position=top_left, y=.5-.025,)
-for i, e in [[512,512], [1024,1024], [2048,2048], [1920,1080], [1920*2,1080*2]]:
+for i, e in canvas_sizes:
     *Button(scale=[.1,.025], origin=[-.5,.5], x=0, y=-.025*i, parent=menu, text=`${e}`, text_size=1)
 
 new_file_button = *Button(position=top_left, origin=[-.5,.5], text='+', scale=[.05,.025])
@@ -39,7 +40,7 @@ new_file_button.on_click = def():
 # sunsnake.define(*layer_button_defaults, parent=layer_menu, scale=[.1,.05], origin=[.5,-.5], draggable=True)
 layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.05, y=-.45+.05, text='layers', visible_self=True, roundness=.005, color=hsv(0,0,.03))
 def add_layer(name='layer'):
-    let layer = Entity(name=name, parent=bg, color=color.clear, scale=[1/2,1/2], z=-1)
+    let layer = Entity(name=name, parent=bg, color=color.red, scale=[1/2,1/2], z=-1)
     layers.append(layer)
 
     layer.canvas = document.createElement('canvas');
@@ -51,6 +52,8 @@ def add_layer(name='layer'):
     layer.ctx = layer.canvas.getContext('2d', {willReadFrequently: true})
     layer.ctx.fillStyle = rgb(128/255, 128/255, 128/255, 255/255)
     layer.ctx.fillRect(0, 0, w, h)
+    layer.ctx.fillStyle = rgb(255/255, 128/255, 128/255, 255/255)
+    layer.ctx.fillRect(0, 0, 100, 100)
 
     layer.layer_button = *Button(scale=[.1,.03], roundness=.005, origin=[.5,-.5], y=layer_menu.y+((len(layers)-1)*1.01*.03), text=name,
         draggable=True, lock_x=True, min_y=layer_menu.y-.015, max_y=layer_menu.y+layer_menu.scale_y+.015)
@@ -92,7 +95,7 @@ selection_ctx.fillStyle = rgb(128/255, 0/255, 0/255, 255/255)
 selection_ctx.clearRect(0, 0, w, h)
 
 
-square_brush = {'textures':None, 'shape':'rect', 'size':[1, 1], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
+square_brush = {'textures':None, 'shape':'rect', 'size':[50, 50], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 round_brush = {'textures':None, 'shape':'circle', 'size':[1, 1], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 round_bitmap_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.5, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 poke_brush = {'textures':["pokebrush.png", ], 'size':[256, 256], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
@@ -262,6 +265,7 @@ def paint():
     if not current_layer:
         return
 
+    print(w, h)
     if held_keys['alt']:
         pos = get_canvas_position()
         sampled_color = current_layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
@@ -269,7 +273,6 @@ def paint():
         return
     if mouse.hovered_entity != bg:
         return
-
     [x, y] = get_canvas_position()
     if held_keys['s'] and prev_pos:
         x = lerp(prev_pos[0], x, .025)
