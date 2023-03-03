@@ -42,6 +42,23 @@ def start_turn():
         print(e)
     #     update_can_use_card(e)
 
+print('-------------------')
+p = Entity(visible_self=False)
+for i in range(5):
+    Entity(parent=p, scale=.05, x=i*.1, color=color.black)
+
+# for i in range(5):
+#     # after i*.2:
+#     destroy(p.children[0])
+p.destroy_children()
+print(p.children)
+# for e in p.children:
+#     print(e)
+# [destroy(e) for e in p.children]
+# for i in range(len(p.children), 0, -1):
+#     print(p.children[i])
+    # destroy(p.children[i])
+
 
 # my_dict = {'name': 'Petter', 'age': '5'}
 # print(my_dict.name)
@@ -55,26 +72,26 @@ def start_turn():
 #
 #
 # # test list comp and auto enumerate
-l = [1,2,3,4]
-l = [e+1 for e in l]
-
-for e in l:
-    print(e)
-
-for e in [1,2,3,4]:
-    print(e)
-
-for i, e in enumerate([1,2,3,4]):
-    print(i, e)
-
-for i, e in l:
-    print(i, e)
-
-for i, e in [1,2,3,4]:
-    print(i, e)
-
-if 1 in l:
-    print('1')
+# l = [1,2,3,4]
+# l = [e+1 for e in l]
+#
+# for e in l:
+#     print(e)
+#
+# for e in [1,2,3,4]:
+#     print(e)
+#
+# for i, e in enumerate([1,2,3,4]):
+#     print(i, e)
+#
+# for i, e in l:
+#     print(i, e)
+#
+# for i, e in [1,2,3,4]:
+#     print(i, e)
+#
+# if 1 in l:
+#     print('1')
 
 
 set_window_color('yellow')

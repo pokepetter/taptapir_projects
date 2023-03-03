@@ -59,6 +59,7 @@ battle.on_enter = def():
     enemy.hp_bar.value = 30
     energy_bar.value = 10
     cover.enabled = False
+    card_parent.destroy_children()
 
     cards = []
     for i in range(8):

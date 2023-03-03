@@ -1,6 +1,7 @@
 <html><title>dreamland sketcher</title><body>
 <script src="color_conversion.js"></script>
 <script src="../taptapir/taptapir.js"></script>
+<script src="assets/base_64_brushes.js"></script>
 <script type='text/sunsnake'>
 
 set_window_color('#222')
@@ -9,37 +10,44 @@ set_orientation('horizontal')
 # set_scale(.66)
 set_scale(1)
 canvas_scale = .8
-var w = 1920
-var h = 1080
-# var h = int(1080*.5);
-# var w = int(1920*.5);
-canvas_aspect = w/h
 
+bg = Entity(color='#222', scale=[2*canvas_scale, 2*canvas_scale], draggable=True, lock_x=True, lock_y=True, name='bg')
 
-bg = Entity(color='#222', scale=[2*canvas_scale*canvas_aspect, 2*canvas_scale], draggable=True, lock_x=True, lock_y=True, name='bg')
-
-layers = []
 menu_parent = Entity(parent=camera.ui, visible_self=False, name='menu_parent')
 right_button_x = (.5*aspect_ratio)-.0125
 left_button_x = right_button_x-.05
 sunsnake.define(*Button(,Entity(parent=menu_parent, roundness=.01, origin=[.5,.5], text_origin=[0,0], x=(.5*aspect_ratio)-.0125, scale=[.05,.05], z=-1, text_size=1.5, color=hsv(0,0,.05), text_color=hsv(0,.0,.8),)
 
-
 canvas_sizes = [[512,512], [1024,1024], [2048,2048], [1920,1080], [1920*2,1080*2]]
 menu = Entity(enabled=False, visible_self=False, position=top_left, y=.5-.025,)
 for i, e in canvas_sizes:
-    *Button(scale=[.1,.025], origin=[-.5,.5], x=0, y=-.025*i, parent=menu, text=`${e}`, text_size=1)
+    let size = e
+    let b = *Button(scale=[.1,.025], origin=[-.5,.5], x=0, y=-.025*i, parent=menu, text=`${size}`, text_size=1)
 
+    b.original_text = b.text
+    b.original_color = b.color
+    b.original_text_color = b.text_color
+
+    b.on_click = def():
+        if b.text == b.original_text:
+            b.text = `overwrite?`
+            b.text_color = color.white
+            b.color = color.magenta
+        else:
+            new_document(size[0], size[1])
+            b.text = b.original_text
+            b.color = b.original_color
+            b.text_color = b.original_text_color
+            menu.enabled = False
+
+resolution_info = *Button(origin=[-.5,-.5], position=bottom_left, scale=[.075,.015], text='??? x ???', roundness=0, alpha=.5, text_size=1)
 new_file_button = *Button(position=top_left, origin=[-.5,.5], text='+', scale=[.05,.025])
 new_file_button.on_click = def():
     menu.enabled = not menu.enabled
 
-# Entity(parent=menu_parent, origin=[-.5,0], color=hsv(0,0,.1), x=(.5*aspect_ratio)-.125)
-# Entity(parent=menu_parent, origin=[0, .5], color=hsv(0,0,.1), y=-.5+.1, scale_x=2)
 
-# sunsnake.define(*layer_button_defaults, parent=layer_menu, scale=[.1,.05], origin=[.5,-.5], draggable=True)
 layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.05, y=-.45+.05, text='layers', visible_self=True, roundness=.005, color=hsv(0,0,.03))
-def add_layer(name='layer'):
+def add_layer(name='layer', image_data=None):
     let layer = Entity(name=name, parent=bg, color=color.red, scale=[1/2,1/2], z=-1)
     layers.append(layer)
 
@@ -52,8 +60,6 @@ def add_layer(name='layer'):
     layer.ctx = layer.canvas.getContext('2d', {willReadFrequently: true})
     layer.ctx.fillStyle = rgb(128/255, 128/255, 128/255, 255/255)
     layer.ctx.fillRect(0, 0, w, h)
-    layer.ctx.fillStyle = rgb(255/255, 128/255, 128/255, 255/255)
-    layer.ctx.fillRect(0, 0, 100, 100)
 
     layer.layer_button = *Button(scale=[.1,.03], roundness=.005, origin=[.5,-.5], y=layer_menu.y+((len(layers)-1)*1.01*.03), text=name,
         draggable=True, lock_x=True, min_y=layer_menu.y-.015, max_y=layer_menu.y+layer_menu.scale_y+.015)
@@ -64,11 +70,32 @@ def add_layer(name='layer'):
     return layer
 
 
-first_layer = add_layer()
-sketch_layer = add_layer('sketch_layer')
-sketch_layer.name = 'sketch_layer'
-sketch_layer.enabled = False
-layers = [e for e in layers if e != sketch_layer]
+w = 1920
+h = 1080
+layers = []
+def new_document(_w, _h):
+
+    print('new_document')
+    for e in layers:
+        destroy(e)
+    layers = []
+
+    w = _w
+    h = _h
+    canvas_aspect = w/h
+    print('ffffffffffffffffff', canvas_aspect)
+    bg.scale = [2*canvas_scale*canvas_aspect, 2*canvas_scale]
+
+    first_layer = add_layer()
+    sketch_layer = add_layer('sketch_layer')
+    sketch_layer.name = 'sketch_layer'
+    sketch_layer.enabled = False
+    layers = [e for e in layers if e != sketch_layer]
+    current_layer = first_layer
+
+    resolution_info.text = `${w} x ${h}`
+
+new_document(1920, 1080)
 
 def set_layer(layer):
     current_layer = layer
@@ -101,18 +128,25 @@ round_bitmap_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spaci
 poke_brush = {'textures':["pokebrush.png", ], 'size':[256, 256], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 painterly_brush = {'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[178, 400], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':False}
 
-brushes = [square_brush, round_brush, round_bitmap_brush, poke_brush, painterly_brush]
+brushes = [round_brush, square_brush, round_bitmap_brush, poke_brush, painterly_brush]
 current_brush = None
+brush_canvases = []
+
 
 def set_brush(brush):
     current_brush = brush
+
     brush_tips = None
-    brush_canvases = None
     if brush.textures:
+        for e in brush_canvases:
+            e.remove()
+
         brush_tips = [new Image() for e in brush.textures]
         brush_canvases = [document.createElement('canvas') for e in brush_tips]
         for i in range(brush_tips.length):
-            brush_tips[i].src = brush.textures[i]
+            # brush_tips[i].src = brush.textures[i]
+            brush_tips[i].src = brush_textures[brush.textures[i]]
+
 
     print('set brush', brush)
     brush_size = brush.size
@@ -265,7 +299,6 @@ def paint():
     if not current_layer:
         return
 
-    print(w, h)
     if held_keys['alt']:
         pos = get_canvas_position()
         sampled_color = current_layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
@@ -370,7 +403,7 @@ opacity_keys = '|1234567890'.split('')
 target_zoom = bg.scale_y
 zoom_label = Button(text='100%', scale=[.075,.04], origin=[.5,.5], xy=[(.5*aspect_ratio)-.005,.495], color=hsv(0,0,0), text_color=hsv(0,0,.8), text_size=2, on_click=def():target_zoom=1)
 zoom_label.update = def update():
-    bg.scale_x = lerp(bg.scale[0], target_zoom*aspect_ratio, .2)
+    bg.scale_x = lerp(bg.scale[0], target_zoom*canvas_aspect, .2)
     bg.scale_y = lerp(bg.scale[1], target_zoom, .2)
 
 def input(key):
@@ -466,7 +499,7 @@ def set_color(value, move_sliders=True):
     if len(value) == 3:
         value.append(255)
 
-    print('set color:', value)
+    # print('set color:', value)
     current_color = value
     color_preview.color = rgb(current_color[0]/255, current_color[1]/255, current_color[2]/255)
     color_as_hsv = rgb_to_hsv(current_color)
@@ -492,7 +525,7 @@ for i, e in enumerate(brushes):
         brush_button.text = e.shape
     else:
         icon = Entity(roundness=.01, parent=brush_button, xy=[-.5,-.5], color=color.black, z=-1, scale=.7)
-        icon.texture = e.textures[0]
+        icon.texture = `assets/${e.textures[0]}`
         icon_aspect = brush.size[0] / brush.size[1]
         if icon_aspect > 1:
             icon.scale = [1, icon_aspect]
@@ -532,17 +565,17 @@ save_button.input = def input(key):
         save_button.on_click()
 
 
-saved_image = window.localStorage.getItem("image")
-if saved_image:
-    load_image_to_canvas(saved_image)
-
-def load_image_to_canvas(image):
-    var loaded_image = new Image()
-    loaded_image.src = image
-    loaded_image.onload = def on_load():
-        current_layer.ctx.drawImage(loaded_image, 0, 0)
-
-local_image_data = None
+# saved_image = window.localStorage.getItem("image")
+# if saved_image:
+#     load_image_to_canvas(saved_image)
+#
+# def load_image_to_canvas(image):
+#     var loaded_image = new Image()
+#     loaded_image.src = image
+#     loaded_image.onload = def on_load():
+#         current_layer.ctx.drawImage(loaded_image, 0, 0)
+#
+# local_image_data = None
 
 def copy_image_from_canvas():
     if selection.active:
@@ -949,6 +982,31 @@ joycon_handler.update = def joycon_update():
             bg.x -= held_keys['right joystick x'] * .01
         if abs(held_keys['right joystick y']) > .05:
             bg.y += held_keys['right joystick y'] * .01
+
+
+file_handler = Entity(visible_self=False)
+file_handler.input = def file_handler_input(key):
+    if key == 'o':
+        open_file()
+
+async def open_file():
+    const pickerOpts = {types: [{description: "Images", accept:{"image/*": [".png", ".gif", ".jpeg", ".jpg"],},},], excludeAcceptAllOption: true, multiple: false};
+    const [fileHandle] = await window.showOpenFilePicker(pickerOpts)
+    const file = await fileHandle.getFile()
+    # const contents = await file.text();
+    # print(typeof contents)
+    # return contents
+    const reader = new FileReader();
+    img = new Image()
+
+    reader.addEventListener('load', (event) => :
+        img.onload = def():
+            current_layer.canvas.width = img.width
+            current_layer.canvas.height = img.height
+            current_layer.ctx.drawImage(img,0,0)
+        img.src = event.target.result;
+    )
+    reader.readAsDataURL(file);
 
 
 
