@@ -438,11 +438,10 @@ def input(key):
     if key == 'h':
         selection_canvas_entity.enabled = not selection_canvas_entity.enabled
         # snap_to_hex = True
-
-    if key == 'scroll down':
+    if key == 'scroll down' or key == 'down arrow':
         target_zoom = target_zoom*.9
         zoom_label.text = `${int(target_zoom*100)}%`
-    if key == 'scroll up':
+    if key == 'scroll up' or key == 'up arrow':
         target_zoom = target_zoom*1/.9
         zoom_label.text = `${int(target_zoom*100)}%`
 
