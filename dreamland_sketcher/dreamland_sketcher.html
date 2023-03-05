@@ -126,12 +126,21 @@ square_brush = {'textures':None, 'shape':'rect', 'size':[50, 50], 'spacing':.1, 
 round_brush = {'textures':None, 'shape':'circle', 'size':[1, 1], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 round_bitmap_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.5, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 poke_brush = {'textures':["pokebrush.png", ], 'size':[256, 256], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
+poke_brush_small = {'textures':["pokebrush.png", ], 'size':[16, 16], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 painterly_brush = {'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[178, 400], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':False}
 
-brushes = [round_brush, square_brush, round_bitmap_brush, poke_brush, painterly_brush]
+brushes = [round_brush, square_brush, round_bitmap_brush, poke_brush, poke_brush_small, painterly_brush]
 current_brush = None
 brush_canvases = []
-
+brush_size_label = *Button(text='??', y=.45)
+increase_brush_size_button = *Button(y=.36, text='+')
+increase_brush_size_button.on_click = def():
+    new_brush_size = [e*1.5 for e in brush_size]
+    set_brush_size(new_brush_size)
+decrease_brush_size_button = *Button(y=.36, x=left_button_x, text='-')
+decrease_brush_size_button.on_click = def():
+    new_brush_size = [e*1/1.5 for e in brush_size]
+    set_brush_size(new_brush_size)
 
 def set_brush(brush):
     current_brush = brush
@@ -149,19 +158,23 @@ def set_brush(brush):
 
 
     print('set brush', brush)
-    brush_size = brush.size
+    set_brush_size(brush.size)
     SPACING = brush.spacing
     using_painterly_brush = brush.painterly_brush
     rotate_brush = brush.rotate
     draw_on_click = brush.draw_on_click
 
+brush_size = [64,64]
+def set_brush_size(value):
+    brush_size = value
+    brush_size_label.text = `${brush_size[0]}`
 
 brush_distance = 0
 draw_on_click = False
 rotate_brush = True
 using_painterly_brush = True
 prev_brush_tip = -1
-set_brush(square_brush)
+set_brush(poke_brush)
 img = new Image()
 current_color = [32, 32, 32, 255]
 drawing = False
@@ -246,8 +259,8 @@ brush_tool.input = def brush_tool_input(key):
         catch:
             return
 
-    # if key == 'left mouse up':
-
+    if key == 'left mouse up':
+        record_undo()
 
 
 brush_tool.update = def update():
@@ -430,10 +443,12 @@ def input(key):
 
 
     if key == 'd':
-        brush_size = [clamp(int(e*2), 1, 2048) for e in brush_size]
+        new_size = [clamp(int(e*2), 1, 2048) for e in brush_size]
+        set_brush_size(new_size)
 
     if key == 'x':
-        brush_size = [clamp(int(e/2), 1, 2048) for e in brush_size]
+        new_size = [clamp(int(e/2), 1, 2048) for e in brush_size]
+        set_brush_size(new_size)
 
     if key == 'h':
         selection_canvas_entity.enabled = not selection_canvas_entity.enabled
@@ -512,9 +527,6 @@ def set_color(value, move_sliders=True):
         sat_slider.indicator.x = -.5 + color_as_hsv[1]
         val_slider.indicator.x = -.5 + color_as_hsv[2]
 
-
-increase_brush_size_button = *Button(y=.36, text='+', on_click=def():brush_size = [e*1.5 for e in brush_size])
-decrease_brush_size_button = *Button(y=.36, x=left_button_x, text='-', on_click=def():brush_size = [e*1/1.5 for e in brush_size])
 
 
 for i, e in enumerate(brushes):
@@ -667,7 +679,7 @@ def record_undo():
         undo_data.splice(undo_index+1)
         # print('delete old undo data')
 
-    undo_data.push(canvas.toDataURL())
+    undo_data.push(current_layer.canvas.toDataURL())
     # print('record undo')
     undo_index += 1
 
@@ -911,10 +923,10 @@ def set_current_tool(tool):
     current_tool = tool
     for e in tools:
         if e != tool:
-            print('disable:', e.name)
+            # print('disable:', e.name)
             e.enabled = False
         else:
-            print('enable:', e.name)
+            # print('enable:', e.name)
             e.enabled = True
 
 set_current_tool(brush_tool)
@@ -992,18 +1004,15 @@ async def open_file():
     const pickerOpts = {types: [{description: "Images", accept:{"image/*": [".png", ".gif", ".jpeg", ".jpg"],},},], excludeAcceptAllOption: true, multiple: false};
     const [fileHandle] = await window.showOpenFilePicker(pickerOpts)
     const file = await fileHandle.getFile()
-    # const contents = await file.text();
-    # print(typeof contents)
-    # return contents
     const reader = new FileReader();
-    img = new Image()
+    _img = new Image()
 
     reader.addEventListener('load', (event) => :
-        img.onload = def():
-            current_layer.canvas.width = img.width
-            current_layer.canvas.height = img.height
-            current_layer.ctx.drawImage(img,0,0)
-        img.src = event.target.result;
+        _img.onload = def():
+            new_document(this.width, this.height)
+            current_layer.ctx.drawImage(_img,0,0)
+
+        _img.src = event.target.result;
     )
     reader.readAsDataURL(file);
 
