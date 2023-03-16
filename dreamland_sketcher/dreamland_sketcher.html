@@ -45,21 +45,19 @@ new_file_button = *Button(position=top_left, origin=[-.5,.5], text='+', scale=[.
 new_file_button.on_click = def():
     menu.enabled = not menu.enabled
 
-
+canvas_entity = Entity(parent=bg, color=color.clear, scale=[1/2,1/2], z=-1, shadow=True)
 layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.05, y=-.45+.05, text='layers', visible_self=True, roundness=.005, color=hsv(0,0,.03))
 def add_layer(name='layer', image_data=None):
-    let layer = Entity(name=name, parent=bg, color=color.red, scale=[1/2,1/2], z=-1)
+    let layer = Entity(name=name, parent=bg, color=color.clear, scale=[1/2,1/2], z=-1)
     layers.append(layer)
 
     layer.canvas = document.createElement('canvas');
-    layer.canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none; box-shadow:3px 10px 20px #111;'
+    layer.canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
     layer.canvas.width = w
     layer.canvas.height = h
     layer.model.appendChild(layer.canvas)
 
     layer.ctx = layer.canvas.getContext('2d', {willReadFrequently: true})
-    layer.ctx.fillStyle = rgb(128/255, 128/255, 128/255, 255/255)
-    layer.ctx.fillRect(0, 0, w, h)
 
     layer.layer_button = *Button(scale=[.1,.03], roundness=.005, origin=[.5,-.5], y=layer_menu.y+((len(layers)-1)*1.01*.03), text=name,
         draggable=True, lock_x=True, min_y=layer_menu.y-.015, max_y=layer_menu.y+layer_menu.scale_y+.015)
@@ -73,9 +71,7 @@ def add_layer(name='layer', image_data=None):
 w = 1920
 h = 1080
 layers = []
-def new_document(_w, _h):
-
-    print('new_document')
+def new_document(_w, _h, fill_color=color.white):
     for e in layers:
         destroy(e)
     layers = []
@@ -83,10 +79,13 @@ def new_document(_w, _h):
     w = _w
     h = _h
     canvas_aspect = w/h
-    print('ffffffffffffffffff', canvas_aspect)
+    print('new_document', canvas_aspect)
     bg.scale = [2*canvas_scale*canvas_aspect, 2*canvas_scale]
 
     first_layer = add_layer()
+    first_layer.ctx.fillStyle = rgb(...fill_color)
+    first_layer.ctx.fillRect(0, 0, w, h)
+
     sketch_layer = add_layer('sketch_layer')
     sketch_layer.name = 'sketch_layer'
     sketch_layer.enabled = False
@@ -308,6 +307,11 @@ def draw_rect(x, y):
             if selection.active and selection.matrix[int(_x)][int(_y)]:
                 current_layer.ctx.fillRect(int(_x), int(_y), 1, 1);
 
+def draw_brush_image(img, x, y):
+    if not current_color == color.clear:
+        current_layer.ctx.drawImage(img, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+
+
 def paint():
     if not current_layer:
         return
@@ -339,9 +343,7 @@ def paint():
                     prev_brush_tip = 0
                 img.src = brush_canvases[prev_brush_tip].toDataURL()
 
-                invoke(def anon():
-                    current_layer.ctx.drawImage(img, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
-                , delay=0)
+                draw_brush_image(img, x, y)
 
         start_position = pos
         prev_draw_pos = pos
@@ -527,11 +529,19 @@ def set_color(value, move_sliders=True):
         sat_slider.indicator.x = -.5 + color_as_hsv[1]
         val_slider.indicator.x = -.5 + color_as_hsv[2]
 
+background_color_menu = Entity(parent=camera.ui, visible_self=False, position=window.top_right, scale=.5)
+background_color_menu.x -= .2
+for i, col in [color.black, color.dark_gray, color.gray, color.light_gray, color.white]:
+    let change_bg_color_button = *Button(parent=background_color_menu, x=i*.05, color=col, origin=[.5,.5], on_click=def():bg.color=col)
+
+toggle_canvas_shadow_button = *Button(parent=background_color_menu, x=-.05, origin=[.5,.5], radius=.5, texture='https://static.thenounproject.com/png/4651840-200.png')
+toggle_canvas_shadow_button.on_click = def():
+    canvas_entity.shadow = not canvas_entity.shadow
 
 
 for i, e in enumerate(brushes):
     let brush = e
-    let brush_button = *Button(xy=[right_button_x-((i%2)*.05), .3+(.05*-floor(i/2))])
+    let brush_button = *Button(xy=[right_button_x-((i%2)*.05), .3+(.05*-floor(i/2))], roundness=.5)
     if not e.textures:
         brush_button.text = e.shape
     else:
@@ -569,8 +579,9 @@ window.onfocus = def():
 
 save_button = *Button(y=-.46, scale=[.1,.04], text='save')
 save_button.on_click = def save():
-    dataURL = canvas.toDataURL("image")
-    window.localStorage.setItem("image", dataURL)
+    save_file()
+    # dataURL = canvas.toDataURL("image")
+    # window.localStorage.setItem("image", dataURL)
 save_button.input = def input(key):
     if held_keys['shift'] and key == 's':
         save_button.on_click()
@@ -602,7 +613,7 @@ def copy_image_from_canvas():
         print('ffffffffff', int(flat_selection[0]))
         # print(local_image_data[0], int(flat_selection[0]))
         for i in range(0, len(local_image_data), 4):
-            local_image_data[i+3] = int(flat_selection[i+3]) * 255
+            local_image_data[i+3] = 255
         # print('--------', local_image_data)
         navigator.clipboard.writeText(`local_image:${JSON.stringify([selection_x, selection_y, selection_width, selection_height])}`)
 
@@ -662,15 +673,17 @@ def undo():
     var loaded_image = new Image
     loaded_image.src = undo_data[undo_index]
     loaded_image.onload = def on_load():
+        current_layer.ctx.clearRect(0, 0, w, h)
         current_layer.ctx.drawImage(loaded_image, 0, 0)
 
 def redo()
-    if undo_index < undo_data.length:
+    if undo_index < undo_data.length-1:
         undo_index += 1
 
     var loaded_image = new Image
     loaded_image.src = undo_data[undo_index]
     loaded_image.onload = def():
+        current_layer.ctx.clearRect(0, 0, w, h)
         current_layer.ctx.drawImage(loaded_image, 0, 0)
 
 
@@ -680,7 +693,7 @@ def record_undo():
         # print('delete old undo data')
 
     undo_data.push(current_layer.canvas.toDataURL())
-    # print('record undo')
+    print('record undo')
     undo_index += 1
 
 
@@ -1015,6 +1028,32 @@ async def open_file():
         _img.src = event.target.result;
     )
     reader.readAsDataURL(file);
+
+async def save_file(json_obj, suggested_name='untitled.drla'):
+    const opts = {
+    types: [{
+      description: 'Text file',
+      accept: {'text/plain': ['.drla']},
+    }],
+    };
+    return await window.showSaveFilePicker(opts);
+    # const writer = await handle.createWritable()
+    # await writer.write(JSON.stringify(obj))
+    # await writer.close()
+    # try:
+    #     const handle = await showSaveFilePicker({suggestedName})
+    #     # // Write the blob to the file.
+    #     const writable = await handle.createWritable()
+    #     await writable.write(blob)
+    #     await writable.close()
+    #     return
+    # catch (err):
+    #     # // Fail silently if the user has simply canceled the dialog.
+    #     if err.name !== 'AbortError':
+    #         console.error(err.name, err.message)
+    #         return
+
+
 
 
 
