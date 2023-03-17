@@ -16,14 +16,14 @@ Button(parent=menu, text='Play', scale=[.35,.15], y=-.2, on_click=def():goto_sce
 battle = Scene('textures/bergen_005')
 bg_overlay = Entity(parent=battle, scale=2, color=color.dark_gray, alpha=.75)
 card_parent = Entity(parent=battle, color=color.clear, z=-1)
-enemy = Entity(parent=battle, scale=[.4,.6], color=color.azure, name='entity', value=20, text='zombie', y=.1, texture='https://game-icons.net/icons/ffffff/000000/1x1/delapouite/shambling-zombie.svg')
+enemy = Entity(parent=battle, scale=[.4,.6], color=color.azure, name='entity', value=20, text='zombie', y=.1, texture='https:#game-icons.net/icons/ffffff/000000/1x1/delapouite/shambling-zombie.svg')
 enemy.hp_bar = HealthBar(parent=battle, max=30, y=.5, scale=[.6,.075], bar_color=hsv(320,1,.8), shadow='#f00')
 enemy_text = Button(parent=battle, x=enemy.hp_bar.x+.025, y=enemy.hp_bar.y+.06, z=0, text='Zombie', scale_y=.05, text_size=2, text_origin=[-.5,0], scale=enemy.hp_bar.scale, color=color.clear, text_color=color.light_gray)
 
 energy_bar = HealthBar(parent=battle, max=10, y=-(.5*aspect_ratio)+.115, z=-2, scale=[.9,.04], bar_color=color.orange, shadow=True)
 energy_bar.value = 5
 
-hp_bar = HealthBar(parent=battle, max=100, y=-(.5*aspect_ratio)+.05, z=-3, scale=[.9,.075], bar_color=hsv(320,1,.8), shadow=True)
+hp_bar = HealthBar(parent=camera.ui, max=100, y=-(.5*aspect_ratio)+.05, z=-3, scale=[.9,.075], bar_color=hsv(320,1,.8), shadow=True, z=-100)
 
 
 cover = Entity(parent=battle, alpha=.5, color=color.gray, z=-10, scale=[1,.5], y=-.475, enabled=False, on_click=def():return)
@@ -52,7 +52,7 @@ tooltip.title = Text(parent=tooltip, text=' Shotgun', scale_y=.25, scale_x=1.1, 
 
 spell_names = ['Flamethrower', 'Shotgun', 'Bat', 'Rope', 'Nail_Gun', 'Bandages', 'Plank', 'Hunting_Rifle']
 deck = [spells[e] for e in spell_names]
-// print('-------------', spells, deck)
+# print('-------------', spells, deck)
 cards = []
 
 battle.on_enter = def():
@@ -73,11 +73,11 @@ battle.on_enter = def():
         card.cooldown_overlay = Entity(parent=card, roundness=.5, enabled=False, text=`?`, text_origin=[0,0], scale=.8, alpha=.75, color=color.light_gray)
         card.energy_cost_icon = Entity(parent=card, roundness=.5, scale=.25, color=color.orange, xy=[.45,-.45], shadow=1, text=`${card.spell.cost}`, text_origin=[0,0], text_size=2, text_color=color.dark_gray)
         card.enabled = False
-        // print('aaaaaaaaaaaaaaaaaaaaaaaa', card.spell)
+        # print('aaaaaaaaaaaaaaaaaaaaaaaa', card.spell)
         if card.spell.icon:
             card.texture = card.spell.icon
         else:
-            // card.texture = `textures/${card.spell.constructor.name}.png`.toLowerCase()
+            # card.texture = `textures/${card.spell.constructor.name}.png`.toLowerCase()
             card.text = card.spell.constructor.name.toLowerCase()
 
         after .1*(i+1):
@@ -85,8 +85,8 @@ battle.on_enter = def():
             update_can_use_card(card)
 
         card.on_click = def():
-            // if not card.draggable:
-            //     return
+            # if not card.draggable:
+            #     return
             dmg = ''
             heal = ''
             if card.spell.damage > 0:
@@ -144,7 +144,7 @@ def update_can_use_card(card):
     after .05:
         card.cooldown_overlay.animate('scale_x', .75)
         card.cooldown_overlay.animate('scale_y', .75)
-    // card.cooldown_overlay.enabled = True
+    # card.cooldown_overlay.enabled = True
     card.cooldown_overlay.enabled = card.cooldown_left > 0
     if card.draggable:
         card.alpha = 1
@@ -159,45 +159,78 @@ def update_can_use_card(card):
         card.energy_cost_icon.color = hsv(30,1,.9)
         card.energy_cost_icon.text_color = hsv(0,0,.2)
 
-// battle.on_exit = def():
+# battle.on_exit = def():
 
 
 
 def win():
     battle.enabled = False
-    // tooltip.enabled = False
+    # tooltip.enabled = False
     goto_scene(city_scene)
 
 city_scene = Scene('city')
-possible_tiles = [
-    ['zombie', 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/shambling-zombie.svg'],
-    ['house', 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/house.svg'],
-    ['crate', 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/wooden-crate.svg'],
-]
-// bg = Entity(texture='https://game-icons.net/icons/ffffff/000000/1x1/skoll/balkenkreuz.svg', tileset_size=[.2,.2], alpha=.5)
+possible_tiles = dict(
+    empty = '',
+    zombie = 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/shambling-zombie.svg',
+    house = 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/house.svg',
+    crate = 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/wooden-crate.svg',
+)
+print(possible_tiles['crate'])
+# loot_boxes = {
+#
+#     'small' :       new Object(draws=1, gold=4, gas=1, ammo=1, food=1},
+#     'medium':       new Object(draws=2, gold=2, ammo=2, food=2),
+#     'food_crate':   new Object(draws=2, snack=5, food=2, drink=3),
+#     'ammo_crate':   new Object(draws=2, snack=5, food=2, drink=3),
+#
+#
+# }
+item_chances = dict(gold=25, gold_stash=5, gas=10, ammo=10, snack=20, drink=10, food=10, weapon=1)
+# gold, gas, ammo, weapon, food
+
+# bg = Entity(texture='https:#game-icons.net/icons/ffffff/000000/1x1/skoll/balkenkreuz.svg', tileset_size=[.2,.2], alpha=.5)
 grid = Array_2d(5,5)
 for _y in range(5):
     for _x in range(5):
         let x = _x
         let y = _y
-        let tile = Entity(parent=city_scene, scale=.1, origin=[-.5,0], xy=[-.45 + x*.2,-.3 + y*.2], shadow=1, roundness=.1, enabled=False, revealed=False)
+        let tile = Entity(parent=city_scene, scale=.1, origin=[-.5,0], xy=[-.45 + x*.2,-.3 + y*.2], collor=color.white, shadow=1, roundness=.1, enabled=False, revealed=False)
         grid[y][x] = tile
 
-        // tile.activate = def():
-        //     tile.text = '?'
-        //     tile.texture = 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/perspective-dice-six-faces-random.svg'
+        i = random_int(0,9)
+        if i <= 1:
+            tile.type = 'empty'
+        elif i <= 4:
+            tile.type = 'zombie'
+        elif i <= 7:
+            tile.type = 'house'
+        else:
+            tile.type = 'crate'
 
         tile.reveal = def():
             if tile.revealed:
                 return
             tile.enabled = True
-            i = random_int(0,2)
-            tile.type = possible_tiles[i][0]
-            tile.text = tile.type
-            tile.texture = possible_tiles[i][1]
+            # tile.text = tile.type
+            print('-----------------', possible_tiles[tile.type])
+            tile.texture = possible_tiles[tile.type]
             tile.revealed = True
 
         tile.on_click = def():
+            if tile.type == 'house':
+                r = random_int(0,1):
+                if r <= 0:
+                    after .1s:
+                        tile.type = 'zombie'
+                        tile.texture = possible_tiles[tile.type]
+                    after .8s:
+                        goto_scene(battle)
+                    return
+                else:
+                    tile.type = 'crate'
+
+                tile.texture = possible_tiles[tile.type]
+
             tile.texture = None
             tile.color = color.lime
             if tile.type == 'zombie':
@@ -205,18 +238,20 @@ for _y in range(5):
 
             offsets = [[1,0], [-1,0], [0,1], [0,-1]]
             for offset in offsets:
-                print(offset)
+                # print(offset)
                 try:
                     grid[y+offset[0]][x+offset[1]].reveal()
                 catch:
                     print('a')
-                // after .2s:
-// grid[0][2].texture = ''
+                # after .2s:
 grid[0][2].reveal()
+grid[0][2].type = 'empty'
+grid[0][2].color = color.white
+grid[0][2].texture = possible_tiles[grid[0][2].type]
 
 goto_scene(city_scene)
-// goto_scene(menu)
+# goto_scene(menu)
 
 
-// goto_scene(menu)
+# goto_scene(menu)
 </script><script src="../taptapir/sunsnake_compiler.js"></script></html>
