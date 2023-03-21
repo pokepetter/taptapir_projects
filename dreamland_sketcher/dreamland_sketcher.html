@@ -4,14 +4,14 @@
 <script src="assets/base_64_brushes.js"></script>
 <script type='text/sunsnake'>
 
-set_window_color('#222')
+set_window_color('#222222')
 set_background_color('#111')
 set_orientation('horizontal')
 # set_scale(.66)
 set_scale(1)
 canvas_scale = .8
 
-bg = Entity(color='#222', scale=[2*canvas_scale, 2*canvas_scale], draggable=True, lock_x=True, lock_y=True, name='bg')
+bg = Entity(visible_self=False, scale=[2*canvas_scale, 2*canvas_scale], draggable=True, lock_x=True, lock_y=True)
 
 menu_parent = Entity(parent=camera.ui, visible_self=False, name='menu_parent')
 right_button_x = (.5*aspect_ratio)-.0125
@@ -46,9 +46,14 @@ new_file_button.on_click = def():
     menu.enabled = not menu.enabled
 
 canvas_entity = Entity(parent=bg, color=color.clear, scale=[1/2,1/2], z=-1, shadow=True)
-layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.05, y=-.45+.05, text='layers', visible_self=True, roundness=.005, color=hsv(0,0,.03))
+canvas_entity.el.style.overflow = 'hidden'
+# canvas_entity.el.style.marginLeft = '20px'
+canvas_entity.el.style.boxShadow = '-5px 5px 15px #000'
+layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.05, y=-.45+.1, text='layers', visible_self=True, roundness=.005, color=hsv(0,0,.03))
+add_layer_button = *Button(text='+', scale=[layer_menu.scale_x/2,.03], roundness=.005, origin=[.5,-.5], x=layer_menu.x, y=layer_menu.y-.032, on_click=add_layer)
+
 def add_layer(name='layer', image_data=None):
-    let layer = Entity(name=name, parent=bg, color=color.clear, scale=[1/2,1/2], z=-1)
+    let layer = Entity(name=name, parent=canvas_entity, color=color.clear, z=-1)
     layers.append(layer)
 
     layer.canvas = document.createElement('canvas');
@@ -59,11 +64,14 @@ def add_layer(name='layer', image_data=None):
 
     layer.ctx = layer.canvas.getContext('2d', {willReadFrequently: true})
 
-    layer.layer_button = *Button(scale=[.1,.03], roundness=.005, origin=[.5,-.5], y=layer_menu.y+((len(layers)-1)*1.01*.03), text=name,
+    layer.layer_button = Button(x=layer_menu.x, origin=[0,-.5], scale=[.1,.03], roundness=.1, y=layer_menu.y+((len(layers)-1)*1.01*.03), text_size=1, text=name,
         draggable=True, lock_x=True, min_y=layer_menu.y-.015, max_y=layer_menu.y+layer_menu.scale_y+.015)
     layer.layer_button.original_color = layer.layer_button.color
-    layer.layer_button.on_click = def():
-        set_layer(layer.layer_button)
+    layer.layer_button.drop = def():
+        set_layer(layer)
+
+    # layer.layer_button.on_click = def():
+    #     set_layer(layer.layer_button)
 
     return layer
 
@@ -71,7 +79,7 @@ def add_layer(name='layer', image_data=None):
 w = 1920
 h = 1080
 layers = []
-def new_document(_w, _h, fill_color=color.white):
+def new_document(_w, _h, fill_color=color.clear):
     for e in layers:
         destroy(e)
     layers = []
@@ -83,8 +91,11 @@ def new_document(_w, _h, fill_color=color.white):
     bg.scale = [2*canvas_scale*canvas_aspect, 2*canvas_scale]
 
     first_layer = add_layer()
-    first_layer.ctx.fillStyle = rgb(...fill_color)
-    first_layer.ctx.fillRect(0, 0, w, h)
+    if fill_color == color.clear:
+        first_layer.ctx.clearRect(0, 0, w, h)
+    else:
+        first_layer.ctx.fillStyle = rgb(...fill_color)
+        first_layer.ctx.fillRect(0, 0, w, h)
 
     sketch_layer = add_layer('sketch_layer')
     sketch_layer.name = 'sketch_layer'
@@ -126,9 +137,10 @@ round_brush = {'textures':None, 'shape':'circle', 'size':[1, 1], 'spacing':.1, '
 round_bitmap_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.5, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 poke_brush = {'textures':["pokebrush.png", ], 'size':[256, 256], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 poke_brush_small = {'textures':["pokebrush.png", ], 'size':[16, 16], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
+poke_brush_scatter = {'textures':["pokebrush.png", 'pokebrush.png'], 'size':[256, 256], 'spacing':.25, 'painterly_brush':False, 'rotate':'random', 'draw_on_click':False}
 painterly_brush = {'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[178, 400], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':False}
 
-brushes = [round_brush, square_brush, round_bitmap_brush, poke_brush, poke_brush_small, painterly_brush]
+brushes = [round_brush, square_brush, round_bitmap_brush, poke_brush, poke_brush_small, painterly_brush, poke_brush_scatter]
 current_brush = None
 brush_canvases = []
 brush_size_label = *Button(text='??', y=.45)
@@ -250,9 +262,6 @@ brush_tool.input = def brush_tool_input(key):
 
                 brush_canvas_context.putImageData(imgData, 0, 0)
 
-        if tool == 'eyedropper':
-            drawing = True
-
         try:
             paint()
         catch:
@@ -272,7 +281,8 @@ def get_canvas_position():
         return [0,0]
 
     pos = mouse.point
-    return [int(((pos[0]*2)+.5) * w), int(((pos[1]*2)-.5) * -h)]
+    # pos[0] -= current_layer.x
+    return [int((((pos[0]-(current_layer.x*.5))*2)+.5) * w), int((((pos[1]-(current_layer.y*.5))*2)-.5) * -h)]
 
 
 def draw_circle(x, y):
@@ -316,11 +326,6 @@ def paint():
     if not current_layer:
         return
 
-    if held_keys['alt']:
-        pos = get_canvas_position()
-        sampled_color = current_layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
-        set_color(sampled_color)
-        return
     if mouse.hovered_entity != bg:
         return
     [x, y] = get_canvas_position()
@@ -391,12 +396,21 @@ def paint():
                     draw_rect(_x, _y)
                 elif current_brush.shape == 'circle':
                     draw_circle(_x, _y)
-        else:
+        elif rotate_brush == True:
             invoke(def anon():
                 current_layer.ctx.translate(_x, _y)
                 current_layer.ctx.rotate(radians)
                 current_layer.ctx.drawImage(img, -brush_size[0]/2, -brush_size[1]/2)
                 current_layer.ctx.rotate(-radians)
+                current_layer.ctx.translate(-_x, -_y)
+            , delay=0)
+        elif rotate_brush == 'random':
+            invoke(def anon():
+                random_radian = random_int(0, 360) * Math.PI / 180
+                current_layer.ctx.translate(_x, _y)
+                current_layer.ctx.rotate(random_radian)
+                current_layer.ctx.drawImage(img, -brush_size[0]/2, -brush_size[1]/2)
+                current_layer.ctx.rotate(-random_radian)
                 current_layer.ctx.translate(-_x, -_y)
             , delay=0)
 
@@ -531,12 +545,16 @@ def set_color(value, move_sliders=True):
 
 background_color_menu = Entity(parent=camera.ui, visible_self=False, position=window.top_right, scale=.5)
 background_color_menu.x -= .2
-for i, col in [color.black, color.dark_gray, color.gray, color.light_gray, color.white]:
-    let change_bg_color_button = *Button(parent=background_color_menu, x=i*.05, color=col, origin=[.5,.5], on_click=def():bg.color=col)
+for i, col in ['#000000', '#404040', '#606060', '#bfbfbf', '#ffffff']:
+    let change_bg_color_button = *Button(parent=background_color_menu, x=i*.05, color=col, origin=[.5,.5], on_click=def():set_window_color(col))
 
 toggle_canvas_shadow_button = *Button(parent=background_color_menu, x=-.05, origin=[.5,.5], radius=.5, texture='https://static.thenounproject.com/png/4651840-200.png')
 toggle_canvas_shadow_button.on_click = def():
-    canvas_entity.shadow = not canvas_entity.shadow
+    if canvas_entity.shadow:
+        canvas_entity._shadow_style = canvas_entity.shadow
+        canvas_entity.shadow = False
+    else:
+        canvas_entity.shadow = not canvas_entity._shadow_style
 
 
 for i, e in enumerate(brushes):
@@ -558,17 +576,30 @@ for i, e in enumerate(brushes):
 
 
 eyedropper = Entity(name='eyedropper', visible_self=False)
-eyedropper.update = def update():
-    if mouse.left:
-        if mouse.hovered_entity == bg:
-            print('smaple')
-            pos = get_canvas_position()
-            current_color = current_layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
-            set_color(current_color)
-            return
+eyedropper.input = async def input(key):
+    if key == 'alt':
+        await new EyeDropper().open().then((result) => {set_window_color(result.sRGBHex)})
 
-        elif mouse.hovered_entity:
-            set_color(mouse.hovered_entity.color)
+# async def open_eyedropper():
+#     await new EyeDropper().open()
+    # print('ccccccccccccc    ')
+
+
+# eyedropper.update = async def update():
+#     if held_keys['alt']:
+#         await new EyeDropper().open().then((result) => {set_window_color(result.sRGBHex)})
+
+
+#     if mouse.left:
+#         if mouse.hovered_entity == bg:
+#             print('smaple')
+#             pos = get_canvas_position()
+#             current_color = current_layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
+#             set_color(current_color)
+#             return
+#
+#         elif mouse.hovered_entity:
+#             set_color(mouse.hovered_entity.color)
 
 window.onfocus = def():
     set_current_tool(brush_tool)
@@ -927,8 +958,23 @@ rect_select_tool.input = def rect_select_tool_input(key):
 
         render_selection()
 
+transform_tool = Entity(parent=canvas_entity, visible_self=False, enabled=False, draggable=True)
 
-tools = [brush_tool, eyedropper, lasso_tool, rect_select_tool]
+transform_tool.input = def transform_tool_input(key):
+    if key == 'left mouse down' and not held_keys['control'] and not held_keys['shift'] and not held_keys['alt']:
+        transform_tool.position = current_layer.position
+        current_layer.parent = transform_tool
+        current_layer.position = [0,0]
+    elif key == 'left mouse up':
+        current_layer.parent = canvas_entity
+        current_layer.position = transform_tool.position
+        # current_layer.scale = current_layer.scale
+
+        # current_layer.dragging = False
+        # current_layer.draggable = False
+# current_layer.draggable=True
+
+tools = [brush_tool, lasso_tool, rect_select_tool, transform_tool]
 
 current_tool = None
 def set_current_tool(tool):
@@ -936,10 +982,10 @@ def set_current_tool(tool):
     current_tool = tool
     for e in tools:
         if e != tool:
-            # print('disable:', e.name)
+            print('disable:', e.name)
             e.enabled = False
         else:
-            # print('enable:', e.name)
+            print('enable:', e.name)
             e.enabled = True
 
 set_current_tool(brush_tool)
@@ -956,8 +1002,10 @@ tool_toggler.input = def tool_toggler_input(key):
         set_current_tool(lasso_tool)
     elif key == 'm':
         set_current_tool(rect_select_tool)
+    elif key == 'v':
+        set_current_tool(transform_tool)
 
-    if key == 'r':
+    elif key == 'r':
         current_layer.enabled = False
         current_layer = sketch_layer
         sketch_layer.enabled = True
@@ -969,6 +1017,7 @@ tool_toggler.input = def tool_toggler_input(key):
         current_layer = layers[0]
         current_layer.enabled = True
         print(current_layer)
+
 
 
 
