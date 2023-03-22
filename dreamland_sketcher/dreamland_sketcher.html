@@ -4,7 +4,7 @@
 <script src="assets/base_64_brushes.js"></script>
 <script type='text/sunsnake'>
 
-set_window_color('#222222')
+set_window_color('#555')
 set_background_color('#111')
 set_orientation('horizontal')
 # set_scale(.66)
@@ -45,15 +45,14 @@ new_file_button = *Button(position=top_left, origin=[-.5,.5], text='+', scale=[.
 new_file_button.on_click = def():
     menu.enabled = not menu.enabled
 
-canvas_entity = Entity(parent=bg, color=color.clear, scale=[1/2,1/2], z=-1, shadow=True)
-canvas_entity.el.style.overflow = 'hidden'
-# canvas_entity.el.style.marginLeft = '20px'
-canvas_entity.el.style.boxShadow = '-5px 5px 15px #000'
+canvas_entity = Entity(parent=bg, color=color.clear, scale=[1/2,1/2], z=-1, shadow='-5px 5px 15px #000')
+canvas_entity.model.style.overflow = 'hidden'
+
 layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.05, y=-.45+.1, text='layers', visible_self=True, roundness=.005, color=hsv(0,0,.03))
 add_layer_button = *Button(text='+', scale=[layer_menu.scale_x/2,.03], roundness=.005, origin=[.5,-.5], x=layer_menu.x, y=layer_menu.y-.032, on_click=add_layer)
 
-def add_layer(name='layer', image_data=None):
-    let layer = Entity(name=name, parent=canvas_entity, color=color.clear, z=-1)
+def add_layer(name='layer', image_data=None, enabled=True, select=True):
+    let layer = Entity(name=name, parent=canvas_entity, color=color.clear, z=-1, enabled=enabled)
     layers.append(layer)
 
     layer.canvas = document.createElement('canvas');
@@ -64,14 +63,23 @@ def add_layer(name='layer', image_data=None):
 
     layer.ctx = layer.canvas.getContext('2d', {willReadFrequently: true})
 
-    layer.layer_button = Button(x=layer_menu.x, origin=[0,-.5], scale=[.1,.03], roundness=.1, y=layer_menu.y+((len(layers)-1)*1.01*.03), text_size=1, text=name,
+    print('--------------------hidden:', not enabled)
+    if not enabled:
+        return layer
+
+    layer.layer_button = Button(enabled=enabled, x=layer_menu.x, origin=[0,-.5], scale=[.1,.03], roundness=.1, y=layer_menu.y+((len(layers)-1)*1.01*.03), text_size=1, text=name,
         draggable=True, lock_x=True, min_y=layer_menu.y-.015, max_y=layer_menu.y+layer_menu.scale_y+.015)
     layer.layer_button.original_color = layer.layer_button.color
     layer.layer_button.drop = def():
         set_layer(layer)
 
-    # layer.layer_button.on_click = def():
-    #     set_layer(layer.layer_button)
+    toggle_layer_visibility_button = Button(parent=layer.layer_button, origin=[-.5,-.5], x=-.5, scale=[.25,.9], roundness=0, alpha=.1, text_size=1, text='h', z=-1)
+    toggle_layer_visibility_button.on_click = def():
+        print('toggle layer')
+        layer.enabled = not layer.enabled
+
+    if select:
+        set_layer(layer)
 
     return layer
 
@@ -97,9 +105,7 @@ def new_document(_w, _h, fill_color=color.clear):
         first_layer.ctx.fillStyle = rgb(...fill_color)
         first_layer.ctx.fillRect(0, 0, w, h)
 
-    sketch_layer = add_layer('sketch_layer')
-    sketch_layer.name = 'sketch_layer'
-    sketch_layer.enabled = False
+    sketch_layer = add_layer(name='sketch_layer', image_data=None, enabled=False)
     layers = [e for e in layers if e != sketch_layer]
     current_layer = first_layer
 
@@ -110,9 +116,10 @@ new_document(1920, 1080)
 def set_layer(layer):
     current_layer = layer
     print('current_layer:', current_layer)
-    for layer in layers:
+    for i, layer in layers:
         layer.layer_button.color = layer.layer_button.original_color
-    layer.layer_button.color = color.azure
+        layer.z = -i
+    current_layer.layer_button.color = color.azure
 
 set_layer(first_layer)
 
@@ -262,12 +269,16 @@ brush_tool.input = def brush_tool_input(key):
 
                 brush_canvas_context.putImageData(imgData, 0, 0)
 
+        if tool == 'eyedropper':
+            drawing = True
+
         try:
             paint()
         catch:
             return
 
-    if key == 'left mouse up':
+    if drawing and key == 'left mouse up':
+        drawing = False
         record_undo()
 
 
@@ -276,13 +287,12 @@ brush_tool.update = def update():
         paint()
 
 
-def get_canvas_position():
+def get_canvas_position(layer=current_layer):
     if not mouse.point:
         return [0,0]
 
     pos = mouse.point
-    # pos[0] -= current_layer.x
-    return [int((((pos[0]-(current_layer.x*.5))*2)+.5) * w), int((((pos[1]-(current_layer.y*.5))*2)-.5) * -h)]
+    return [int((((pos[0]-(layer.x*.5))*2)+.5) * w), int((((pos[1]-(layer.y*.5))*2)-.5) * -h)]
 
 
 def draw_circle(x, y):
@@ -323,11 +333,19 @@ def draw_brush_image(img, x, y):
 
 
 def paint():
-    if not current_layer:
+    if not current_layer or not current_layer.enabled:
         return
+
+    if held_keys['alt']:
+        pos = get_canvas_position()
+        sampled_color = current_layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
+        set_color(sampled_color)
+        return
+
 
     if mouse.hovered_entity != bg:
         return
+
     [x, y] = get_canvas_position()
     if held_keys['s'] and prev_pos:
         x = lerp(prev_pos[0], x, .025)
@@ -552,9 +570,10 @@ toggle_canvas_shadow_button = *Button(parent=background_color_menu, x=-.05, orig
 toggle_canvas_shadow_button.on_click = def():
     if canvas_entity.shadow:
         canvas_entity._shadow_style = canvas_entity.shadow
+        print('-------------', canvas_entity._shadow_style)
         canvas_entity.shadow = False
     else:
-        canvas_entity.shadow = not canvas_entity._shadow_style
+        canvas_entity.shadow = canvas_entity._shadow_style
 
 
 for i, e in enumerate(brushes):
@@ -575,24 +594,11 @@ for i, e in enumerate(brushes):
         set_brush(brush)
 
 
-eyedropper = Entity(name='eyedropper', visible_self=False)
-eyedropper.input = async def input(key):
-    if key == 'alt':
-        await new EyeDropper().open().then((result) => {set_window_color(result.sRGBHex)})
-
-# async def open_eyedropper():
-#     await new EyeDropper().open()
-    # print('ccccccccccccc    ')
-
-
-# eyedropper.update = async def update():
-#     if held_keys['alt']:
-#         await new EyeDropper().open().then((result) => {set_window_color(result.sRGBHex)})
-
-
+# eyedropper = Entity(name='eyedropper', visible_self=False)
+# eyedropper.update = def update():
 #     if mouse.left:
+#         print('smaple')
 #         if mouse.hovered_entity == bg:
-#             print('smaple')
 #             pos = get_canvas_position()
 #             current_color = current_layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
 #             set_color(current_color)
@@ -809,19 +815,19 @@ lasso_tool.input = def lasso_tool_input(key):
         selection.max_x = max(...xs)
         selection.min_y = min(...ys)
         selection.max_y = max(...ys)
+        # #
+        # selection.width = (selection.max_x - selection.min_x) +1
+        # selection.height = (selection.max_y - selection.min_y) +1
 
-        selection.width = (selection.max_x - selection.min_x) +1
-        selection.height = (selection.max_y - selection.min_y) +1
-
-        def inside(point, vs):
+        def inside(point, poly):
             # // ray-casting algorithm based on
             # // https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html/pnpoly.html
             var x = point[0], y = point[1]
             var inside = False
 
-            for (var i=0, j=vs.length-1; i < vs.length; j=i++):
-                var xi = vs[i][0], yi = vs[i][1];
-                var xj = vs[j][0], yj = vs[j][1];
+            for (var i=0, j=poly.length-1; i < poly.length; j=i++):
+                var xi = poly[i][0], yi = poly[i][1];
+                var xj = poly[j][0], yj = poly[j][1];
 
                 intersect = ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / (yj - yi) + xi)
                 if intersect:
@@ -830,11 +836,26 @@ lasso_tool.input = def lasso_tool_input(key):
             return inside
 
         poly = selection.points
-        for y in range(selection.min_y, selection.min_y+selection.height):
-            for x in range(selection.min_x, selection.min_x+selection.width):
-                if inside([x,y], poly):
-                    selection.matrix[x][y] = not held_keys['alt']
-                    selection.ative = True
+        # clean_poly = []
+        # for i, e in poly:
+        #     if i > 0:
+        #         if poly[i-1][0] == e[0]-1 and poly[i-1][1] == e[1]:
+        #             continue
+        #         if poly[i-1][0] == e[0]+1 and poly[i-1][1] == e[1]:
+        #             continue
+        #         if poly[i-1][0] == e[0] and poly[i-1][1]-1 == e[1]:
+        #             continue
+        #         if poly[i-1][0] == e[0] and poly[i-1][1]+1 == e[1]:
+        #             continue
+        #     clean_poly.append(poly)
+        # print('----------------', len(poly))
+        # poly = clean_poly
+        print('----------------', len(poly))
+        for y in range(selection.min_y, selection.max_y):
+            for x in range(selection.min_x, selection.max_x):
+                # if inside([x,y], poly):
+                selection.matrix[x][y] = not held_keys['alt'] * inside([x,y], poly)
+                    # selection.active = True
 
         lasso_prev_pos = None
         render_selection()
@@ -962,12 +983,12 @@ transform_tool = Entity(parent=canvas_entity, visible_self=False, enabled=False,
 
 transform_tool.input = def transform_tool_input(key):
     if key == 'left mouse down' and not held_keys['control'] and not held_keys['shift'] and not held_keys['alt']:
-        transform_tool.position = current_layer.position
+        transform_tool.xyz = current_layer.xyz
         current_layer.parent = transform_tool
-        current_layer.position = [0,0]
+        current_layer.xy = [0,0]
     elif key == 'left mouse up':
         current_layer.parent = canvas_entity
-        current_layer.position = transform_tool.position
+        current_layer.xy = transform_tool.xy
         # current_layer.scale = current_layer.scale
 
         # current_layer.dragging = False
