@@ -4,7 +4,7 @@
 <script src="assets/base_64_brushes.js"></script>
 <script type='text/sunsnake'>
 
-set_window_color('#555')
+set_window_color('#222')
 set_background_color('#111')
 set_orientation('horizontal')
 # set_scale(.66)
@@ -45,7 +45,7 @@ new_file_button = *Button(position=top_left, origin=[-.5,.5], text='+', scale=[.
 new_file_button.on_click = def():
     menu.enabled = not menu.enabled
 
-canvas_entity = Entity(parent=bg, color=color.clear, scale=[1/2,1/2], z=-1, shadow='-5px 5px 15px #000')
+canvas_entity = Entity(parent=bg, color='#606060', scale=[1/2,1/2], z=-1, shadow='-5px 5px 15px #000')
 canvas_entity.model.style.overflow = 'hidden'
 
 layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.05, y=-.45+.1, text='layers', visible_self=True, roundness=.005, color=hsv(0,0,.03))
@@ -63,7 +63,7 @@ def add_layer(name='layer', image_data=None, enabled=True, select=True):
 
     layer.ctx = layer.canvas.getContext('2d', {willReadFrequently: true})
 
-    print('--------------------hidden:', not enabled)
+    # print('--------------------hidden:', not enabled)
     if not enabled:
         return layer
 
@@ -192,7 +192,7 @@ draw_on_click = False
 rotate_brush = True
 using_painterly_brush = True
 prev_brush_tip = -1
-set_brush(poke_brush)
+set_brush(poke_brush_small)
 img = new Image()
 current_color = [32, 32, 32, 255]
 drawing = False
@@ -336,12 +336,31 @@ def paint():
     if not current_layer or not current_layer.enabled:
         return
 
-    if held_keys['alt']:
+    if held_keys['control'] and not held_keys['alt']:
         pos = get_canvas_position()
         sampled_color = current_layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
+        sampled_color[3] = 255
         set_color(sampled_color)
-        return
 
+    # sample combined
+    if held_keys['alt'] and not held_keys['control']:
+        sampled_colors = []
+        for layer in layers:
+            pos = get_canvas_position(layer)
+            sampled_color = layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
+            sampled_colors.append(sampled_color)
+
+        combined_color = [0,0,0]
+        for i in range(3):
+            average = [c[i] for c in sampled_colors]
+            average = int(sum(average) / len(sampled_colors))
+            combined_color[i] = average
+
+        alphas = [e[3] for e in sampled_colors]
+        alpha = min(sum(alphas), 255)
+        combined_color = [lerp(canvas_entity.color[i], combined_color[i], alpha/255) for i in range(3)]
+        set_color(combined_color)
+        return
 
     if mouse.hovered_entity != bg:
         return
@@ -514,7 +533,7 @@ color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=True, sc
 # color_menu.input = color_menu_input
 
 slider_height = .075
-color_menu_bg = Entity(parent=color_menu.menu, x=.15, scale=[1.05+.3, (slider_height*1.1*3)+.05], color='#000f', alpha=.8, roundness=.05, z=2)
+color_menu_bg = Entity(parent=color_menu.menu, x=.15, scale=[1.05+.3, (slider_height*1.1*3)+.05], color=color.black, alpha=.8, roundness=.05, z=2)
 color_preview = Entity(parent=color_menu.menu, scale=slider_height*3*1.1, x=.55, origin=[-.5,0], roundness=.5)
 
 sunsnake.define(*slider_style, scale_y=.075, roundness=.15, draggable=True, lock_x=True, lock_y=True)
@@ -564,7 +583,7 @@ def set_color(value, move_sliders=True):
 background_color_menu = Entity(parent=camera.ui, visible_self=False, position=window.top_right, scale=.5)
 background_color_menu.x -= .2
 for i, col in ['#000000', '#404040', '#606060', '#bfbfbf', '#ffffff']:
-    let change_bg_color_button = *Button(parent=background_color_menu, x=i*.05, color=col, origin=[.5,.5], on_click=def():set_window_color(col))
+    let change_bg_color_button = *Button(parent=background_color_menu, x=i*.05, color=col, origin=[.5,.5], on_click=def():canvas_entity.color=col)
 
 toggle_canvas_shadow_button = *Button(parent=background_color_menu, x=-.05, origin=[.5,.5], radius=.5, texture='https://static.thenounproject.com/png/4651840-200.png')
 toggle_canvas_shadow_button.on_click = def():
