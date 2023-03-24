@@ -1118,29 +1118,28 @@ async def open_file():
     )
     reader.readAsDataURL(file);
 
-async def save_file(json_obj, suggested_name='untitled.drla'):
-    const opts = {
+
+async def save_file(json_obj, suggested_name='untitled.png'):
+    const options = {
     types: [{
-      description: 'Text file',
-      accept: {'text/plain': ['.drla']},
-    }],
-    };
-    return await window.showSaveFilePicker(opts);
-    # const writer = await handle.createWritable()
-    # await writer.write(JSON.stringify(obj))
-    # await writer.close()
-    # try:
-    #     const handle = await showSaveFilePicker({suggestedName})
-    #     # // Write the blob to the file.
-    #     const writable = await handle.createWritable()
-    #     await writable.write(blob)
-    #     await writable.close()
-    #     return
-    # catch (err):
-    #     # // Fail silently if the user has simply canceled the dialog.
-    #     if err.name !== 'AbortError':
-    #         console.error(err.name, err.message)
-    #         return
+      description: 'png transparent',
+      accept: {'image/png': ['.png'],},
+    },
+    {
+      description: 'png opaque',
+      accept: {'image/png': ['.png'],},
+    }
+    ],
+    suggestedName: suggested_name
+    }
+    const newHandle = await window.showSaveFilePicker(options)
+    # const fileData = await newHandle.getFile()
+    # print(fileData.type)
+    const writableStream = await newHandle.createWritable()
+
+    imgBlob = await new Promise(resolve => current_layer.canvas.toBlob(resolve, 'image/png'));
+    await writableStream.write(imgBlob)
+    await writableStream.close()
 
 
 
