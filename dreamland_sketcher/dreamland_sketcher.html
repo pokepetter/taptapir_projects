@@ -1022,10 +1022,8 @@ def set_current_tool(tool):
     current_tool = tool
     for e in tools:
         if e != tool:
-            print('disable:', e.name)
             e.enabled = False
         else:
-            print('enable:', e.name)
             e.enabled = True
 
 set_current_tool(brush_tool)
@@ -1141,10 +1139,23 @@ async def save_file(json_obj, suggested_name='untitled.png'):
     await writableStream.write(imgBlob)
     await writableStream.close()
 
+# drop_area = Entity(parent=canvas_entity, color=color.red, on_click=def():print('a'))
+document.ondrop = def ondrop(event):
+    event.preventDefault()
+    files = [e for e in event.dataTransfer.files]
+    if files:
+        var url = URL.createObjectURL(files[0])
+        var img = new Image();
+        img.onload = def():
+            # this.width
+            # this.height
+            ctx.drawImage(img, 0, 0)
 
+    img.src = url
 
-
-
+document.ondragover = def ondragover(event):
+    event.preventDefault()
+#
 </script>
 
 <script src="../taptapir/sunsnake_compiler.js"></script>
