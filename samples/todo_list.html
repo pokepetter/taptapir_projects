@@ -27,13 +27,25 @@ def add_item(name='', value=1):
 
     e.delete_button = *Button(parent=e, color='#eeeeee', scale=[.08/e.scale_x,.08/e.scale_y], x=.5-.01, origin=[.5,0], text='✕', text_size=1.5, shadow=None)
     e.delete_button.on_click = def():
-        items.remove(e)
-        destroy(e)
-        update_list()
+        confirm_delete_button.parent = e.delete_button
+        confirm_delete_button.enabled = True
+        confirm_delete_button.target = e
+
 
     update_list()
 
-sort_by_name_button = *Button(x=-.0125, y=(-.5*aspect_ratio)+.025, origin=[.5,-.5], scale=[.25,.1], text_size=1.5, text='sort by name', reverse=False)
+confirm_delete_button = Entity(parent=list_parent, color=color.pink, enabled=0, text='delete?', target=None, origin=[.5,0], roundness=.5, text_size=1, text_origin=[0,0], text_color=color.white)
+confirm_delete_button.on_click = def():
+    confirm_delete_button.parent = list_parent
+    confirm_delete_button.enabled = False
+    items.remove(confirm_delete_button.target)
+    destroy(confirm_delete_button.target)
+    update_list()
+confirm_delete_button.input = def input(key):
+    if key == 'left mouse down' and mouse.hovered_entity != confirm_delete_button:
+        confirm_delete_button.enabled = False
+
+sort_by_name_button = *Button(parent=camera.ui, x=-.0125, y=(-.5*aspect_ratio)+.025, origin=[.5,-.5], scale=[.25,.1], text_size=1.5, text='sort by name', reverse=False)
 sort_by_name_button.on_click = def():
     def sort_alphabetically(first, second):
         return first.input_field.value.localeCompare(second.input_field.value)
@@ -43,9 +55,9 @@ sort_by_name_button.on_click = def():
         items.reverse()
     update_list()
     sort_by_name_button.reverse = not sort_by_name_button.reverse
-    # print(items)
 
-sort_by_value_button = *Button(x=.0125, y=(-.5*aspect_ratio)+.025, origin=[-.5,-.5], scale=[.25,.1], text_size=1.5, text='sort by value', reverse=False)
+
+sort_by_value_button = *Button(parent=camera.ui, x=.0125, y=(-.5*aspect_ratio)+.025, origin=[-.5,-.5], scale=[.25,.1], text_size=1.5, text='sort by value', reverse=False)
 sort_by_value_button.on_click = def():
     def sort(first, second):
         return second.slider.value - first.slider.value
@@ -68,11 +80,11 @@ def update_list():
 
 
 
-data = {
-    'project 1': 1,
-    'project 2': 1,
-    'project 3': 1,
-}
+# data = {
+#     'project 1': 1,
+#     'project 2': 1,
+#     'project 3': 1,
+# }
 data = save_system_load('data')
 if data:
     print('load:', data)
