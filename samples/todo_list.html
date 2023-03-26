@@ -33,7 +33,29 @@ def add_item(name='', value=1):
 
     update_list()
 
-sort_by_name_button = *Button(x=-.45, y=(-.5*aspect_ratio)+.025, origin=[-.5,-.5], scale=[.3,.1])
+sort_by_name_button = *Button(x=-.0125, y=(-.5*aspect_ratio)+.025, origin=[.5,-.5], scale=[.25,.1], text_size=1.5, text='sort by name', reverse=False)
+sort_by_name_button.on_click = def():
+    def sort_alphabetically(first, second):
+        return first.input_field.value.localeCompare(second.input_field.value)
+    items.sort(sort_alphabetically)
+
+    if sort_by_name_button.reverse:
+        items.reverse()
+    update_list()
+    sort_by_name_button.reverse = not sort_by_name_button.reverse
+    # print(items)
+
+sort_by_value_button = *Button(x=.0125, y=(-.5*aspect_ratio)+.025, origin=[-.5,-.5], scale=[.25,.1], text_size=1.5, text='sort by value', reverse=False)
+sort_by_value_button.on_click = def():
+    def sort(first, second):
+        return second.slider.value - first.slider.value
+    items.sort(sort)
+
+    if sort_by_value_button.reverse:
+        items.reverse()
+    update_list()
+    sort_by_value_button.reverse = not sort_by_value_button.reverse
+
 
 
 def update_list():
@@ -62,11 +84,16 @@ save_button = *Button(parent=camera.ui, xy=[.475, (-.5*aspect_ratio)+.025], scal
 save_button.on_click = def():
     data = {}
     for e in items:
+        if not e.input_field.value:
+            continue
         data[e.input_field.value] = e.slider.value
-    print('save:', data)
+    # print('save:', data)
 
 
     save_system_save('data', data)
+
+options_button = *Button(parent=camera.ui, xy=[-.475, (-.5*aspect_ratio)+.025], scale=.15, origin=[-.5,-.5], text='⚙️')
+# options_button.on_click = def():
 
 
 </script><script src="../taptapir/sunsnake_compiler.js"></script></html>
