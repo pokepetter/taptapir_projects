@@ -1,0 +1,72 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>taptapir</title><link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir/taptapir.js"></script><script type='text/sunsnake'>
+
+set_window_color('#eeeeee')
+set_background_color('#000000')
+bg = Entity(scale=[1,4], draggable=True, lock_x=True, visible_self=False, min_y=0, max_y=2)
+items = []
+
+shadow_style = '10px 10px 10px #ccc'
+sunsnake.define(*Button(, Entity(parent=list_parent, scale=[.95,.1,], color=color.white, roundness=.5, shadow=shadow_style, text_origin=[0,0], text_color=hsv(0,0,.67), )
+
+list_parent= Entity(parent=bg, scale=[1,1/4], visible_self=False)
+let add_row_button = *Button(parent=list_parent, scale=[.25,.1,], shadow='10px 10px 10px #ccc', text='+', on_click=def():add_item('',1))
+
+def add_item(name='', value=1):
+    let e = *Button(scale=[.95,.1,], text_origin=[-.5,0], text='.', text_color=color.clear)
+    items.append(e)
+
+    x = Entity(parent=e, scale=[.55,.7], color=color.red, origin=[-.5,0], x=-.48, roundness=.5, color=color.smoke, text_size=2, text_color=color.azure)
+    e.input_field = document.createElement('input')
+    e.input_field.value = name
+    x.model.appendChild(e.input_field)
+
+
+    e.slider = RainbowSlider(parent=e, x=.5-.15-(.1/e.scale_x), scale=[.3,.8], roundness=.05, color='#eeeeee')
+    e.slider.value= value
+    e.slider.bar.roundness = .25
+
+    e.delete_button = *Button(parent=e, color='#eeeeee', scale=[.08/e.scale_x,.08/e.scale_y], x=.5-.01, origin=[.5,0], text='✕', text_size=1.5, shadow=None)
+    e.delete_button.on_click = def():
+        items.remove(e)
+        destroy(e)
+        update_list()
+
+    update_list()
+
+sort_by_name_button = *Button(x=-.45, y=(-.5*aspect_ratio)+.025, origin=[-.5,-.5], scale=[.3,.1])
+
+
+def update_list():
+    for y, e in items:
+        e.y = (.5*aspect_ratio)-(.125*y)-.15
+    add_row_button.y = items[-1].y-.15
+
+    bg.max_y = max(len(items) *.15 -1, bg.min_y)
+
+
+
+
+data = {
+    'project 1': 1,
+    'project 2': 1,
+    'project 3': 1,
+}
+data = save_system_load('data')
+if data:
+    print('load:', data)
+    for name, value in data:
+        add_item(name, value)
+    update_list()
+
+save_button = *Button(parent=camera.ui, xy=[.475, (-.5*aspect_ratio)+.025], scale=.15, origin=[.5,-.5], text='💾')
+save_button.on_click = def():
+    data = {}
+    for e in items:
+        data[e.input_field.value] = e.slider.value
+    print('save:', data)
+
+
+    save_system_save('data', data)
+
+
+</script><script src="../taptapir/sunsnake_compiler.js"></script></html>
