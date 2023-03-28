@@ -53,19 +53,19 @@ new_file_button.on_click = def():
     menu.enabled = not menu.enabled
 
 canvas_entity = Entity(parent=bg, color='#606060', scale=[1/2,1/2], z=-1, shadow='-5px 5px 15px #000')
-canvas_entity.model.style.overflow = 'hidden'
+canvas_entity.el.style.overflow = 'hidden'
 
-layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.05, y=-.45+.1, text='layers', visible_self=True, roundness=.005, color=hsv(0,0,.03))
+layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.05, y=-.45+.1, text='layers', visible_self=True, roundness=.005, color=hsv(0,0,.03), ignore_collision=False)
 add_layer_button = *Button(text='+', scale=[layer_menu.scale_x/2,.03], roundness=.005, origin=[.5,-.5], x=layer_menu.x, y=layer_menu.y-.035, on_click=add_layer)
 
-def add_layer(name='layer', image_data=None, enabled=True, select=True):
+def add_layer(name='layer', _w=w, _h=h, enabled=True, select=True):
     let layer = Entity(name=name, parent=canvas_entity, color=color.clear, z=-1, enabled=enabled)
     layers.append(layer)
 
     layer.canvas = document.createElement('canvas');
     layer.canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
-    layer.canvas.width = w
-    layer.canvas.height = h
+    layer.canvas.width = _w
+    layer.canvas.height = _h
     layer.model.appendChild(layer.canvas)
 
     layer.ctx = layer.canvas.getContext('2d', {willReadFrequently: true})
@@ -135,7 +135,7 @@ def set_layer(layer):
 
 set_layer(first_layer)
 
-print('----------------', layers)
+# print('----------------', layers)
 
 selection_canvas = document.createElement('canvas');
 selection_canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
@@ -153,7 +153,7 @@ selection_ctx.clearRect(0, 0, w, h)
 
 square_brush = {'textures':None, 'shape':'rect', 'size':[50, 50], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 round_brush = {'textures':None, 'shape':'circle', 'size':[1, 1], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
-round_bitmap_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.5, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
+round_bitmap_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 poke_brush = {'textures':["pokebrush.png", ], 'size':[256, 256], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 poke_brush_small = {'textures':["pokebrush.png", ], 'size':[16, 16], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 poke_brush_scatter = {'textures':["pokebrush.png", 'pokebrush.png'], 'size':[256, 256], 'spacing':.25, 'painterly_brush':False, 'rotate':'random', 'draw_on_click':False}
@@ -185,7 +185,7 @@ def set_brush(brush):
         for i in range(brush_tips.length):
             # brush_tips[i].src = brush.textures[i]
             brush_tips[i].src = brush_textures[brush.textures[i]]
-
+        # brush_cursor.texture = brush_tips[i].src
 
     print('set brush', brush)
     set_brush_size(brush.size)
@@ -195,17 +195,29 @@ def set_brush(brush):
     draw_on_click = brush.draw_on_click
 
 brush_size = [64,64]
+brush_cursor = Entity(parent=bg, color=color.clear, scale=.1, z=-10)
+brush_cursor.model.style.borderWidth = '1px'
+brush_cursor.model.style.borderColor = '#cccccc33'
+brush_cursor.model.style.borderStyle = 'solid'
+brush_cursor.update = def brush_cursor_update():
+    if mouse.hovered_entity == bg and mouse.point:
+        brush_cursor.xy = mouse.point
+
+
 def set_brush_size(value):
     brush_size = value
     brush_size_label.text = `${brush_size[0]}`
+    brush_cursor.scale_x = brush_size[0] / w * canvas_entity.scale_x
+    brush_cursor.scale_y = brush_size[1] / h * canvas_entity.scale_y
+
 
 brush_distance = 0
 draw_on_click = False
 rotate_brush = True
 using_painterly_brush = True
 prev_brush_tip = -1
-set_brush(poke_brush_small)
-img = new Image()
+set_brush(poke_brush)
+IMG = new Image()
 current_color = [32, 32, 32, 255]
 drawing = False
 smoothing = False
@@ -213,22 +225,22 @@ prev_pos = None
 start_position = None
 snap_to_hex = False
 tool = 'brush'
+SMUDGE = False
+SMUDGE_STRENGTH = 1
 # cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enabled=False)
 
-
 brush_tool = Entity(name='brush_tool', visible_self=False)
-brush_tool.on_enable = def():
-    print('enable brush------------------------------')
-    document.body.style.cursor = 'rainbow.png'
-    mouse.texture='rainbow.png'
 
 brush_tool.input = def brush_tool_input(key):
     if mouse.hovered_entity == bg and key == 'left mouse down':
         if not held_keys['control']:
             prev_pos = None
-        if not brush_tips:
-            return
+
         drawing = True
+        if tool == 'eyedropper' or not brush_tips:
+            paint()
+            return
+
         if not using_painterly_brush: # tint the temporary brush tip
             for j in range(brush_tips.length):
                 brush_canvas = brush_canvases[j]
@@ -236,17 +248,39 @@ brush_tool.input = def brush_tool_input(key):
 
                 brush_canvas.width = brush_size[0]
                 brush_canvas.height = brush_size[1]
-                brush_canvas_context = brush_canvas.getContext("2d")
+                brush_canvas_context = brush_canvas.getContext("2d", {willReadFrequently: true})
                 brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
-                imgData = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
+                if not SMUDGE:
+                    img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
 
-                for i in range(0, imgData.data.length, 4):
-                    imgData.data[i] = imgData.data[i] * (current_color[0]/255)
-                    imgData.data[i+1] = imgData.data[i+1] * (current_color[1]/255)
-                    imgData.data[i+2] = imgData.data[i+2] * (current_color[2]/255)
-                    imgData.data[i+3] = imgData.data[i+3] * (current_color[3]/255)
+                    for i in range(0, img_data.data.length, 4):
+                        img_data.data[i] = img_data.data[i] * (current_color[0]/255)
+                        img_data.data[i+1] = img_data.data[i+1] * (current_color[1]/255)
+                        img_data.data[i+2] = img_data.data[i+2] * (current_color[2]/255)
+                        img_data.data[i+3] = img_data.data[i+3] * (current_color[3]/255)
 
-                brush_canvas_context.putImageData(imgData, 0, 0)
+                elif SMUDGE:
+                #     print('SMUDGE')
+                #     # sample the canvas for colors and multiply with brush alpha
+                    pos = get_canvas_position()
+                    img_data = current_layer.ctx.getImageData(pos[0]-(brush_size[0]/2), pos[1]-brush_size[1]/2, brush_size[0], brush_size[1])
+                    brush_pixels = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
+
+                    for i in range(0, img_data.data.length, 4):
+                        img_data.data[i+3] = img_data.data[i+3] * brush_pixels.data[i+3] * (1/255*SMUDGE_STRENGTH)
+                        # img_data.data[i+3] = img_data.data[i+3]
+                #     # brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
+                #     # img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
+                #     # self.smudge_IMG = self.parent.current_layer.img_data.crop((
+                #     #         stamp_pos[0], stamp_pos[1],
+                #     #         stamp_pos[0]+self.brush.width, stamp_pos[1]+self.brush.height))
+                #     #
+                #     #     try:
+                #     #         self.smudge_IMG.putalpha(self.brush.split()[-1])
+                #     #     except:
+                #     #         pass
+
+                brush_canvas_context.putImageData(img_data, 0, 0)
         else: # special tint for paiterly brushes to keep contrast
             color_as_hsv = rgb_to_hsv(current_color)
             c = color_as_hsv[2] * 255
@@ -266,20 +300,21 @@ brush_tool.input = def brush_tool_input(key):
 
                 brush_canvas.width = brush_size[0]
                 brush_canvas.height = brush_size[1]
-                brush_canvas_context = brush_canvas.getContext("2d")
+                brush_canvas_context = brush_canvas.getContext("2d", {willReadFrequently: true})
                 brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
-                imgData = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
+                img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
 
-                for i in range(0, imgData.data.length, 4):
-                    # imgData.data[i] = lerp(dark, light, imgData.data[i]/255) * lerp(1, current_color[0]/255, sat)
-                    # imgData.data[i+1] = lerp(dark, light, imgData.data[i+1]/255) * lerp(1, current_color[1]/255, sat)
-                    # imgData.data[i+2] = lerp(dark, light, imgData.data[i+2]/255) * lerp(1, current_color[2]/255, sat)
-                    imgData.data[i] = lerp(dark, light, imgData.data[i]/255) * current_color[0]/255
-                    imgData.data[i+1] = lerp(dark, light, imgData.data[i+1]/255) * current_color[1]/255
-                    imgData.data[i+2] = lerp(dark, light, imgData.data[i+2]/255) * current_color[2]/255
-                    imgData.data[i+3] = imgData.data[i+3] * current_color[3]/255
+                for i in range(0, img_data.data.length, 4):
+                    # img_data.data[i] = lerp(dark, light, img_data.data[i]/255) * lerp(1, current_color[0]/255, sat)
+                    # img_data.data[i+1] = lerp(dark, light, img_data.data[i+1]/255) * lerp(1, current_color[1]/255, sat)
+                    # img_data.data[i+2] = lerp(dark, light, img_data.data[i+2]/255) * lerp(1, current_color[2]/255, sat)
+                    img_data.data[i] = lerp(dark, light, img_data.data[i]/255) * current_color[0]/255
+                    img_data.data[i+1] = lerp(dark, light, img_data.data[i+1]/255) * current_color[1]/255
+                    img_data.data[i+2] = lerp(dark, light, img_data.data[i+2]/255) * current_color[2]/255
+                    img_data.data[i+3] = img_data.data[i+3] * current_color[3]/255
 
-                brush_canvas_context.putImageData(imgData, 0, 0)
+                brush_canvas_context.putImageData(img_data, 0, 0)
+
 
         if tool == 'eyedropper':
             drawing = True
@@ -293,9 +328,9 @@ brush_tool.input = def brush_tool_input(key):
         drawing = False
         record_undo()
 
-
-brush_tool.update = def update():
+brush_tool.update = def brush_tool_update():
     if drawing:
+
         paint()
 
 
@@ -305,6 +340,7 @@ def get_canvas_position(layer=current_layer):
 
     pos = mouse.point
     return [int((((pos[0]-(layer.x*.5))*2)+.5) * w), int((((pos[1]-(layer.y*.5))*2)-.5) * -h)]
+    # return [int((((pos[0])*2)+.5) * w), int((((pos[1])*2)-.5) * -h)]
 
 
 def draw_circle(x, y):
@@ -340,7 +376,7 @@ def draw_rect(x, y):
                 current_layer.ctx.fillRect(int(_x), int(_y), 1, 1);
 
 def draw_brush_image(img, x, y):
-    if not current_color == color.clear:
+    if not lists_are_equal(current_color, color.clear):
         current_layer.ctx.drawImage(img, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
 
 
@@ -372,6 +408,7 @@ def paint():
         alpha = min(sum(alphas), 255)
         combined_color = [lerp(canvas_entity.color[i], combined_color[i], alpha/255) for i in range(3)]
         set_color(combined_color)
+
         return
 
     if mouse.hovered_entity != bg:
@@ -398,9 +435,9 @@ def paint():
                 prev_brush_tip += 1
                 if prev_brush_tip >= brush_tips.length:
                     prev_brush_tip = 0
-                img.src = brush_canvases[prev_brush_tip].toDataURL()
+                IMG.src = brush_canvases[prev_brush_tip].toDataURL()
 
-                draw_brush_image(img, x, y)
+                draw_brush_image(IMG, x, y)
 
         start_position = pos
         prev_draw_pos = pos
@@ -436,23 +473,24 @@ def paint():
         let _y = lerp(prev_pos[1], y, t)
 
         if brush_tips:
-            img.src = brush_canvases[prev_brush_tip].toDataURL()
+            IMG.src = brush_canvases[prev_brush_tip].toDataURL()
 
 
         if not rotate_brush:
             if brush_tips:
-                current_layer.ctx.drawImage(img, _x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
+                current_layer.ctx.drawImage(IMG, _x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
             else: # draw rect
                 # print(current_color, `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`)
                 if current_brush.shape == 'rect':
                     draw_rect(_x, _y)
                 elif current_brush.shape == 'circle':
+
                     draw_circle(_x, _y)
         elif rotate_brush == True:
             invoke(def anon():
                 current_layer.ctx.translate(_x, _y)
                 current_layer.ctx.rotate(radians)
-                current_layer.ctx.drawImage(img, -brush_size[0]/2, -brush_size[1]/2)
+                current_layer.ctx.drawImage(IMG, -brush_size[0]/2, -brush_size[1]/2)
                 current_layer.ctx.rotate(-radians)
                 current_layer.ctx.translate(-_x, -_y)
             , delay=0)
@@ -461,7 +499,7 @@ def paint():
                 random_radian = random_int(0, 360) * Math.PI / 180
                 current_layer.ctx.translate(_x, _y)
                 current_layer.ctx.rotate(random_radian)
-                current_layer.ctx.drawImage(img, -brush_size[0]/2, -brush_size[1]/2)
+                current_layer.ctx.drawImage(IMG, -brush_size[0]/2, -brush_size[1]/2)
                 current_layer.ctx.rotate(-random_radian)
                 current_layer.ctx.translate(-_x, -_y)
             , delay=0)
@@ -483,7 +521,7 @@ def distanceApprox(p1,p2):
 opacity_keys = '|1234567890'.split('')
 target_zoom = bg.scale_y
 zoom_label = Button(text='100%', scale=[.075,.04], origin=[.5,.5], xy=[(.5*aspect_ratio)-.005,.495], color=hsv(0,0,0), text_color=hsv(0,0,.8), text_size=2, on_click=def():target_zoom=1)
-zoom_label.update = def update():
+zoom_label.update = def zoom_label_update():
     bg.scale_x = lerp(bg.scale[0], target_zoom*canvas_aspect, .2)
     bg.scale_y = lerp(bg.scale[1], target_zoom, .2)
 
@@ -491,9 +529,13 @@ def input(key):
     # print(key)
     for i, e in enumerate(opacity_keys):
         if key == e:
-            current_color[3] = int(255/10 * i)
-            print(current_color)
-
+            if current_tool == brush_tool:
+                if not SMUDGE:
+                    current_color[3] = int(255/10 * i)
+                    # print(current_color)
+                else:
+                    SMUDGE_STRENGTH = int(i) / 10
+                    print(SMUDGE_STRENGTH)
     if (held_keys['control'] and key == 'z') or key == 'u':
         undo()
 
@@ -542,6 +584,24 @@ def input(key):
         bg.lock_y = True
         bg.dragging = False
 
+    if key == 'f':
+        SMUDGE = True
+
+def update():
+    if mouse.hovered_entity == bg:
+        if not held_keys['alt'] and not held_keys['h']: # if not sampling color
+            document.body.style.cursor = 'none'
+        else:
+            document.body.style.cursor = 'crosshair'
+
+        if mouse.point:
+            brush_cursor.xy = mouse.point
+        # document.body.style.cursor = `url('${brush_canvases[0].toDataURL()}') ${brush_size[0]/2} ${brush_size[1]/2}, auto`
+    else:
+        document.body.style.cursor = 'auto'
+
+
+
 color_menu = Entity(parent=camera.ui, visible_self=False, position=[.465,-.451,-1])
 color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=True, scale=.3)
 
@@ -552,7 +612,7 @@ color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=True, sc
 
 slider_height = .075
 sunsnake.define(*slider_style, scale_y=.075, roundness=.15, draggable=True, lock_x=True, lock_y=True)
-color_menu_bg = Entity(parent=color_menu.menu, x=.15, scale=[1.05+.3, (slider_height*1.1*3)+.05], color=color.black, alpha=.8, roundness=.05, z=2)
+color_menu_bg = Entity(parent=color_menu.menu, x=.15, scale=[1.05+.3, (slider_height*1.1*3)+.05], color=color.black, alpha=.8, roundness=.05, z=2, ignore_collision=False)
 color_preview = Entity(parent=color_menu.menu, scale=slider_height*3*1.1, x=.55, origin=[-.5,0], roundness=.5)
 
 
@@ -607,7 +667,6 @@ toggle_canvas_shadow_button = *Button(parent=background_color_menu, x=-.05, orig
 toggle_canvas_shadow_button.on_click = def():
     if canvas_entity.shadow:
         canvas_entity._shadow_style = canvas_entity.shadow
-        print('-------------', canvas_entity._shadow_style)
         canvas_entity.shadow = False
     else:
         canvas_entity.shadow = canvas_entity._shadow_style
@@ -632,7 +691,7 @@ for i, e in enumerate(brushes):
 
 
 # eyedropper = Entity(name='eyedropper', visible_self=False)
-# eyedropper.update = def update():
+# eyedropper.update = def eyedropper_update():
 #     if mouse.left:
 #         print('smaple')
 #         if mouse.hovered_entity == bg:
@@ -703,7 +762,7 @@ async def paste(e):
             # print('paste local data', value)
             if value.startsWith('local_image:'):
                 [_x, _y, _w, _h] = JSON.parse(value.split('local_image:')[1])
-                print('-----------', _x, _y, _w, _h)
+                # print('-----------', _x, _y, _w, _h)
                 current_layer = add_layer()
                 current_layer.ctx.putImageData(new ImageData(local_image_data, _w, _h), _x, _y)
         )
@@ -715,7 +774,7 @@ async def paste(e):
     if file.name == 'image.png':
         var URLObj = window.URL || window.webkitURL;
         var source = URLObj.createObjectURL(file);
-        print('-----', source)
+        # print('-----', source)
         var pastedImage = new Image();
         pastedImage.src = source
         current_layer.ctx.drawImage(pastedImage, 0, 0)
@@ -887,7 +946,7 @@ lasso_tool.input = def lasso_tool_input(key):
         #     clean_poly.append(poly)
         # print('----------------', len(poly))
         # poly = clean_poly
-        print('----------------', len(poly))
+        # print('----------------', len(poly))
         for y in range(selection.min_y, selection.max_y):
             for x in range(selection.min_x, selection.max_x):
                 # if inside([x,y], poly):
@@ -903,57 +962,57 @@ def set_pixel(x, y, color):
     # current_layer.ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3]})`
     current_layer.ctx.fillRect(x, y, 1, 1);
 
-paint_bucket = Entity(visible_self=False)
-margin = 3
-pixel_grid = None
-paint_bucket.input = def paint_bucket_input(key):
-    if key == 'g' and mouse.hovered_entity == bg:
-        current_layer.ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
-
-        if held_keys['shift']:
-            print('fill')
-            pixel_grid = Array_2d(w, h)
-            for _y in range(h):
-                for _x in range(w):
-                    pixel_grid[_x][_y] = get_pixel(_x, _y)
-
-            [x, y] = get_canvas_position()
-            floodfill(x, y)
-
-        else:
-            [x, y] = get_canvas_position()
-            color_to_replace = get_pixel(x, y)
-            for y in range(h):
-                for x in range(w):
-                    pixel = get_pixel(x, y)
-                    if abs(pixel[0]-color_to_replace[0]) <= margin and abs(pixel[1]-color_to_replace[1]) <= margin and abs(pixel[2]-color_to_replace[2]) <= margin:
-                        current_layer.ctx.fillRect(x, y, 1, 1);
-
-fill_stack = []
-def floodfill(x, y):
-    fill_stack.push([x, y])
-    color_to_replace = pixel_grid[x][y]
-
-    while (fill_stack.length > 0):
-        # if held_keys['escape']:
-        #     break
-
-        var [x, y] = fill_stack.pop();
-
-        if x < 0 or x >= w or y < 0 or y >= h:
-            continue
-
-        pixel = pixel_grid[x][y]
-        if abs(pixel[0]-color_to_replace[0]) > margin or abs(pixel[1]-color_to_replace[1]) > margin or abs(pixel[2]-color_to_replace[2]) > margin:
-            continue
-
-        pixel_grid[x][y] = current_color
-        set_pixel(x, y, current_color)
-
-        fill_stack.push([x + 1, y]);
-        fill_stack.push([x - 1, y]);
-        fill_stack.push([x, y + 1]);
-        fill_stack.push([x, y - 1]);
+# paint_bucket = Entity(visible_self=False)
+# margin = 3
+# pixel_grid = None
+# paint_bucket.input = def paint_bucket_input(key):
+#     if key == 'g' and mouse.hovered_entity == bg:
+#         current_layer.ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
+#
+#         if held_keys['shift']:
+#             print('fill')
+#             pixel_grid = Array_2d(w, h)
+#             for _y in range(h):
+#                 for _x in range(w):
+#                     pixel_grid[_x][_y] = get_pixel(_x, _y)
+#
+#             [x, y] = get_canvas_position()
+#             floodfill(x, y)
+#
+#         else:
+#             [x, y] = get_canvas_position()
+#             color_to_replace = get_pixel(x, y)
+#             for y in range(h):
+#                 for x in range(w):
+#                     pixel = get_pixel(x, y)
+#                     if abs(pixel[0]-color_to_replace[0]) <= margin and abs(pixel[1]-color_to_replace[1]) <= margin and abs(pixel[2]-color_to_replace[2]) <= margin:
+#                         current_layer.ctx.fillRect(x, y, 1, 1);
+#
+# fill_stack = []
+# def floodfill(x, y):
+#     fill_stack.push([x, y])
+#     color_to_replace = pixel_grid[x][y]
+#
+#     while (fill_stack.length > 0):
+#         # if held_keys['escape']:
+#         #     break
+#
+#         var [x, y] = fill_stack.pop();
+#
+#         if x < 0 or x >= w or y < 0 or y >= h:
+#             continue
+#
+#         pixel = pixel_grid[x][y]
+#         if abs(pixel[0]-color_to_replace[0]) > margin or abs(pixel[1]-color_to_replace[1]) > margin or abs(pixel[2]-color_to_replace[2]) > margin:
+#             continue
+#
+#         pixel_grid[x][y] = current_color
+#         set_pixel(x, y, current_color)
+#
+#         fill_stack.push([x + 1, y]);
+#         fill_stack.push([x - 1, y]);
+#         fill_stack.push([x, y + 1]);
+#         fill_stack.push([x, y - 1]);
 
 
 lasso_prev_pos = None
@@ -1048,8 +1107,9 @@ set_current_tool(brush_tool)
 
 tool_toggler = Entity(visible_self=False)
 tool_toggler.input = def tool_toggler_input(key):
-    if key == 'l':
+    if key == 'l' or key == 'b':
         set_current_tool(brush_tool)
+        SMUDGE = False
     # elif key == 'alt' and current_tool == brush_tool:
     #     set_current_tool(eyedropper)
     # elif key == 'alt up' and current_tool == eyedropper:
@@ -1058,8 +1118,8 @@ tool_toggler.input = def tool_toggler_input(key):
         set_current_tool(lasso_tool)
     elif key == 'm':
         set_current_tool(rect_select_tool)
-    # elif key == 't':
-    #     set_current_tool(transform_tool)
+    elif key == 'v':
+        set_current_tool(transform_tool)
 
     # elif key == 'r':
     #     current_layer.enabled = False
@@ -1123,14 +1183,14 @@ async def open_file():
     const [fileHandle] = await window.showOpenFilePicker(pickerOpts)
     const file = await fileHandle.getFile()
     const reader = new FileReader();
-    _img = new Image()
+    _IMG = new Image()
 
     reader.addEventListener('load', (event) => :
-        _img.onload = def():
+        _IMG.onload = def():
             new_document(this.width, this.height)
-            current_layer.ctx.drawImage(_img,0,0)
+            current_layer.ctx.drawImage(_IMG,0,0)
 
-        _img.src = event.target.result;
+        _IMG.src = event.target.result;
     )
     reader.readAsDataURL(file);
 
@@ -1158,24 +1218,58 @@ async def save_file(json_obj, suggested_name='untitled.png'):
     await writableStream.close()
 
 # drop_area = Entity(parent=canvas_entity, color=color.red, on_click=def():print('a'))
+# file_input = document.createElement('input')
+# document.body.appendChild(file_input)
+# file_input.type = 'file'
+
 document.ondrop = def ondrop(event):
     event.preventDefault()
     files = [e for e in event.dataTransfer.files]
-    if files:
-        var url = URL.createObjectURL(files[0])
-        var img = new Image();
+    if not files:
+        return False
+
+    # file_input.files = files;
+    # print(file_input.files)
+
+    # file = files[0]
+    # var fr = new FileReader();
+    # img = new Image();
+    # fr.onload = def():
+    #     print('load_ file ')
+    #     img.onload = def():
+    #         # new_layer = add_layer(file.name)
+    #
+    #         print('-------------', img)
+    #         current_layer.ctx.drawImage(img, 0, 0)
+    #     img.src = fr.result;
+    # fr.readAsDataURL(file);    # begin reading
+
+    let reader = new FileReader()
+    reader.onloadend = def():
+        img = new Image()
+        img.src = reader.result
         img.onload = def():
+            print('aaaaaaaaaaaaaaa', img)
+            new_layer = add_layer(name=files[0].name, img.width, img.height)
+            new_layer.ctx.drawImage(img, 0, 0)
+    reader.readAsDataURL(files[0])
+
+        # var url = URL.createObjectURL(files[0])
+        # var _img = new Image();
+        # _img.onload = def():
             # this.width
             # this.height
-            ctx.drawImage(img, 0, 0)
 
-    img.src = url
+            # ctx.drawImage(_img, 0, 0)
+
+    # _img.src = url
 
 document.ondragover = def ondragover(event):
     event.preventDefault()
 
 window.onbeforeunload = def():
-    return "Data will be lost if you leave the page, are you sure?"
+    if not held_keys['shift']:
+        return "Data will be lost if you leave the page, are you sure?"
 
 </script>
 
