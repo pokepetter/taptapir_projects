@@ -52,7 +52,7 @@ new_file_button = *Button(position=top_left, origin=[-.5,.5], text='+', scale=[.
 new_file_button.on_click = def():
     menu.enabled = not menu.enabled
 
-canvas_entity = Entity(parent=bg, color='#606060', scale=[1/2,1/2], z=-1, shadow='-5px 5px 15px #000')
+canvas_entity = Entity(parent=bg, color='#606060', scale=[1/2,1/2], z=-1, shadow='0px 0px 20px #0008')
 canvas_entity.el.style.overflow = 'hidden'
 
 layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.05, y=-.45+.1, text='layers', visible_self=True, roundness=.005, color=hsv(0,0,.03), ignore_collision=False)
@@ -587,6 +587,48 @@ def input(key):
     if key == 'f':
         SMUDGE = True
 
+    if key == 'w':
+        for layer in layers:
+            const img_data = flip_image_data_horizontally(layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height))
+            layer.ctx.putImageData(img_data, 0, 0)
+
+    if key == 'q':
+        for layer in layers:
+            const img_data = flip_image_data_vertically(layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height))
+            layer.ctx.putImageData(img_data, 0, 0)
+
+
+def flip_image_data_horizontally(img_data):
+    for (let y = 0; y < img_data.height; y++):
+        for (let x = 0; x < img_data.width / 2; x++):
+            const i = (y * img_data.width+x) * 4
+            const j = (y * img_data.width+(img_data.width - x - 1)) * 4
+            const tmp = [img_data.data[i], img_data.data[i+1], img_data.data[i+2], img_data.data[i+3],
+            ]
+            img_data.data[i] = img_data.data[j]
+            img_data.data[i+1] = img_data.data[j+1]
+            img_data.data[i+2] = img_data.data[j+2]
+            img_data.data[i+3] = img_data.data[j+3]
+            img_data.data[j] = tmp[0]
+            img_data.data[j+1] = tmp[1]
+            img_data.data[j+2] = tmp[2]
+            img_data.data[j+3] = tmp[3]
+
+    return img_data
+
+def flip_image_data_vertically(imageData):
+    const temp = new Uint8ClampedArray(imageData.data.length);
+
+    for (let i = 0; i < imageData.height; i++):
+        const srcOff = i * imageData.width * 4;
+        const dstOff = (imageData.height - i - 1) * imageData.width * 4;
+        temp.set(imageData.data.subarray(srcOff, srcOff + imageData.width * 4), dstOff);
+
+    imageData.data.set(temp);
+
+    return imageData
+
+
 def update():
     if mouse.hovered_entity == bg:
         if not held_keys['alt'] and not held_keys['h']: # if not sampling color
@@ -644,13 +686,13 @@ def set_color(value, move_sliders=True):
     if len(value) == 3:
         value.append(255)
 
-    # print('set color:', value)
+    print('set color:', value)
     current_color = value
-    color_preview.color = rgb(current_color[0]/255, current_color[1]/255, current_color[2]/255)
+    color_preview.color = current_color
     color_as_hsv = rgb_to_hsv(current_color)
     color_saturated = hsv(color_as_hsv[0], 1, color_as_hsv[2])
     color_desaturated = hsv(color_as_hsv[0], 0, color_as_hsv[2])
-    sat_slider.color = rgb(color_saturated[0]/255, color_saturated[1]/255, color_saturated[2]/255)
+    sat_slider.color = color_saturated
     # sat.overlay.color = rgb(color_desaturated[0]/255, color_desaturated[1]/255, color_desaturated[2]/255)
     # sat.overlay.alpha = current_color[3]/255
     if move_sliders:
@@ -764,7 +806,8 @@ async def paste(e):
                 [_x, _y, _w, _h] = JSON.parse(value.split('local_image:')[1])
                 # print('-----------', _x, _y, _w, _h)
                 current_layer = add_layer()
-                current_layer.ctx.putImageData(new ImageData(local_image_data, _w, _h), _x, _y)
+                current_layer.ctx.putImageData(new img_data(local_image_data, _w, _h), _x, _y)
+                record_undo()
         )
 
         return False
@@ -1228,21 +1271,6 @@ document.ondrop = def ondrop(event):
     if not files:
         return False
 
-    # file_input.files = files;
-    # print(file_input.files)
-
-    # file = files[0]
-    # var fr = new FileReader();
-    # img = new Image();
-    # fr.onload = def():
-    #     print('load_ file ')
-    #     img.onload = def():
-    #         # new_layer = add_layer(file.name)
-    #
-    #         print('-------------', img)
-    #         current_layer.ctx.drawImage(img, 0, 0)
-    #     img.src = fr.result;
-    # fr.readAsDataURL(file);    # begin reading
 
     let reader = new FileReader()
     reader.onloadend = def():
@@ -1252,17 +1280,9 @@ document.ondrop = def ondrop(event):
             print('aaaaaaaaaaaaaaa', img)
             new_layer = add_layer(name=files[0].name, img.width, img.height)
             new_layer.ctx.drawImage(img, 0, 0)
+            record_undo()
     reader.readAsDataURL(files[0])
 
-        # var url = URL.createObjectURL(files[0])
-        # var _img = new Image();
-        # _img.onload = def():
-            # this.width
-            # this.height
-
-            # ctx.drawImage(_img, 0, 0)
-
-    # _img.src = url
 
 document.ondragover = def ondragover(event):
     event.preventDefault()
