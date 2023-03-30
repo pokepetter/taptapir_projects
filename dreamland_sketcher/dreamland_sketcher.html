@@ -55,7 +55,7 @@ new_file_button.on_click = def():
 canvas_entity = Entity(parent=bg, color='#606060', scale=[1/2,1/2], z=-1, shadow='0px 0px 20px #0008')
 canvas_entity.el.style.overflow = 'hidden'
 
-layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.05, y=-.45+.1, text='layers', visible_self=True, roundness=.005, color=hsv(0,0,.03), ignore_collision=False)
+layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.05, y=-.45+.1, visible_self=True, roundness=.005, color=hsv(0,0,.03), ignore_collision=False)
 add_layer_button = *Button(text='+', scale=[layer_menu.scale_x/2,.03], roundness=.005, origin=[.5,-.5], x=layer_menu.x, y=layer_menu.y-.035, on_click=add_layer)
 
 def add_layer(name='layer', _w=w, _h=h, enabled=True, select=True):
@@ -80,15 +80,18 @@ def add_layer(name='layer', _w=w, _h=h, enabled=True, select=True):
     layer.layer_button.drop = def():
         set_layer(layer)
 
-    layer.opacity_slider = RainbowSlider(parent=layer.layer_button, scale=[1,.2], y=.125, z=-2, show_lines=True, max=20)
-    layer.opacity_slider.bar.alpha = .75
+    layer.opacity_slider = RainbowSlider(parent=layer.layer_button, scale=[1,.2], y=.125, z=-2, show_lines=True, max=20, color=color.pink, default=20)
+    layer.opacity_slider.bar.alpha = .5
     layer.opacity_slider.on_value_changed = def():
         layer.canvas.style.opacity = layer.opacity_slider.value/layer.opacity_slider.max
 
-    toggle_layer_visibility_button = Button(parent=layer.layer_button, origin=[-.5,-.5], x=-.5, scale=[.25,.9], roundness=0, alpha=.1, text_size=1, text='h', z=-1)
+    let toggle_layer_visibility_button = Button(parent=layer.layer_button, origin=[-.5,-.5], x=-.48, y=.3, scale=[.2,.6], roundness=.1, alpha=.25, text_size=2, z=-1, color=color.black, text='', text_color=color.white)
     toggle_layer_visibility_button.on_click = def():
-        print('toggle layer')
         layer.enabled = not layer.enabled
+        text = ' '
+        if not layer.enabled:
+            text = 'H'
+        toggle_layer_visibility_button.text = text
 
     if select:
         set_layer(layer)
@@ -100,6 +103,7 @@ w = 1920
 h = 1080
 layers = []
 def new_document(_w, _h, fill_color=color.clear):
+
     for e in layers:
         destroy(e)
     layers = []
@@ -117,13 +121,12 @@ def new_document(_w, _h, fill_color=color.clear):
         first_layer.ctx.fillStyle = rgb(...fill_color)
         first_layer.ctx.fillRect(0, 0, w, h)
 
-    sketch_layer = add_layer(name='sketch_layer', image_data=None, enabled=False)
-    layers = [e for e in layers if e != sketch_layer]
     current_layer = first_layer
+    undo_data = [current_layer.canvas.toDataURL("image"), ]
+    undo_index = 0
 
     resolution_info.text = `${w} x ${h}`
 
-new_document(1920, 1080)
 
 def set_layer(layer):
     current_layer = layer
@@ -133,7 +136,6 @@ def set_layer(layer):
         layer.z = -i
     current_layer.layer_button.color = color.azure
 
-set_layer(first_layer)
 
 # print('----------------', layers)
 
@@ -199,6 +201,7 @@ brush_cursor = Entity(parent=bg, color=color.clear, scale=.1, z=-10)
 brush_cursor.model.style.borderWidth = '1px'
 brush_cursor.model.style.borderColor = '#cccccc33'
 brush_cursor.model.style.borderStyle = 'solid'
+brush_cursor.model.style.borderRadius = '50%'
 brush_cursor.update = def brush_cursor_update():
     if mouse.hovered_entity == bg and mouse.point:
         brush_cursor.xy = mouse.point
@@ -229,7 +232,7 @@ SMUDGE = False
 SMUDGE_STRENGTH = 1
 # cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enabled=False)
 
-brush_tool = Entity(name='brush_tool', visible_self=False)
+brush_tool = Entity(name='brush_tool', add_to_scene=False)
 
 brush_tool.input = def brush_tool_input(key):
     if mouse.hovered_entity == bg and key == 'left mouse down':
@@ -520,7 +523,7 @@ def distanceApprox(p1,p2):
 
 opacity_keys = '|1234567890'.split('')
 target_zoom = bg.scale_y
-zoom_label = Button(text='100%', scale=[.075,.04], origin=[.5,.5], xy=[(.5*aspect_ratio)-.005,.495], color=hsv(0,0,0), text_color=hsv(0,0,.8), text_size=2, on_click=def():target_zoom=1)
+zoom_label = *Button(text='100%', scale=[.075,.04], origin=[.5,.5], y=.495, color=hsv(0,0,0), text_color=hsv(0,0,.8), text_size=2, on_click=def():target_zoom=1)
 zoom_label.update = def zoom_label_update():
     bg.scale_x = lerp(bg.scale[0], target_zoom*canvas_aspect, .2)
     bg.scale_y = lerp(bg.scale[1], target_zoom, .2)
@@ -644,7 +647,7 @@ def update():
 
 
 
-color_menu = Entity(parent=camera.ui, visible_self=False, position=[.465,-.451,-1])
+color_menu = Entity(parent=camera.ui, visible_self=False, position=[(.5*aspect_ratio)-.2575,-.451,-1])
 color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=True, scale=.3)
 
 # def color_menu_input(key):
@@ -806,41 +809,40 @@ async def paste(e):
                 [_x, _y, _w, _h] = JSON.parse(value.split('local_image:')[1])
                 # print('-----------', _x, _y, _w, _h)
                 current_layer = add_layer()
-                current_layer.ctx.putImageData(new img_data(local_image_data, _w, _h), _x, _y)
+                current_layer.ctx.putImageData(new ImageData(local_image_data, _w, _h), _x, _y)
                 record_undo()
         )
-
         return False
-
 
     file = paste_data.getAsFile()
     if file.name == 'image.png':
         var URLObj = window.URL || window.webkitURL;
         var source = URLObj.createObjectURL(file);
-        # print('-----', source)
-        var pastedImage = new Image();
-        pastedImage.src = source
-        current_layer.ctx.drawImage(pastedImage, 0, 0)
-        after .01:
-            current_layer.ctx.drawImage(pastedImage, 0, 0)
-        print('pasted')
+        print('-----', source)
+        loaded_image = new Image();
+        loaded_image.onload = def on_load():
+            current_layer.ctx.clearRect(0, 0, w, h)
+            current_layer.ctx.drawImage(loaded_image, 0, 0)
+
+        loaded_image.src = source
+        # current_layer.ctx.drawImage(pastedImage, 0, 0)
+        # after .01:
+        #     current_layer.ctx.drawImage(pastedImage, 0, 0)
+        record_undo()
 
 window.addEventListener("paste", paste)
 
 
-download_button = *Button(text='download', scale=[.1,.04], origin=[.5,.5], x=(.5*aspect_ratio)-.0125, y=-.42)
-var link = document.createElement('a');
-download_button.on_click = def download():
-    link.download = "untitled.png"
-    # download_button.href = canvas.toDataURL()
-    link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream")
+# download_button = *Button(text='download', scale=[.1,.04], origin=[.5,.5], x=(.5*aspect_ratio)-.0125, y=-.42)
+# var link = document.createElement('a');
+# download_button.on_click = def download():
+#     link.download = "untitled.png"
+#     # download_button.href = canvas.toDataURL()
+#     link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream")
+#
+#     link.click()
+#     print('download')
 
-    link.click()
-    print('download')
-
-
-const undo_data = [current_layer.canvas.toDataURL("image"), ]
-undo_index = 0
 
 def undo():
     if undo_index > 0:
@@ -901,7 +903,7 @@ def render_selection():
                     selection_ctx.fillRect(x, y, 1, 1);
     # print('selection bounds', selection.bounds)
 
-lasso_tool = Entity(visible_self=False, enabled=False)
+lasso_tool = Entity(enabled=False, add_to_scene=False)
 lasso_tool.input = def lasso_tool_input(key):
     if key == 'left mouse down':
         pos = get_canvas_position()
@@ -1092,7 +1094,7 @@ lasso_tool.update = def():
     #     ctx.fillStyle = rgb(0/255, 0/255, 0/255, 255/255)
     #     ctx.fillRect(x, y, 2, 2);
 
-rect_select_tool = Entity(name='rect_select_tool', visible_self=False, enabled=False)
+rect_select_tool = Entity(name='rect_select_tool', add_to_scene=False, enabled=False)
 rect_select_tool.input = def rect_select_tool_input(key):
     if key == 'left mouse down':
         self.start_pos = get_canvas_position()
@@ -1161,60 +1163,8 @@ tool_toggler.input = def tool_toggler_input(key):
         set_current_tool(lasso_tool)
     elif key == 'm':
         set_current_tool(rect_select_tool)
-    elif key == 'v':
+    elif key == 'v' and not held_keys['control']:
         set_current_tool(transform_tool)
-
-    # elif key == 'r':
-    #     current_layer.enabled = False
-    #     current_layer = sketch_layer
-    #     sketch_layer.enabled = True
-    #     # current_layer = None
-    #     print(current_layer)
-    #
-    # elif key == 'r up':
-    #     sketch_layer.enabled = False
-    #     current_layer = layers[0]
-    #     current_layer.enabled = True
-    #     print(current_layer)
-
-
-
-
-</script>
-
-<script src="https://cdn.cde.run/Joycon.min.js"></script>
-
-<script type="text/sunsnake">
-held_keys['right joystick x'] = 0
-held_keys['right joystick y'] = 0
-# gamepad_1 = gamepads[0]
-
-joycon_handler = Entity(visible_self=False)
-joycon_handler.update = def joycon_update():
-    const gamepads = navigator.getGamepads()
-    if not gamepads or not gamepads[0]:
-        return
-
-    gamepad = gamepads[0]
-    # gamepad_1 = gamepads[0]
-    held_keys['right joystick x'] = gamepads[0].axes[0]
-    held_keys['right joystick y'] = gamepads[0].axes[1]
-    # for i, e in enumerate(gamepad.buttons):
-    #     print(i, e)
-
-    if not gamepad.buttons[5].pressed:
-        if abs(held_keys['right joystick y']) > .05:
-            target_zoom -= held_keys['right joystick y'] * .08
-            target_zoom = clamp(target_zoom, .5, 30)
-        if abs(held_keys['right joystick x']) > .05:
-            bg.x -= held_keys['right joystick x'] * .01
-
-    else:
-        if abs(held_keys['right joystick x']) > .05:
-            bg.x -= held_keys['right joystick x'] * .01
-        if abs(held_keys['right joystick y']) > .05:
-            bg.y += held_keys['right joystick y'] * .01
-
 
 file_handler = Entity(visible_self=False)
 file_handler.input = def file_handler_input(key):
@@ -1252,18 +1202,12 @@ async def save_file(json_obj, suggested_name='untitled.png'):
     suggestedName: suggested_name
     }
     const newHandle = await window.showSaveFilePicker(options)
-    # const fileData = await newHandle.getFile()
-    # print(fileData.type)
     const writableStream = await newHandle.createWritable()
 
     imgBlob = await new Promise(resolve => current_layer.canvas.toBlob(resolve, 'image/png'));
     await writableStream.write(imgBlob)
     await writableStream.close()
 
-# drop_area = Entity(parent=canvas_entity, color=color.red, on_click=def():print('a'))
-# file_input = document.createElement('input')
-# document.body.appendChild(file_input)
-# file_input.type = 'file'
 
 document.ondrop = def ondrop(event):
     event.preventDefault()
@@ -1291,6 +1235,16 @@ window.onbeforeunload = def():
     if not held_keys['shift']:
         return "Data will be lost if you leave the page, are you sure?"
 
+
+new_document(1920, 1080)
+set_layer(first_layer)
+
+
+
 </script>
+
+<script src="https://cdn.cde.run/Joycon.min.js"></script>
+
+<script type="text/sunsnake" src="joycon_input.sunsnake"></script>
 
 <script src="../taptapir/sunsnake_compiler.js"></script>

@@ -1,0 +1,29 @@
+held_keys['right joystick x'] = 0
+held_keys['right joystick y'] = 0
+# gamepad_1 = gamepads[0]
+
+joycon_handler = Entity(visible_self=False)
+joycon_handler.update = def joycon_update():
+    const gamepads = navigator.getGamepads()
+    if not gamepads or not gamepads[0]:
+        return
+
+    gamepad = gamepads[0]
+    # gamepad_1 = gamepads[0]
+    held_keys['right joystick x'] = gamepads[0].axes[0]
+    held_keys['right joystick y'] = gamepads[0].axes[1]
+    # for i, e in enumerate(gamepad.buttons):
+    #     print(i, e)
+
+    if not gamepad.buttons[5].pressed:
+        if abs(held_keys['right joystick y']) > .05:
+            target_zoom -= held_keys['right joystick y'] * .08
+            target_zoom = clamp(target_zoom, .5, 30)
+        if abs(held_keys['right joystick x']) > .05:
+            bg.x -= held_keys['right joystick x'] * .01
+
+    else:
+        if abs(held_keys['right joystick x']) > .05:
+            bg.x -= held_keys['right joystick x'] * .01
+        if abs(held_keys['right joystick y']) > .05:
+            bg.y += held_keys['right joystick y'] * .01
