@@ -3,6 +3,27 @@
 set_window_color('#eeeeee')
 set_background_color('#000000')
 bg = Entity(scale=[1,4], draggable=True, lock_x=True, visible_self=False, min_y=0, max_y=2)
+options_button = *Button(parent=camera.ui, xy=[-.475, (-.5*aspect_ratio)+.025], scale=.15, origin=[-.5,-.5], text='⚙️')
+options_button.on_click = def():
+    options_menu.enabled = True
+
+options_menu = Entity(parent=camera.ui, z=-10, color=color.white, shadow=shadow_style, scale=.85, roundness=.025, padding=1, enabled=False)
+options_menu.bg = Entity(parent=options_menu, scale=3, color=color.black, alpha=.5, z=1, on_click=def():options_menu.enabled=False)
+options_menu.close_button = *Button(parent=options_menu, position=[.525,.575], color=color.red, text='x', scale=.1, on_click=def():options_menu.enabled=False)
+options_menu.on_disable = def():
+    save_system_save('page_names', page_names)
+
+
+label = Text(parent=options_menu, text='Tab Names:', text_color=color.gray, y=-.01, text_size=2.5)
+for i, tab in tabs:
+    let name_change_field = InputField(parent=options_menu, y=.5-.15-(i*.11), text_origin=[0,0], value=page_names[i], scale=[1,.095])
+    name_change_field.on_value_changed = def():
+        # print('change tab name to:', name_change_field.value)
+        page_names[i] = name_change_field.value
+        tab.text = name_change_field.value
+
+clear_data_button = *Button(text='clear data', parent=options_menu, scale=[.25,.1], text_size=2, position=[.5,-.5], origin=[.5,-.5], text_color=color.red, color=color.black, on_click=save_system_clear)
+
 
 shadow_style = '10px 10px 10px #ccc'
 sunsnake.define(*Button(, Entity(scale=[.95,.1,], color=color.white, roundness=.5, shadow=shadow_style, text_origin=[0,0], text_color=hsv(0,0,.67), )
@@ -62,7 +83,7 @@ def goto_page(page_index):
         fields.append(e)
         e.input_field = InputField(parent=e, scale=[.55,.7], origin=[-.5,0], x=-.48, roundness=.5, color=color.smoke, text_size=2, text_color=color.azure, value=item[0])
         e.input_field.on_value_changed = def():
-            pages[page_index][i][0] = e.input_field.value        
+            pages[page_index][i][0] = e.input_field.value
 
         e.slider = RainbowSlider(parent=e, x=.5-.15-(.1/e.scale_x), scale=[.3,.8], roundness=.05, color='#eeeeee')
         e.slider.value = item[1]
@@ -125,25 +146,5 @@ save_button = *Button(parent=camera.ui, xy=[.475, (-.5*aspect_ratio)+.025], scal
 save_button.on_click = def():
     save_system_save('data', pages)
 
-options_button = *Button(parent=camera.ui, xy=[-.475, (-.5*aspect_ratio)+.025], scale=.15, origin=[-.5,-.5], text='⚙️')
-options_button.on_click = def():
-    options_menu.enabled = True
-
-options_menu = Entity(parent=camera.ui, z=-10, color=color.white, shadow=shadow_style, scale=.85, roundness=.025, padding=1, enabled=False)
-options_menu.bg = Entity(parent=options_menu, scale=3, color=color.black, alpha=.5, z=1, on_click=def():options_menu.enabled=False)
-options_menu.close_button = *Button(parent=options_menu, position=[.525,.575], color=color.red, text='x', scale=.1, on_click=def():options_menu.enabled=False)
-options_menu.on_disable = def():
-    save_system_save('page_names', page_names)
-
-
-label = Text(parent=options_menu, text='Tab Names:', text_color=color.gray, y=-.01, text_size=2.5)
-for i, tab in tabs:
-    let name_change_field = InputField(parent=options_menu, y=.5-.15-(i*.11), text_origin=[0,0], value=page_names[i], scale=[1,.095])
-    name_change_field.on_value_changed = def():
-        # print('change tab name to:', name_change_field.value)
-        page_names[i] = name_change_field.value
-        tab.text = name_change_field.value
-
-clear_data_button = *Button(text='clear data', parent=options_menu, scale=[.25,.1], text_size=2, position=[.5,-.5], origin=[.5,-.5], text_color=color.red, color=color.black, on_click=save_system_clear)
 
 </script><script src="../taptapir/sunsnake_compiler.js"></script></html>
