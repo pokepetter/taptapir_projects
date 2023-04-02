@@ -1,46 +1,113 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>taptapir</title><link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir/taptapir.js"></script><script type='text/sunsnake'>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>todo</title><link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir/taptapir.js"></script><script type='text/sunsnake'>
 
 set_window_color('#eeeeee')
 set_background_color('#000000')
 bg = Entity(scale=[1,4], draggable=True, lock_x=True, visible_self=False, min_y=0, max_y=2)
-items = []
 
 shadow_style = '10px 10px 10px #ccc'
-sunsnake.define(*Button(, Entity(parent=list_parent, scale=[.95,.1,], color=color.white, roundness=.5, shadow=shadow_style, text_origin=[0,0], text_color=hsv(0,0,.67), )
+sunsnake.define(*Button(, Entity(scale=[.95,.1,], color=color.white, roundness=.5, shadow=shadow_style, text_origin=[0,0], text_color=hsv(0,0,.67), )
+
+# tab_data = save_system_load('tabs')
+tab_parent = Entity(visible_self=False, xy=top_left)
+tabs = []
+items = []
+items1 = [
+    ['project 1', 1],
+    ['project 1', 1],
+    ['project 1', 1],
+]
+items2 = [
+    ['wqdqwd 1', 1],
+    ['qwdqwd 1', 2],
+    ['qwdqwd 1', 3],
+]
+
+pages = [items1, items2, [], [], []]
+pages = save_system_load('data')
+
+page_names = ['1', '2', '3', '4', '5']
+custom_page_names = save_system_load('page_names')
+if custom_page_names:
+    page_names = custom_page_names
+
+for i, page in pages:
+    name = page_names[i]
+    let tab = *Button(parent=tab_parent, scale=[.2,.075,], text=name, x=i*.2, origin=[-.5,.5], z=i, roundness=.0, text_size=2)
+    tabs.append(tab)
+    tab.on_click = def():
+        goto_page(i)
+
+    tab.on_double_click = def():
+        print('aapfkjpawodkpok')
 
 list_parent= Entity(parent=bg, scale=[1,1/4], visible_self=False)
-let add_row_button = *Button(parent=list_parent, scale=[.25,.1,], shadow='10px 10px 10px #ccc', text='+', on_click=def():add_item('',1))
+add_row_button = *Button(parent=list_parent, scale=[.25,.1,], text='+')
+add_row_button.on_click = def():
+    pages[current_page_index].append(['0',0]);
+    goto_page(current_page_index)
 
-def add_item(name='', value=1):
-    let e = *Button(scale=[.95,.1,], text_origin=[-.5,0], text='.', text_color=color.clear)
-    items.append(e)
+fields = []
+current_page_index = 0
 
-    x = Entity(parent=e, scale=[.55,.7], color=color.red, origin=[-.5,0], x=-.48, roundness=.5, color=color.smoke, text_size=2, text_color=color.azure)
-    e.input_field = document.createElement('input')
-    e.input_field.value = name
-    x.model.appendChild(e.input_field)
+def get_current_state():
+    items = []
+    for field in fields:
+        items.append([field.input_field.value, field.slider.value])
+    return items
+
+def goto_page(page_index):
+    current_page_index = page_index
+
+    for e in tabs:
+        e.color = color.white
+        e.text_color = color.light_gray
+        e.z = 0
+    tabs[page_index].color = color.azure
+    tabs[page_index].z = -1
+    tabs[page_index].text_color = color.white
 
 
-    e.slider = RainbowSlider(parent=e, x=.5-.15-(.1/e.scale_x), scale=[.3,.8], roundness=.05, color='#eeeeee')
-    e.slider.value= value
-    e.slider.bar.roundness = .25
+    [destroy(e) for e in fields]
+    fields = []
+    items = pages[page_index]
+    for i, item in items:
+        let e = *Button(parent=list_parent, scale=[.95,.1,], text_origin=[-.5,0], text='.', text_color=color.clear, roundness=10)
+        fields.append(e)
+        x = Entity(parent=e, scale=[.55,.7], color=color.red, origin=[-.5,0], x=-.48, roundness=.5, color=color.smoke, text_size=2, text_color=color.azure)
+        e.input_field = document.createElement('input')
+        e.input_field.value = item[0]
+        e.input_field.onkeyup = def():
+            pages[page_index][i][0] = e.input_field.value
 
-    e.delete_button = *Button(parent=e, color='#eeeeee', scale=[.08/e.scale_x,.08/e.scale_y], x=.5-.01, origin=[.5,0], text='✕', text_size=1.5, shadow=None)
-    e.delete_button.on_click = def():
-        confirm_delete_button.parent = e.delete_button
-        confirm_delete_button.enabled = True
-        confirm_delete_button.target = e
+        x.model.appendChild(e.input_field)
 
+        e.slider = RainbowSlider(parent=e, x=.5-.15-(.1/e.scale_x), scale=[.3,.8], roundness=.05, color='#eeeeee')
+        e.slider.value = item[1]
+        e.slider.bar.roundness = .25
+        e.slider.on_value_changed = def():
+            pages[page_index][i][1] = e.slider.value
+            # print(pages[page_index][i][1])
 
-    update_list()
+        e.delete_button = *Button(parent=e, color='#eeeeee', scale=[.08/e.scale_x,.08/e.scale_y], origin=[.5,0], x=.5-.01, text='✕', text_size=1.5, shadow=None)
+        e.delete_button.on_click = def():
+            confirm_delete_button.parent = e.delete_button
+            confirm_delete_button.xy = [0,0]
+            confirm_delete_button.enabled = True
+            confirm_delete_button.target = e
+
+    for y, e in list_parent.children:
+        e.y = (.5*aspect_ratio)-(.125*y)
+    add_row_button.y = list_parent.children[-1].y-.15
+
+    bg.max_y = max(len(list_parent.children) *.15 -1, bg.min_y)
+
 
 confirm_delete_button = Entity(parent=list_parent, color=color.pink, enabled=0, text='delete?', target=None, origin=[.5,0], roundness=.5, text_size=1, text_origin=[0,0], text_color=color.white)
 confirm_delete_button.on_click = def():
     confirm_delete_button.parent = list_parent
     confirm_delete_button.enabled = False
-    items.remove(confirm_delete_button.target)
-    destroy(confirm_delete_button.target)
-    update_list()
+    items.pop(fields.index(confirm_delete_button.target))
+    goto_page(current_page_index)
 confirm_delete_button.input = def input(key):
     if key == 'left mouse down' and mouse.hovered_entity != confirm_delete_button:
         confirm_delete_button.enabled = False
@@ -48,63 +115,48 @@ confirm_delete_button.input = def input(key):
 sort_by_name_button = *Button(parent=camera.ui, x=-.0125, y=(-.5*aspect_ratio)+.025, origin=[.5,-.5], scale=[.25,.1], text_size=1.5, text='sort by name', reverse=False)
 sort_by_name_button.on_click = def():
     def sort_alphabetically(first, second):
-        return first.input_field.value.localeCompare(second.input_field.value)
+        return first[0].localeCompare(second[0])
     items.sort(sort_alphabetically)
 
     if sort_by_name_button.reverse:
         items.reverse()
-    update_list()
+    goto_page(current_page_index)
     sort_by_name_button.reverse = not sort_by_name_button.reverse
 
 
 sort_by_value_button = *Button(parent=camera.ui, x=.0125, y=(-.5*aspect_ratio)+.025, origin=[-.5,-.5], scale=[.25,.1], text_size=1.5, text='sort by value', reverse=False)
 sort_by_value_button.on_click = def():
     def sort(first, second):
-        return second.slider.value - first.slider.value
+        return second[1] - first[1]
     items.sort(sort)
 
     if sort_by_value_button.reverse:
         items.reverse()
-    update_list()
+    goto_page(current_page_index)
     sort_by_value_button.reverse = not sort_by_value_button.reverse
 
 
 
-def update_list():
-    for y, e in items:
-        e.y = (.5*aspect_ratio)-(.125*y)-.15
-    add_row_button.y = items[-1].y-.15
-
-    bg.max_y = max(len(items) *.15 -1, bg.min_y)
 
 
-
-
-# data = {
-#     'project 1': 1,
-#     'project 2': 1,
-#     'project 3': 1,
-# }
-data = save_system_load('data')
-if data:
-    print('load:', data)
-    for name, value in data:
-        add_item(name, value)
-    update_list()
+# tabs[0].on_click()
+goto_page(0)
+# data = save_system_load('data')
+# if data:
+#     print('load:', data)
+#     for name, value in data:
+#         add_item(name, value)
+#     render_list()
 
 save_button = *Button(parent=camera.ui, xy=[.475, (-.5*aspect_ratio)+.025], scale=.15, origin=[.5,-.5], text='💾')
 save_button.on_click = def():
-    data = {}
-    for e in items:
-        if not e.input_field.value:
-            continue
-        data[e.input_field.value] = e.slider.value
-    # print('save:', data)
+    # data = {}
+    print(pages)
 
 
-    save_system_save('data', data)
+    save_system_save('data', pages)
 
-options_button = *Button(parent=camera.ui, xy=[-.475, (-.5*aspect_ratio)+.025], scale=.15, origin=[-.5,-.5], text='⚙️')
+# options_button = *Button(parent=camera.ui, xy=[-.475, (-.5*aspect_ratio)+.025], scale=.15, origin=[-.5,-.5], text='⚙️')
 # options_button.on_click = def():
 
 
