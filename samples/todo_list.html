@@ -10,20 +10,11 @@ sunsnake.define(*Button(, Entity(scale=[.95,.1,], color=color.white, roundness=.
 # tab_data = save_system_load('tabs')
 tab_parent = Entity(visible_self=False, xy=top_left)
 tabs = []
-items = []
-items1 = [
-    ['project 1', 1],
-    ['project 1', 1],
-    ['project 1', 1],
-]
-items2 = [
-    ['wqdqwd 1', 1],
-    ['qwdqwd 1', 2],
-    ['qwdqwd 1', 3],
-]
 
-pages = [items1, items2, [], [], []]
-pages = save_system_load('data')
+pages = [[], [], [], [], []]
+loaded_pages = save_system_load('data')
+if loaded_pages:
+    pages = loaded_pages
 
 page_names = ['1', '2', '3', '4', '5']
 custom_page_names = save_system_load('page_names')
@@ -43,7 +34,7 @@ for i, page in pages:
 list_parent= Entity(parent=bg, scale=[1,1/4], visible_self=False)
 add_row_button = *Button(parent=list_parent, scale=[.25,.1,], text='+')
 add_row_button.on_click = def():
-    pages[current_page_index].append(['0',0]);
+    pages[current_page_index].append(['',0]);
     goto_page(current_page_index)
 
 fields = []
@@ -159,5 +150,5 @@ save_button.on_click = def():
 # options_button = *Button(parent=camera.ui, xy=[-.475, (-.5*aspect_ratio)+.025], scale=.15, origin=[-.5,-.5], text='⚙️')
 # options_button.on_click = def():
 
-
+save_system_clear()
 </script><script src="../taptapir/sunsnake_compiler.js"></script></html>
