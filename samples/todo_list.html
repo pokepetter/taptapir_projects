@@ -61,6 +61,8 @@ def goto_page(page_index):
         let e = *Button(parent=list_parent, scale=[.95,.1,], text_origin=[-.5,0], text='.', text_color=color.clear, roundness=10)
         fields.append(e)
         e.input_field = InputField(parent=e, scale=[.55,.7], origin=[-.5,0], x=-.48, roundness=.5, color=color.smoke, text_size=2, text_color=color.azure, value=item[0])
+        e.input_field.on_value_changed = def():
+            pages[page_index][i][0] = e.input_field.value        
 
         e.slider = RainbowSlider(parent=e, x=.5-.15-(.1/e.scale_x), scale=[.3,.8], roundness=.05, color='#eeeeee')
         e.slider.value = item[1]
