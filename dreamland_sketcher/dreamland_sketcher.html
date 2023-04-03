@@ -232,7 +232,7 @@ SMUDGE = False
 SMUDGE_STRENGTH = 1
 # cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enabled=False)
 
-brush_tool = Entity(name='brush_tool', add_to_scene=False)
+brush_tool = Entity(name='brush_tool', render=False)
 
 brush_tool.input = def brush_tool_input(key):
     if mouse.hovered_entity == bg and key == 'left mouse down':
@@ -903,7 +903,7 @@ def render_selection():
                     selection_ctx.fillRect(x, y, 1, 1);
     # print('selection bounds', selection.bounds)
 
-lasso_tool = Entity(enabled=False, add_to_scene=False)
+lasso_tool = Entity(enabled=False, render=False)
 lasso_tool.input = def lasso_tool_input(key):
     if key == 'left mouse down':
         pos = get_canvas_position()
@@ -1094,7 +1094,7 @@ lasso_tool.update = def():
     #     ctx.fillStyle = rgb(0/255, 0/255, 0/255, 255/255)
     #     ctx.fillRect(x, y, 2, 2);
 
-rect_select_tool = Entity(name='rect_select_tool', add_to_scene=False, enabled=False)
+rect_select_tool = Entity(name='rect_select_tool', render=False, enabled=False)
 rect_select_tool.input = def rect_select_tool_input(key):
     if key == 'left mouse down':
         self.start_pos = get_canvas_position()
