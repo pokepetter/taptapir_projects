@@ -118,6 +118,22 @@ sort_by_value_button.on_click = def():
     sort_by_value_button.reverse = not sort_by_value_button.reverse
 
 
+def input(key):
+    if key == 'swipe left':
+        current_page_index += 1
+        current_page_index = clamp(current_page_index, 0, len(pages))
+        goto_page(current_page_index)
+    elif key == 'swipe right':
+        current_page_index -= 1
+        current_page_index = clamp(current_page_index, 0, len(pages))
+        goto_page(current_page_index)
+
+# swipe_effect = Entity(scale=[.05, aspect_ratio])
+# swipe_effect.input = def swipe_effect_input(key):
+#     if key == 'swipe left':
+#         swipe_effect.x = .5
+#         swipe_effect.animate('x', -.5)
+
 
 goto_page(0)
 
