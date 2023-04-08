@@ -1,0 +1,24 @@
+{
+  "name": "todo_list",
+  "short_name": "todo_list",
+  "description": "simple todo list.",
+  "theme_color": "#ffffff",
+  "background_color": "#000000",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "dir": "auto",
+  "lang": "en",
+  "categories": [
+    "productivity"
+  ],
+  "scope": "./",
+  "start_url": "./",
+  "icons": [
+    {
+      "src": "todo_list_icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
