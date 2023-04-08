@@ -1,6 +1,7 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8" />
 <title>todo</title>
 <link rel="icon" href="todo_list_icon.png">
+<script type="text/javascript">if ('serviceWorker' in navigator) {navigator.serviceWorker.register('./service_worker.js')}</script>
 <link rel="stylesheet" href="../taptapir.css"></head><body></body><script src="../taptapir/taptapir.js"></script><script type='text/sunsnake'>
 
 set_window_color('#eeeeee')
@@ -25,7 +26,7 @@ if custom_page_names:
 
 for i, page in pages:
     name = page_names[i]
-    let tab = *Button(parent=tab_parent, scale=[.2,.075,], text=name, x=i*.2, origin=[-.5,.5], z=i, roundness=.0, text_size=2)
+    let tab = *Button(parent=tab_parent, scale=[.2,.085,], text=name, x=i*.2, origin=[-.5,.5], z=i, roundness=.0, text_size=2)
     tabs.append(tab)
     tab.on_click = def():
         goto_page(i)
@@ -81,10 +82,10 @@ def goto_page(page_index):
             confirm_delete_button.target = e
 
     for y, e in list_parent.children:
-        e.y = (.5*aspect_ratio)-(.125*y)
+        e.y = (.5*aspect_ratio)-(.125*y) +.05
     add_row_button.y = list_parent.children[-1].y-.15
 
-    bg.max_y = max(len(list_parent.children) *.15 -1, bg.min_y)
+    bg.max_y = max(len(list_parent.children) *.125 -1, bg.min_y)
 
 
 confirm_delete_button = Entity(parent=list_parent, color=color.pink, enabled=0, text='delete?', target=None, origin=[.5,0], roundness=.5, text_size=1, text_origin=[0,0], text_color=color.white)
