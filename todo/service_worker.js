@@ -1,7 +1,7 @@
 const CACHE_NAME  = 'todo_list';
 const CONTENT_TO_CACHE = [
   '/',
-  // '/todo_list.html',
+  '/todo_list.html',
   // '../taptapir/taptapir.js',
   // '../taptapir/sunsnake_compiler.js',
 ]
