@@ -1,1 +1,0 @@
-flatpak run com.google.Chrome dreamland_sketcher.html --allow-file-access-from-files --user-data-dir="./Temp" --enable-immersive-fullscreen-toolbar
