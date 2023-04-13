@@ -16,7 +16,7 @@ Button(parent=menu, text='Play', scale=[.35,.15], y=-.2, on_click=def():goto_sce
 battle = Scene('textures/bergen_005')
 bg_overlay = Entity(parent=battle, scale=2, color=color.dark_gray, alpha=.75)
 card_parent = Entity(parent=battle, color=color.clear, z=-1)
-enemy = Entity(parent=battle, scale=[.4,.6], color=color.azure, name='entity', value=20, text='zombie', y=.1, texture='https:#game-icons.net/icons/ffffff/000000/1x1/delapouite/shambling-zombie.svg')
+enemy = Entity(parent=battle, scale=[.4,.6], color=color.azure, name='entity', value=20, text='zombie', y=.1, texture='https://game-icons.net/icons/ffffff/000000/1x1/delapouite/shambling-zombie.svg')
 enemy.hp_bar = HealthBar(parent=battle, max=30, y=.5, scale=[.6,.075], bar_color=hsv(320,1,.8), shadow='#f00')
 enemy_text = Button(parent=battle, x=enemy.hp_bar.x+.025, y=enemy.hp_bar.y+.06, z=0, text='Zombie', scale_y=.05, text_size=2, text_origin=[-.5,0], scale=enemy.hp_bar.scale, color=color.clear, text_color=color.light_gray)
 
@@ -26,14 +26,22 @@ energy_bar.value = 5
 hp_bar = HealthBar(parent=camera.ui, max=100, y=-(.5*aspect_ratio)+.05, z=-3, scale=[.9,.075], bar_color=hsv(320,1,.8), shadow=True, z=-100)
 
 
-cover = Entity(parent=battle, alpha=.5, color=color.gray, z=-10, scale=[1,.5], y=-.475, enabled=False, on_click=def():return)
-end_turn_button = Button(parent=battle, scale=[.15,.1], position=[.35,-.15],text='end\nturn', text_size=1.75, color=hsv(280,.8,.5), text_color=color.light_gray, shadow=1)
-end_turn_button.on_click = def next_turn():
+cover = Entity(parent=battle, alpha=.0, color=color.gray, z=-10, scale=[1,.5], y=-.475, enabled=False, on_click=def():return)
+def end_turn():
     for card in cards:
         card.alpha = .25
+
     cover.enabled = True
     end_turn_button.enabled = False
-    after .5s:
+
+# def enemy_turn():
+    after .2s:
+        enemy.animate('y', -.1, duration=.1)
+        hp_bar.value -= 5
+    after .31s:
+        enemy.animate('y', .1, duration=.1)
+
+    after 1s:
         start_turn()
 
 def start_turn():
@@ -46,6 +54,8 @@ def start_turn():
         e.cooldown_left -= 1
         update_can_use_card(e)
 
+end_turn_button = Button(parent=battle, scale=[.15,.1], position=[.35,-.15],text='end\nturn', text_size=1.75, color=hsv(280,.8,.5), text_color=color.light_gray, shadow=1)
+end_turn_button.on_click = end_turn
 
 tooltip = Text(text='tooltip', scale=[.4,.2], z=-2, enabled=0, origin=[0,-.5], roundness=.1, color='#eee', alpha=.9, text_color='#222', text_size=2)
 tooltip.title = Text(parent=tooltip, text=' Shotgun', scale_y=.25, scale_x=1.1, roundness=1, color=color.pink, x=-.00, y=1.35, text_size=2.5, padding=.2)
@@ -127,11 +137,22 @@ battle.on_enter = def():
             print('USE')
             card.cooldown_left = card.spell.cooldown
             energy_bar.value -= card.spell.cost
-            enemy.hp_bar.value -= card.spell.damage
-            if enemy.hp_bar.value <= 0:
-                win()
+            cover.enabled = True
+            end_turn_button.enabled = False
 
-            update_can_use_card(card)
+
+            enemy.animate('y', .15, .05)
+            after .05s:
+                enemy.animate('y', .1, .05)
+
+            after .2:
+                enemy.hp_bar.value -= card.spell.damage
+                if enemy.hp_bar.value <= 0:
+                    win()
+                    return
+                update_can_use_card(card)
+                after .2:
+                    end_turn()
 
 
 def update_can_use_card(card):
