@@ -44,14 +44,14 @@ set_background_color('#222')
 set_scale(.75)
 on_color = '#85B112'
 
-# splash_screen = Entity(scale=2, color='black', z=-1)
+# splash_screen = Entity(scale=2, color=color.black, z=-1)
 # Text(parent=splash_screen, text='launch', color='#00000000', text_color='white', z=-2, scale=.05, text_origin='center')
 # splash_screen.on_click = def():
 #     set_fullscreen(True)
 #     splash_screen.enabled = False
 
 
-note_view_parent = Entity(xy=[-.75,-.25], color='black', origin=[0,-.5], scale=.075, visible_self=False)
+note_view_parent = Entity(xy=[-.75,-.25], color=color.black, origin=[0,-.5], scale=.075, visible_self=False)
 note_entities = Array_2d(16, 8)
 for y in range(8):
     for x in range(16):
@@ -124,7 +124,7 @@ for x in range(16):
         current_note_section.length = x+1
 
 limiter = Entity(parent=note_view_parent, scale_x=1, scale_y=.75, origin=[-.5,.5], color='#333', roundness=.5, text='∞')
-limiter.shadower = Entity(parent=limiter, color='black', alpha=.75, origin=[-.5,-.5], scale=[16,8/.75])
+limiter.shadower = Entity(parent=limiter, color=color.black, alpha=.75, origin=[-.5,-.5], scale=[16,8/.75])
 
 max_x = 16
 limiter.drop = def():
