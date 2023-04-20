@@ -12,7 +12,7 @@ set_scale(1)
 canvas_scale = .8
 
 
-bg = Entity(visible_self=False, scale=[2*canvas_scale, 2*canvas_scale], draggable=True, lock_x=True, lock_y=True)
+bg = Entity(visible_self=False, scale=[2*canvas_scale, 2*canvas_scale], draggable=True, lock_x=True, lock_y=True, ignore_collision=False)
 
 right_menu_bg = Entity(origin=[.5,0], scale=[.115,1], position=right, color=hsv(0,0,.07), alpha=.9, ignore_collision=False)
 menu_parent = Entity(parent=camera.ui, visible_self=False)
@@ -425,6 +425,20 @@ def paint():
         return
 
     [x, y] = get_canvas_position()
+
+    # if held_keys['shift'] and prev_pos != None:
+    #     velocity = [x-prev_pos[0], y-prev_pos[1]]
+    #     if abs(velocity[0]) > abs(velocity[1]):
+    #         lock_axis = 'horizontal'
+    #     else:
+    #         lock_axis = 'vertical'
+    #
+    #     if self.lock_axis == 'horizontal':
+    #         y = prev_pos[1]
+    #
+    #     if self.lock_axis == 'vertical':
+    #         x = prev_pos[0]
+
     if held_keys['s'] and prev_pos:
         x = lerp(prev_pos[0], x, .025)
         y = lerp(prev_pos[1], y, .025)
@@ -571,10 +585,10 @@ def input(key):
     # if key == 'h':
     #     selection_canvas_entity.enabled = not selection_canvas_entity.enabled
         # snap_to_hex = True
-    if key == 'scroll down' or key == 'down arrow':
+    if key == 'scroll down' or (held_keys['control'] and key == 'down arrow'):
         target_zoom = target_zoom*.9
         zoom_label.text = `${int(target_zoom*100)}%`
-    if key == 'scroll up' or key == 'up arrow':
+    if key == 'scroll up' or (held_keys['control'] and key == 'up arrow'):
         target_zoom = target_zoom*1/.9
         zoom_label.text = `${int(target_zoom*100)}%`
 
@@ -594,12 +608,12 @@ def input(key):
     if key == 'f':
         SMUDGE = True
 
-    if key == 'w':
+    if key == 'up arrow':
         for layer in layers:
             const img_data = flip_image_data_horizontally(layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height))
             layer.ctx.putImageData(img_data, 0, 0)
 
-    if key == 'q':
+    if key == 'left arrow':
         for layer in layers:
             const img_data = flip_image_data_vertically(layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height))
             layer.ctx.putImageData(img_data, 0, 0)
@@ -755,7 +769,7 @@ window.onfocus = def():
             held_keys[key] = 0
 
 
-save_button = *Button(y=-.46, scale=[.1,.04], text='save', enabled=False)
+save_button = *Button(xy=[(-.5*aspect_ratio)+.06,.5], origin=[-.5,.5], scale=[.05,.025], text='save', text_size=1)
 save_button.on_click = def save():
     save_file()
     # dataURL = canvas.toDataURL("image")
@@ -1182,6 +1196,7 @@ async def open_file():
         _IMG.onload = def():
             new_document(this.width, this.height)
             current_layer.ctx.drawImage(_IMG,0,0)
+            record_undo()
 
         _IMG.src = event.target.result;
     )
@@ -1221,9 +1236,9 @@ document.ondrop = def ondrop(event):
         img = new Image()
         img.src = reader.result
         img.onload = def():
-            print('aaaaaaaaaaaaaaa', img)
-            new_layer = add_layer(name=files[0].name, img.width, img.height)
-            new_layer.ctx.drawImage(img, 0, 0)
+            # print('aaaaaaaaaaaaaaa', img)
+            new_document(img.width, img.height)
+            current_layer.ctx.drawImage(img, 0, 0)
             record_undo()
     reader.readAsDataURL(files[0])
 
@@ -1239,7 +1254,9 @@ window.onbeforeunload = def():
 new_document(1920, 1080)
 set_layer(first_layer)
 
-
+if '?' in window.location.href:
+    args = window.local_image.href.split('?',1)[1]
+    print('---------------', args)
 
 </script>
 
