@@ -82,6 +82,12 @@ class Bandages:
     damage = -6
     cost = 3
     cooldown = 3
+,
+class Axe:
+    icon = 'https://cdn-icons-png.flaticon.com/512/809/809037.png'
+    damage = 3
+    cost = 3
+    cooldown = 3
 
 
 ]
@@ -123,3 +129,11 @@ spells = spells_dict
 
 print('spells', spells)
 `
+// fire/smoke zombie
+// root/plant zombie
+// sand/drought/mud zombie
+// snow/ice/water zombie
+//
+// trash zombie
+//
+// fire -> plants -> sand -> snow -> fire

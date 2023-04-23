@@ -20,19 +20,16 @@ enemy = Entity(parent=battle, scale=[.4,.6], color=color.azure, name='entity', v
 enemy.hp_bar = HealthBar(parent=battle, max=30, y=.5, scale=[.6,.075], bar_color=hsv(320,1,.8), shadow='#f00')
 enemy_text = Button(parent=battle, x=enemy.hp_bar.x+.025, y=enemy.hp_bar.y+.06, z=0, text='Zombie', scale_y=.05, text_size=2, text_origin=[-.5,0], scale=enemy.hp_bar.scale, color=color.clear, text_color=color.light_gray)
 
-energy_bar = HealthBar(parent=battle, max=10, y=-(.5*aspect_ratio)+.115, z=-2, scale=[.9,.04], bar_color=color.orange, shadow=True)
-energy_bar.value = 5
+# energy_bar = HealthBar(parent=battle, max=10, y=-(.5*aspect_ratio)+.115, z=-2, scale=[.9,.04], bar_color=color.orange, shadow=True)
+# energy_bar.value = 5
 
 hp_bar = HealthBar(parent=camera.ui, max=100, y=-(.5*aspect_ratio)+.05, z=-3, scale=[.9,.075], bar_color=hsv(320,1,.8), shadow=True, z=-100)
 
 
-cover = Entity(parent=battle, alpha=.0, color=color.gray, z=-10, scale=[1,.5], y=-.475, enabled=False, on_click=def():return)
+cover = Entity(parent=battle, alpha=.25, color=color.black, z=-10, scale=[1,.5], y=-.475, enabled=False, shadow=True, on_click=def():return)
 def end_turn():
-    for card in cards:
-        card.alpha = .25
-
     cover.enabled = True
-    end_turn_button.enabled = False
+    # end_turn_button.enabled = False
 
 # def enemy_turn():
     after .2s:
@@ -46,100 +43,113 @@ def end_turn():
 
 def start_turn():
     cover.enabled = False
-    end_turn_button.enabled = True
-    energy_bar.value += 3
+    # end_turn_button.enabled = True
+    # energy_bar.value += 3
 
 
     for i, e in enumerate(cards):
         e.cooldown_left -= 1
         update_can_use_card(e)
 
-end_turn_button = Button(parent=battle, scale=[.15,.1], position=[.35,-.15],text='end\nturn', text_size=1.75, color=hsv(280,.8,.5), text_color=color.light_gray, shadow=1)
-end_turn_button.on_click = end_turn
+# end_turn_button = Button(parent=battle, scale=[.15,.1], position=[.35,-.15],text='end\nturn', text_size=1.75, color=hsv(280,.8,.5), text_color=color.light_gray, shadow=1)
+# end_turn_button.on_click = end_turn
 
-tooltip = Text(text='tooltip', scale=[.4,.2], z=-2, enabled=0, origin=[0,-.5], roundness=.1, color='#eee', alpha=.9, text_color='#222', text_size=2)
-tooltip.title = Text(parent=tooltip, text=' Shotgun', scale_y=.25, scale_x=1.1, roundness=1, color=color.pink, x=-.00, y=1.35, text_size=2.5, padding=.2)
+# tooltip = Text(text='tooltip', scale=[.4,.2], z=-2, enabled=0, origin=[0,-.5], roundness=.1, color='#eee', alpha=.9, text_color='#222', text_size=2)
+# tooltip.title = Text(parent=tooltip, text=' Shotgun', scale_y=.25, scale_x=1.1, roundness=1, color=color.pink, x=-.00, y=1.35, text_size=2.5, padding=.2)
 
-spell_names = ['Flamethrower', 'Shotgun', 'Bat', 'Rope', 'Nail_Gun', 'Bandages', 'Plank', 'Hunting_Rifle']
-deck = [spells[e] for e in spell_names]
+rush = Entity(parent=battle, text='rush\n>>', enabled=False, text_origin=[0,0], text_size=2, roundness=.5, color=color.violet, text_color=color.white, alpha=.75)
+
+spells = [
+{name:'Chainsaw',               damage:2,    fire_damage:0,    water_damage:2,    cooldown:2,    icon: 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/chainsaw.svg', },
+{name:'Snowball',               damage:2,    fire_damage:0,    water_damage:2,    cooldown:2,    icon: 'textures/snowflake-2.svg'},
+{name:'Axe',                    damage:2,    fire_damage:0,    water_damage:0,    cooldown:2,    icon: 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/magic-axe.svg'},
+{name:'Cobblestone',            damage:2,    fire_damage:0,    water_damage:0,    cooldown:2,    icon: 'https://game-icons.net/icons/ffffff/000000/1x1/lorc/stone-block.svg'},
+{name:'Police Shield',          damage:2,    fire_damage:0,    water_damage:0,    cooldown:2,    icon: 'https://game-icons.net/icons/ffffff/000000/1x1/lorc/riot-shield.svg'},
+
+{name:'Molotov',                damage:2,    fire_damage:2,    water_damage:0,    cooldown:2,    icon: 'https://game-icons.net/icons/ffffff/000000/1x1/lorc/molotov.svg'},
+{name:'Modded Nail Gun',        damage:2,    fire_damage:0,    water_damage:0,    cooldown:2,    icon: 'https://cdn-icons-png.flaticon.com/512/971/971910.png'},
+{name:'Circle Saw Blade',       damage:2,    fire_damage:0,    water_damage:0,    cooldown:2,    icon: 'https://game-icons.net/icons/ffffff/000000/1x1/sbed/circular-saw.svg'},
+{name:'Shovel',                 damage:2,    fire_damage:0,    water_damage:0,    cooldown:2,    icon: 'https://game-icons.net/icons/ffffff/000000/1x1/lorc/spade.svg'},
+{name:'Med Kit',                damage:2,    fire_damage:0,    water_damage:0,    cooldown:2,    icon: 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/health-capsule.svg'},
+]
+print(spells[0])
+# deck = [spells[e] for e in spell_names]
+# for i, e in deck:
+#     if not e:
+#         deck[i] = spells['Bat']
+
 # print('-------------', spells, deck)
 cards = []
 
 battle.on_enter = def():
     enemy.hp_bar.value = 30
-    energy_bar.value = 10
+    # energy_bar.value = 10
     cover.enabled = False
     card_parent.destroy_children()
 
     cards = []
-    for i in range(8):
-        x = -.5 + .17 + (i%4)*.22
-        y = -.35 - int(i>=4)*.22
-        let slot = Entity(parent=card_parent, xy=[x,y], roundness=.02, color=hsv(0,0,.1,.8), shadow=0, z=1, scale=.2)
-        let card = Entity(parent=card_parent, xy=[x,y], original_xy=[x,y], scale=[.18,.18], roundness=.1, draggable=True, shadow=True, color=random_color(), text_size=2, text_origin=[0,0], spell=None)
+    for i in range(10):
+        x = -.5 + .17 + (i%5)*.16
+        h = .14 + int((i%2) == 0) * .1
+        y = -.3 - int(i>=5)*.4 - (int(i<5)-.5)*h
+
+
+        # let slot = Entity(parent=card_parent, xy=[x,y], roundness=.02, color=hsv(0,0,.1,.8), shadow=0, z=1, scale=[.15,h], origin=[0,int(i<5)-.5])
+        # let card = Entity(parent=card_parent, xy=[x,y], original_xy=[x,y], scale=[.14,h], origin=[0,0], roundness=.1, shadow=True, text_size=1.75, text_origin=[.5,.5], spell=None, on_click=def():print('o'))
+        let card = Entity(parent=card_parent, xy=[x,y], original_xy=[x,y], scale=[.14*.97,h*.97], origin=[0,0], roundness=.1, shadow=True, text_size=1.75, text_origin=[.5,.5], spell=None, on_click=def():print('o'))
         cards.append(card)
-        card.spell = deck[i]
+        card.spell = spells[i]
+        card.texture = card.spell.icon
+        card.tileset_size = [1.5,1.5]
+        card.tile_coordinate = [1,.2]
+
+        card.model.style.border = '5px solid white'
+        card.roundness = .1
+        # card.style.borderStyle = 'solid'
+        # card.style.borderWidth = 5
+        # card.style.borderColor = 'white'
+
+        card.color = color.black
+        card.alpha = .75
+
         card.cooldown_left = 0
-        card.cooldown_overlay = Entity(parent=card, roundness=.5, enabled=False, text=`?`, text_origin=[0,0], scale=.8, alpha=.75, color=color.light_gray)
-        card.energy_cost_icon = Entity(parent=card, roundness=.5, scale=.25, color=color.orange, xy=[.45,-.45], shadow=1, text=`${card.spell.cost}`, text_origin=[0,0], text_size=2, text_color=color.dark_gray)
-        card.enabled = False
-        # print('aaaaaaaaaaaaaaaaaaaaaaaa', card.spell)
-        if card.spell.icon:
-            card.texture = card.spell.icon
-        else:
-            # card.texture = `textures/${card.spell.constructor.name}.png`.toLowerCase()
-            card.text = card.spell.constructor.name.toLowerCase()
+        card.cooldown_overlay = Entity(parent=card, roundness=.5, enabled=False, text=`?`, text_origin=[0,0], scale=.8, alpha=.75, color=color.light_gray, ignore_collision=True, z=-2)
+
+        card.text = `${spells[i].name}\n⚪8\n🔴2\n🟢1`
+        card.damage_icon = Entity(parent=card, scale=[.04/card.scale_x, .04/card.scale_y], color=color.orange, roundness=.5, xy=[.5,.5], origin=[.75,.75], text=card.spell.damage, text_size=2, text_origin=[0,0], text_color=color.white)
+        i = 0
+        if card.spell.fire_damage:
+            i += 1
+            card.damage_icon_fire = Entity(parent=card, scale=[.04/card.scale_x, .04/card.scale_y], color=color.red, roundness=.1, xy=[.5,.5], origin=[.75,.75], text=card.spell.damage, text_size=2, text_origin=[0,0], text_color=color.white, y=card.damage_icon.y-(.45*i)/(card.scale_y*10))
+        if card.spell.water_damage:
+            i += 1
+            card.damage_icon_water = Entity(parent=card, scale=[.04/card.scale_x, .04/card.scale_y], color=color.azure, roundness=.5, xy=[.5,.5], origin=[.75,.75], text=card.spell.damage, text_size=2, text_origin=[0,0], text_color=color.white, y=card.damage_icon.y-(.45*i)/(card.scale_y*10))
 
         after .1*(i+1):
             card.enabled = True
             update_can_use_card(card)
 
+
         card.on_click = def():
-            # if not card.draggable:
-            #     return
-            dmg = ''
-            heal = ''
-            if card.spell.damage > 0:
-                dmg = card.spell.damage
-            elif card.spell.damage < 0:
-                heal = -card.spell.damage
-
-            tooltip.title.text = ` ${card.spell.constructor.name.replace('_', ' ')}`
-            tooltip.text = `damage: ${dmg}\ncooldown: ${card.spell.cooldown}\n${card.spell.description}`
-            tooltip.enabled = True
-            tooltip.x = card.x - .325 -  .65* int(card.original_xy[0] < 0)*-1
-            tooltip.y = card.y - .1
-
-        card.el.onmouseover = card.on_click
-
-        card.while_dragging = def():
-            card.z = -5
-            tooltip.x = card.x - .325 -  .65* int(card.original_xy[0] < 0)*-1
-            tooltip.y = card.y - .1
-            if card.y > -.25:
-                card.color = color.green
-            else:
-                card.color = color.white
-
-        card.drop = def drop():
-            print('drop')
-            if card.y > -.25:
-                print('USE')
-                card.use()
-            card.xy = card.original_xy
-            card.z = 0
-            card.color = color.white
-            tooltip.enabled = False
-
-        card.el.addEventListener("mouseleave", card.drop, false);
-
-        card.use = def():
             print('USE')
-            card.cooldown_left = card.spell.cooldown
-            energy_bar.value -= card.spell.cost
-            cover.enabled = True
-            end_turn_button.enabled = False
+            if card.cooldown_left > 0:
+                rush.position = card.position
+                rush.z = card.z -1
+                rush.scale = [e*.8 for e in card.scale]
+                rush.enabled = True
+                rush.on_click = def():
+                    card.cooldown_left -= 1
+                    update_can_use_card(card)
+                    rush.enabled = False
+                    end_turn()
+                return
 
+            # if energy_bar.value < card.spell.cost:
+            #     return
+
+            # energy_bar.value -= card.spell.cost
+            cover.enabled = True
+            card.cooldown_left = card.spell.cooldown
 
             enemy.animate('y', .15, .05)
             after .05s:
@@ -156,7 +166,7 @@ battle.on_enter = def():
 
 
 def update_can_use_card(card):
-    active = energy_bar.value >= card.spell.cost and card.cooldown_left <= 0
+    active = card.cooldown_left <= 0
     card.lock_x = not active
     card.lock_y = not active
 
@@ -165,28 +175,18 @@ def update_can_use_card(card):
     after .05:
         card.cooldown_overlay.animate('scale_x', .75)
         card.cooldown_overlay.animate('scale_y', .75)
-    # card.cooldown_overlay.enabled = True
+
     card.cooldown_overlay.enabled = card.cooldown_left > 0
-    if card.draggable:
-        card.alpha = 1
-    else:
-        card.alpha=.5
+    # if active:
+    #     card.alpha = 1
+    # else:
+    #     card.alpha = .5
 
-
-    if energy_bar.value < card.spell.cost:
-        card.energy_cost_icon.color = hsv(0,.1,.5)
-        card.energy_cost_icon.text_color = hsv(0,1,.2)
-    else:
-        card.energy_cost_icon.color = hsv(30,1,.9)
-        card.energy_cost_icon.text_color = hsv(0,0,.2)
-
-# battle.on_exit = def():
 
 
 
 def win():
     battle.enabled = False
-    # tooltip.enabled = False
     goto_scene(city_scene)
 
 city_scene = Scene('city')
@@ -270,9 +270,14 @@ grid[0][2].type = 'empty'
 grid[0][2].color = color.white
 grid[0][2].texture = possible_tiles[grid[0][2].type]
 
-goto_scene(city_scene)
+goto_scene(battle)
 # goto_scene(menu)
 
 
 # goto_scene(menu)
 </script><script src="../taptapir/sunsnake_compiler.js"></script></html>
+
+# real time combat?
+# tetris style inventory/skillbar, turn based
+# slay the spire type combat
+#
