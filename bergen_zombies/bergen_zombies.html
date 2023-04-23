@@ -66,22 +66,13 @@ spells = [
 {name:'Cobblestone',            normal_damage:18,    fire_damage:0,    water_damage:0,    sand_damage:2,    leaf_damage:2,    cooldown:5,    icon: 'https://game-icons.net/icons/ffffff/000000/1x1/lorc/stone-block.svg'},
 {name:'Police Shield',          normal_damage:0,    fire_damage:0,    water_damage:0,    sand_damage:2,    leaf_damage:2,    cooldown:5,    icon: 'https://game-icons.net/icons/ffffff/000000/1x1/lorc/riot-shield.svg'},
 
-{name:'Molotov',                normal_damage:7,    fire_damage:2,    water_damage:10,   sand_damage:2,    leaf_damage:2,    cooldown:5,    icon: 'https://game-icons.net/icons/ffffff/000000/1x1/lorc/molotov.svg'},
+{name:'Molotov',                normal_damage:710,    fire_damage:202,    water_damage:10,   sand_damage:2,    leaf_damage:2,    cooldown:5,    icon: 'https://game-icons.net/icons/ffffff/000000/1x1/lorc/molotov.svg'},
 {name:'Modded Nail Gun',        normal_damage:21,    fire_damage:0,    water_damage:0,    sand_damage:2,    leaf_damage:2,    cooldown:5,    icon: 'https://cdn-icons-png.flaticon.com/512/971/971910.png'},
 {name:'Circle Saw Blade',       normal_damage:12,    fire_damage:0,    water_damage:0,    sand_damage:2,    leaf_damage:2,    cooldown:5,    icon: 'https://game-icons.net/icons/ffffff/000000/1x1/sbed/circular-saw.svg'},
 {name:'Shovel',                 normal_damage:10,    fire_damage:0,    water_damage:0,    sand_damage:2,    leaf_damage:2,    cooldown:5,    icon: 'https://game-icons.net/icons/ffffff/000000/1x1/lorc/spade.svg'},
 {name:'Med Kit',                normal_damage:0,    fire_damage:0,    water_damage:0,    sand_damage:2,    leaf_damage:2,    cooldown:5,    icon: 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/health-capsule.svg'},
 ]
-print(spells[0])
-# deck = [spells[e] for e in spell_names]
-# for i, e in deck:
-#     if not e:
-#         deck[i] = spells['Bat']
-
-# print('-------------', spells, deck)
 cards = []
-sunsnake.define(*ElementalDamageLabel(,Entity(parent=card, scale=[.035/card.scale_x*1.8, .035/card.scale_y], roundness=.5, xy=[.5-.05,.5-.025], origin=[.5,.5], text_size=1.5, text_origin=[.5,0], text_color=hsv(0,0,.8), alpha=.9, )
-
 
 battle.on_enter = def():
     enemy.hp_bar.value = 30
@@ -120,8 +111,12 @@ battle.on_enter = def():
         for j, e in ['normal', 'fire', 'water', 'sand', 'leaf']:
             dmg = card.spell[`${e}_damage`]
             if dmg:
-                card.damage_icon_fire = *ElementalDamageLabel(color=element_colors[j], text=`  ${dmg}  `, text_color=text_colors[j], y=(.5-.025)-(.3*(k))/(card.scale_y*10))
-                card.damage_icon_fire.fit_to_text()
+                damage_label = Entity(parent=card, scale=[.035/card.scale_x*1.8, .035/card.scale_y], roundness=.5, x=.5-.025, origin=[.5,.5], text_size=1.4, text_origin=[.5,0], text_color=hsv(0,0,1   ), alpha=.9, font='monospace',
+                    color=element_colors[j], text=`  ${dmg}  `, text_color=text_colors[j], y=(.5-.0275)-(.35    *(k))/(card.scale_y*10))
+                if j > 0:
+                    damage_label.model.innerHTML = `&nbsp;<img style='vertical-align:middle; height:16px;' src='textures/icon_${e}.png'></img> ${dmg}  `
+                damage_label.fit_to_text()
+                # Entity(parent=damage_label, texture=`textures/icon_${e}.png`, scale=[1/len(dmg),1], origin=[-.5,.55])
                 k += 1
 
 
