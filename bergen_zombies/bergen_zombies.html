@@ -16,14 +16,14 @@ Button(parent=menu, text='Play', scale=[.35,.15], y=-.2, on_click=def():goto_sce
 battle = Scene('textures/bergen_005')
 bg_overlay = Entity(parent=battle, scale=2, color=color.dark_gray, alpha=.75)
 card_parent = Entity(parent=battle, color=color.clear, z=-1, scale=1)
-enemy = Entity(parent=battle, scale=[.4,.6], color=color.azure, name='entity', value=20, text='zombie', y=.1, texture='https://game-icons.net/icons/ffffff/000000/1x1/delapouite/shambling-zombie.svg')
-enemy.hp_bar = HealthBar(parent=battle, max=30, y=.5, scale=[.6,.075], bar_color=hsv(320,1,.8), shadow='#f00')
+enemy = Entity(parent=battle, scale=[.4,.6], color=color.azure, name='entity', text='zombie', y=.1, texture='https://game-icons.net/icons/ffffff/000000/1x1/delapouite/shambling-zombie.svg')
+enemy.hp_bar = HealthBar(parent=battle, max=300, y=.5, scale=[.6,.075], bar_color=hsv(320,1,.8), shadow='#f00')
 enemy_text = Button(parent=battle, x=enemy.hp_bar.x+.025, y=enemy.hp_bar.y+.06, z=0, text='Zombie', scale_y=.05, text_size=2, text_origin=[-.5,0], scale=enemy.hp_bar.scale, color=color.clear, text_color=color.light_gray)
 
 # energy_bar = HealthBar(parent=battle, max=10, y=-(.5*aspect_ratio)+.115, z=-2, scale=[.9,.04], bar_color=color.orange, shadow=True)
 # energy_bar.value = 5
 
-hp_bar = HealthBar(parent=camera.ui, max=100, y=-(.5*aspect_ratio)+.05, z=-3, scale=[.9,.075], bar_color=hsv(320,1,.8), shadow=True, z=-100)
+hp_bar = HealthBar(parent=camera.ui, max=100, y=-(.5*aspect_ratio)+.06, z=-3, scale=[.975,.075], bar_color=hsv(320,1,.8), shadow=True, z=-100)
 
 
 cover = Entity(parent=battle, alpha=.25, color=color.black, z=-10, scale=[1,.5], y=-.475, enabled=False, shadow=True, on_click=def():return)
@@ -75,21 +75,21 @@ spells = [
 cards = []
 
 battle.on_enter = def():
-    enemy.hp_bar.value = 30
+    enemy.hp_bar.value = 300
     # energy_bar.value = 10
     cover.enabled = False
     card_parent.destroy_children()
 
     cards = []
     for i in range(10):
-        x = (-.5 + .17 + (i%5)*.16) * 1.1
+        x = (-.5 + .18 + (i%5)*.16) * 1.25
         h = .14 + int((i%2) == 0) * .1
-        y = (-.3 - int(i>=5)*.4 - (int(i<5)-.5)*h ) * 1.1
+        y = (-.21- int(i>=5)*.4 - (int(i<5)-.5)*h ) * 1.25
 
 
         # let slot = Entity(parent=card_parent, xy=[x,y], roundness=.02, color=hsv(0,0,.1,.8), shadow=0, z=1, scale=[.15,h], origin=[0,int(i<5)-.5])
         # let card = Entity(parent=card_parent, xy=[x,y], original_xy=[x,y], scale=[.14,h], origin=[0,0], roundness=.1, shadow=True, text_size=1.75, text_origin=[.5,.5], spell=None, on_click=def():print('o'))
-        let card = Entity(parent=card_parent, xy=[x,y], original_xy=[x,y], scale=[.14*.97*1.1,h*.97*1.1], origin=[0,0], roundness=.1, shadow=True, text_size=1.75, text_origin=[.5,.5], spell=None, on_click=def():print('o'))
+        let card = Entity(parent=card_parent, xy=[x,y], original_xy=[x,y], scale=[.14*.97*1.25,h*.97*1.25], origin=[0,0], roundness=.1, shadow=True, text_size=1.75, text_origin=[.5,.5], spell=None, on_click=def():print('o'))
         cards.append(card)
         card.spell = spells[i]
         card.texture = card.spell.icon
@@ -152,7 +152,7 @@ battle.on_enter = def():
                 enemy.animate('y', .1, .05)
 
             after .2:
-                enemy.hp_bar.value -= card.spell.damage
+                enemy.hp_bar.value -= card.spell.normal_damage
                 if enemy.hp_bar.value <= 0:
                     win()
                     return
