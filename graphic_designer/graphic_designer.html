@@ -27,10 +27,10 @@ set_background_color("#111111")
 set_window_color("#222")
 
 canvas = Entity(scale=[1*.9, 1*aspect_ratio*.9], color='#333', z=2)
-canvas = Entity(parent=canvas, color='red', scale_y=1/aspect_ratio, visible_self=false)
+canvas = Entity(parent=canvas, color=color.red, scale_y=1/aspect_ratio, visible_self=false)
 
 
-# scene = Entity(parent=canvas, color='red', position=[.5,-.5])
+# scene = Entity(parent=canvas, color=color.red, position=[.5,-.5])
 
 # print('-------', window)
 # hierarchy = Entity(position=top_right, origin=[.5,.5], scale=.085, visible_self=false)
@@ -48,7 +48,7 @@ for [i, e] in ['▢','△'].entries():
     let b = Button(parent=add_element_menu, scale=1, text=e, origin=[-.5,.5], x=i)
     b.on_click = def():
         if e == '▢':
-            clone = Entity(parent=canvas, scale=.5, color='gray', draggable=true, lock_x=true, lock_y=true)
+            clone = Entity(parent=canvas, scale=.5, color=color.gray, draggable=true, lock_x=true, lock_y=true)
             clone.on_click = def():
                 selected_entity = clone
                 clone.el.style.outline = "medium dashed #123";
@@ -97,7 +97,7 @@ scale_tool.drop = def():
 
 
 
-# gizmo = Entity(scale=.1, roundness=.5, color='red', visible_self=true, z=-10, x=1,
+# gizmo = Entity(scale=.1, roundness=.5, color=color.red, visible_self=true, z=-10, x=1,
 #     draggable=true, min_x=-.5*.9, max_x=.5*.9, min_y=-.5*.9*aspect_ratio, max_y=.5*.9*aspect_ratio)
 # gizmo.on_click = def():
 #     if selected:
@@ -128,7 +128,7 @@ scale_tool.drop = def():
 
 
 # e = Entity(origin=[-.5,-.5], scale=.4)
-# e2 = Entity(parent=e, scale=.2, color='red')
+# e2 = Entity(parent=e, scale=.2, color=color.red)
 
 
 

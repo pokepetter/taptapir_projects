@@ -19,7 +19,7 @@ clear_button = Button(text='clear all', text_size=2, position=[-.45+(.15*4),-.55
 clear_button.on_click = def():
     are_you_sure.enabled = true
 
-are_you_sure = Button(text='are you sure?', text_size=1.5, position=[-.45+(.15*4),-.45], origin=[-.5,.5], scale=.1, color='red', enabled=false, shadow=1, z=-2)
+are_you_sure = Button(text='are you sure?', text_size=1.5, position=[-.45+(.15*4),-.45], origin=[-.5,.5], scale=.1, color=color.red, enabled=false, shadow=1, z=-2)
 
 are_you_sure.bg = Entity(parent=are_you_sure, scale=100, color='#00000055', z=1)
 are_you_sure.bg.on_click = def():
@@ -69,7 +69,7 @@ bg.on_click = def():
     save()
 
 def create_line(start, end, start_dragging=true):
-    let line = Entity(scale=.01, color='black', origin=[-.5,0], position=start, ignore_collision=true)
+    let line = Entity(scale=.01, color=color.black, origin=[-.5,0], position=start, ignore_collision=true)
     lines.append(line)
     line.el.addEventListener('mouseenter', e => {line.color = 'darkgray'})
     line.el.addEventListener('mouseleave', e => {line.color = 'black'})
@@ -93,7 +93,7 @@ def create_line(start, end, start_dragging=true):
         line.end_point.y += line.y - line.start_y
         drop(line)
 
-    let start_point = Entity(scale=.01, color='black', draggable=true, roundness=.5, line=line, position=start, start_offset=[0,0], drop=drop)
+    let start_point = Entity(scale=.01, color=color.black, draggable=true, roundness=.5, line=line, position=start, start_offset=[0,0], drop=drop)
     start_point.el.addEventListener('mouseenter', e => {start_point.color = 'cyan'})
     start_point.el.addEventListener('mouseleave', e => {start_point.color = 'black'})
     line.start_point = start_point
@@ -103,7 +103,7 @@ def create_line(start, end, start_dragging=true):
     start_point.drop = def():
         drop(line)
 
-    let end_point = Entity(scale=.01, color='black', draggable=true, roundness=.5, line=line, position=end, start_offset=[0,0])
+    let end_point = Entity(scale=.01, color=color.black, draggable=true, roundness=.5, line=line, position=end, start_offset=[0,0])
     line.end_point = end_point
     end_point.el.addEventListener('mouseenter', e => {end_point.color = 'magenta'})
     end_point.el.addEventListener('mouseleave', e => {end_point.color = 'black'})

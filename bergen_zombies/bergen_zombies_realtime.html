@@ -1,0 +1,279 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>Bergen Zombies</title><link rel="stylesheet" href="../taptapir.css"></head><body></body>
+<script src="../taptapir/taptapir.js"></script>
+<script src="spells.js"></script>
+<script type='text/sunsnake'>
+
+
+set_window_color('rgb(49 72 60)')
+set_background_color('#050505')
+
+
+menu = Scene('textures/bergen_003')
+Button(parent=menu, text='Bergen\n Zombies', text_size=10, y=.4, text_color=color.blue, color=color.clear)
+Button(parent=menu, text='Play', scale=[.35,.15], y=-.2, on_click=def():goto_scene(battle))
+
+
+battle = Scene('textures/bergen_005')
+bg_overlay = Entity(parent=battle, scale=2, color=color.dark_gray, alpha=.75)
+card_parent = Entity(parent=battle, color=color.clear, z=-1)
+enemy = Entity(parent=battle, scale=[.4,.6], color=color.azure, name='entity', value=20, text='zombie', y=.1, texture='https://game-icons.net/icons/ffffff/000000/1x1/delapouite/shambling-zombie.svg')
+enemy.hp_bar = HealthBar(parent=battle, max=30, y=.5, scale=[.6,.075], bar_color=hsv(320,1,.8), shadow='#f00')
+enemy_text = Button(parent=battle, x=enemy.hp_bar.x+.025, y=enemy.hp_bar.y+.06, z=0, text='Zombie', scale_y=.05, text_size=2, text_origin=[-.5,0], scale=enemy.hp_bar.scale, color=color.clear, text_color=color.light_gray)
+
+energy_bar = HealthBar(parent=battle, max=10, y=-(.5*aspect_ratio)+.115, z=-2, scale=[.9,.04], bar_color=color.orange, shadow=True)
+energy_bar.value = 5
+
+hp_bar = HealthBar(parent=camera.ui, max=100, y=-(.5*aspect_ratio)+.05, z=-3, scale=[.9,.075], bar_color=hsv(320,1,.8), shadow=True, z=-100)
+
+
+cover = Entity(parent=battle, alpha=.0, color=color.gray, z=-10, scale=[1,.5], y=-.475, enabled=False, on_click=def():return)
+# def end_turn():
+#     for card in cards:
+#         card.alpha = .25
+#
+#     cover.enabled = True
+#     end_turn_button.enabled = False
+#
+# # def enemy_turn():
+#     after .2s:
+#         enemy.animate('y', -.1, duration=.1)
+#         hp_bar.value -= 5
+#     after .31s:
+#         enemy.animate('y', .1, duration=.1)
+#
+#     after 1s:
+#         start_turn()
+
+# def start_turn():
+#     cover.enabled = False
+#     end_turn_button.enabled = True
+#     energy_bar.value += 3
+#
+#
+#     for i, e in enumerate(cards):
+#         e.cooldown_left -= 1
+#         update_can_use_card(e)
+
+# end_turn_button = Button(parent=battle, scale=[.15,.1], position=[.35,-.15],text='end\nturn', text_size=1.75, color=hsv(280,.8,.5), text_color=color.light_gray, shadow=1)
+# end_turn_button.on_click = end_turn
+
+tooltip = Text(text='tooltip', scale=[.4,.2], z=-2, enabled=0, origin=[0,-.5], roundness=.1, color='#eee', alpha=.9, text_color='#222', text_size=2)
+tooltip.title = Text(parent=tooltip, text=' Shotgun', scale_y=.25, scale_x=1.1, roundness=1, color=color.pink, x=-.00, y=1.35, text_size=2.5, padding=.2)
+
+spell_names = [
+'Chainsaw',
+'Snowball',
+'Axe',
+'Cobblestone',
+'Police Shield',
+
+'Molotov',
+'Modden Nail Gun',
+'Circle Saw Blade',
+'Shovel',
+'Med Kit',
+]
+deck = [spells[e] for e in spell_names]
+for i, e in deck:
+    if not e:
+        deck[i] = spells['Bat']
+
+# print('-------------', spells, deck)
+cards = []
+
+battle.on_enter = def():
+    enemy.hp_bar.value = 30
+    energy_bar.value = 10
+    cover.enabled = False
+    card_parent.destroy_children()
+
+    cards = []
+    for i in range(10):
+        x = -.5 + .17 + (i%5)*.16
+        h = .14 + int((i%2) == 0) * .1
+        y = -.3 - int(i>=5)*.4 - (int(i<5)-.5)*h
+
+
+        # let slot = Entity(parent=card_parent, xy=[x,y], roundness=.02, color=hsv(0,0,.1,.8), shadow=0, z=1, scale=[.15,h], origin=[0,int(i<5)-.5])
+        let card = Entity(parent=card_parent, xy=[x,y], original_xy=[x,y], scale=[.14,h], origin=[0,0], roundness=.1, shadow=True, text_size=1, text_origin=[0,0], spell=None, on_click=def():print('o'))
+        cards.append(card)
+        card.spell = deck[i]
+        card.spell = spells['Bat']
+
+
+        card.cooldown_left = 0
+        card.cooldown_overlay = Entity(parent=card, roundness=.5, enabled=False, text=`?`, text_origin=[0,0], scale=.8, alpha=.75, color=color.light_gray)
+        card.energy_cost_icon = Entity(parent=card, roundness=.5, scale=.25, color=color.orange, xy=[.45,-.45], shadow=1, text=`${card.spell.cost}`, text_origin=[0,0], text_size=2, text_color=color.dark_gray)
+        # card.enabled = False
+        # print('aaaaaaaaaaaaaaaaaaaaaaaa', card.spell)
+        # if card.spell.icon:
+        #     card.texture = card.spell.icon
+        # else:
+        #     # card.texture = `textures/${card.spell.constructor.name}.png`.toLowerCase()
+        #     card.text = card.spell.constructor.name.toLowerCase()
+        card.text = spell_names[i]
+        # card.text = i
+
+
+        after .1*(i+1):
+            card.enabled = True
+            # update_can_use_card(card)
+
+        card.on_click = def():
+            print('USE')
+            # if energy_bar.value < card.spell.cost:
+            #     return
+
+            energy_bar.value -= card.spell.cost
+            # cover.enabled = True
+            # end_turn_button.enabled = False
+            card.cooldown_left = card.spell.cooldown
+
+            # enemy.animate('y', .15, .05)
+            # after .05s:
+            #     enemy.animate('y', .1, .05)
+            #
+            # after .2:
+            #     enemy.hp_bar.value -= card.spell.damage
+            #     if enemy.hp_bar.value <= 0:
+            #         win()
+            #         return
+            #     update_can_use_card(card)
+            #     after .2:
+            #         end_turn()
+        card.update = def card_update():
+            if card.cooldown_left <= 0:
+                card.cooldown_overlay.enabled = False
+                return
+            card.cooldown_overlay.enabled = True
+            card.cooldown_left -= delta_time
+            print('aa', card.cooldown_left)
+            card.cooldown_overlay.text = `${round(card.cooldown_left, 1)}`
+            card.cooldown_overlay.scale = .6
+
+# def update_can_use_card(card):
+#     active = energy_bar.value >= card.spell.cost and card.cooldown_left <= 0
+#     card.lock_x = not active
+#     card.lock_y = not active
+#
+#     card.cooldown_overlay.text = `${card.cooldown_left}`
+#     card.cooldown_overlay.scale = .6
+#     after .05:
+#         card.cooldown_overlay.animate('scale_x', .75)
+#         card.cooldown_overlay.animate('scale_y', .75)
+#     # card.cooldown_overlay.enabled = True
+#     card.cooldown_overlay.enabled = card.cooldown_left > 0
+#     if card.draggable:
+#         card.alpha = 1
+#     else:
+#         card.alpha=.5
+#
+#
+#     if energy_bar.value < card.spell.cost:
+#         card.energy_cost_icon.color = hsv(0,.1,.5)
+#         card.energy_cost_icon.text_color = hsv(0,1,.2)
+#     else:
+#         card.energy_cost_icon.color = hsv(30,1,.9)
+#         card.energy_cost_icon.text_color = hsv(0,0,.2)
+
+# battle.on_exit = def():
+
+
+
+def win():
+    battle.enabled = False
+    # tooltip.enabled = False
+    goto_scene(city_scene)
+
+city_scene = Scene('city')
+possible_tiles = dict(
+    empty = '',
+    zombie = 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/shambling-zombie.svg',
+    house = 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/house.svg',
+    crate = 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/wooden-crate.svg',
+)
+print(possible_tiles['crate'])
+# loot_boxes = {
+#
+#     'small' :       new Object(draws=1, gold=4, gas=1, ammo=1, food=1},
+#     'medium':       new Object(draws=2, gold=2, ammo=2, food=2),
+#     'food_crate':   new Object(draws=2, snack=5, food=2, drink=3),
+#     'ammo_crate':   new Object(draws=2, snack=5, food=2, drink=3),
+#
+#
+# }
+item_chances = dict(gold=25, gold_stash=5, gas=10, ammo=10, snack=20, drink=10, food=10, weapon=1)
+# gold, gas, ammo, weapon, food
+
+# bg = Entity(texture='https:#game-icons.net/icons/ffffff/000000/1x1/skoll/balkenkreuz.svg', tileset_size=[.2,.2], alpha=.5)
+grid = Array_2d(5,5)
+for _y in range(5):
+    for _x in range(5):
+        let x = _x
+        let y = _y
+        let tile = Entity(parent=city_scene, scale=.1, origin=[-.5,0], xy=[-.45 + x*.2,-.3 + y*.2], collor=color.white, shadow=1, roundness=.1, enabled=False, revealed=False)
+        grid[y][x] = tile
+
+        i = random_int(0,9)
+        if i <= 1:
+            tile.type = 'empty'
+        elif i <= 4:
+            tile.type = 'zombie'
+        elif i <= 7:
+            tile.type = 'house'
+        else:
+            tile.type = 'crate'
+
+        tile.reveal = def():
+            if tile.revealed:
+                return
+            tile.enabled = True
+            # tile.text = tile.type
+            print('-----------------', possible_tiles[tile.type])
+            tile.texture = possible_tiles[tile.type]
+            tile.revealed = True
+
+        tile.on_click = def():
+            if tile.type == 'house':
+                r = random_int(0,1):
+                if r <= 0:
+                    after .1s:
+                        tile.type = 'zombie'
+                        tile.texture = possible_tiles[tile.type]
+                    after .8s:
+                        goto_scene(battle)
+                    return
+                else:
+                    tile.type = 'crate'
+
+                tile.texture = possible_tiles[tile.type]
+
+            tile.texture = None
+            tile.color = color.lime
+            if tile.type == 'zombie':
+                goto_scene(battle)
+
+            offsets = [[1,0], [-1,0], [0,1], [0,-1]]
+            for offset in offsets:
+                # print(offset)
+                try:
+                    grid[y+offset[0]][x+offset[1]].reveal()
+                catch:
+                    print('a')
+                # after .2s:
+grid[0][2].reveal()
+grid[0][2].type = 'empty'
+grid[0][2].color = color.white
+grid[0][2].texture = possible_tiles[grid[0][2].type]
+
+goto_scene(battle)
+# goto_scene(menu)
+
+
+# goto_scene(menu)
+</script><script src="../taptapir/sunsnake_compiler.js"></script></html>
+
+# real time combat?
+# tetris style inventory/skillbar, turn based
+# slay the spire type combat
+#
