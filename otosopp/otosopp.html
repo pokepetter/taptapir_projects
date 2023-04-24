@@ -426,24 +426,10 @@ def paint():
 
     [x, y] = get_canvas_position()
 
-    # if held_keys['shift'] and prev_pos != None:
-    #     velocity = [x-prev_pos[0], y-prev_pos[1]]
-    #     if abs(velocity[0]) > abs(velocity[1]):
-    #         lock_axis = 'horizontal'
-    #     else:
-    #         lock_axis = 'vertical'
-    #
-    #     if self.lock_axis == 'horizontal':
-    #         y = prev_pos[1]
-    #
-    #     if self.lock_axis == 'vertical':
-    #         x = prev_pos[0]
-
-    if held_keys['s'] and prev_pos:
+    if held_keys['w'] and prev_pos:
         x = lerp(prev_pos[0], x, .025)
         y = lerp(prev_pos[1], y, .025)
 
-    # print('--------------', prev_pos)
     if prev_pos == None:
         if draw_on_click:
             if not brush_tips: # no, brush texture, so draw a rect
@@ -460,7 +446,8 @@ def paint():
 
                 draw_brush_image(IMG, x, y)
 
-        start_position = pos
+
+        start_position = [x,y]
         prev_draw_pos = pos
         prev_pos = [x,y]
         pixels_traveled = 0
@@ -469,12 +456,13 @@ def paint():
     if snap_to_hex:
         y = start_position[1] + (x-start_position[0])
 
-    if held_keys['a']:
-        y = prev_pos[1]
-    if held_keys['w']:
-        x = prev_pos[0]
+    if held_keys['shift']:
+        velocity = [x-start_position[0], y-start_position[1]]
+        if abs(velocity[0]) > abs(velocity[1]):
+            y = prev_pos[1]
+        else:
+            x = prev_pos[0]
 
-    # print('--------', prev_pos)
     distance_since_last_frame = distanceApprox(prev_pos, [x,y])
     pixels_traveled += distance_since_last_frame
     spacing_in_pixels = brush_size[1]*SPACING
@@ -974,46 +962,41 @@ lasso_tool.input = def lasso_tool_input(key):
         # selection.width = (selection.max_x - selection.min_x) +1
         # selection.height = (selection.max_y - selection.min_y) +1
 
-        def inside(point, poly):
-            # // ray-casting algorithm based on
-            # // https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html/pnpoly.html
-            var x = point[0], y = point[1]
-            var inside = False
 
-            for (var i=0, j=poly.length-1; i < poly.length; j=i++):
-                var xi = poly[i][0], yi = poly[i][1];
-                var xj = poly[j][0], yj = poly[j][1];
-
-                intersect = ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / (yj - yi) + xi)
-                if intersect:
-                    inside = !inside;
-
-            return inside
 
         poly = selection.points
-        # clean_poly = []
-        # for i, e in poly:
-        #     if i > 0:
-        #         if poly[i-1][0] == e[0]-1 and poly[i-1][1] == e[1]:
-        #             continue
-        #         if poly[i-1][0] == e[0]+1 and poly[i-1][1] == e[1]:
-        #             continue
-        #         if poly[i-1][0] == e[0] and poly[i-1][1]-1 == e[1]:
-        #             continue
-        #         if poly[i-1][0] == e[0] and poly[i-1][1]+1 == e[1]:
-        #             continue
-        #     clean_poly.append(poly)
-        # print('----------------', len(poly))
-        # poly = clean_poly
-        # print('----------------', len(poly))
+        clean_poly = [poly[0], ]
+        for i in range(0, len(poly), 10):
+            if distance(clean_poly[-1], poly[i]) > 32:
+                clean_poly.append(poly[i])
+        poly = clean_poly
+
         for y in range(selection.min_y, selection.max_y):
             for x in range(selection.min_x, selection.max_x):
-                # if inside([x,y], poly):
-                selection.matrix[x][y] = not held_keys['alt'] * inside([x,y], poly)
+                if inside([x,y], poly):
+                    selection.matrix[x][y] = not held_keys['alt']
+
+                # selection.matrix[x][y] = not held_keys['alt'] * inside([x,y], poly)
                     # selection.active = True
 
         lasso_prev_pos = None
         render_selection()
+
+def inside(point, poly):
+    # // ray-casting algorithm based on
+    # // https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html/pnpoly.html
+    var x = point[0], y = point[1]
+    var inside = False
+
+    for (var i=0, j=poly.length-1; i < poly.length; j=i++):
+        var xi = poly[i][0], yi = poly[i][1];
+        var xj = poly[j][0], yj = poly[j][1];
+
+        intersect = ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / (yj - yi) + xi)
+        if intersect:
+            inside = !inside;
+
+    return inside
 
 def get_pixel(x, y):
     return current_layer.ctx.getImageData(x, y, 1, 1).data
@@ -1257,6 +1240,28 @@ set_layer(first_layer)
 if '?' in window.location.href:
     args = window.local_image.href.split('?',1)[1]
     print('---------------', args)
+
+shortcut_menu = Entity(parent=camera.ui, visible_self=False, enabled=True)
+shortcut_menu.menu = Entity(parent=shortcut_menu, visible_self=False, enabled=False)
+Entity(parent=shortcut_menu.menu, scale=.05, color=color.azure, shadow=True, alpha=.5, roundness=.5)
+
+shortcut_menu.buttons = [
+    Button(parent=shortcut_menu.menu, text='download \nselection', x=.25, roundness=.2, on_click=def():print('aawejaoij')),
+]
+
+shortcut_menu.input = def shortcut_menu_input(key):
+    if key == 'a':
+        shortcut_menu.menu.enabled = True
+        shortcut_menu.menu.xy = mouse.position
+    elif key == 'a up':
+        shortcut_menu.menu.enabled = False
+        # if mouse.hovered_entity in shortcut_menu.buttons:
+        #     mouse.hovered_entity.on_click()
+
+# shortcut_menu.update = def():
+
+
+
 
 </script>
 
