@@ -1,6 +1,7 @@
 <html><title>otosopp</title><body>
 <script src="color_conversion.js"></script>
 <script src="../taptapir/taptapir.js"></script>
+<script src="../taptapir/taptapir_gamepad.js"></script>
 <script src="assets/base_64_brushes.js"></script>
 <script type='text/sunsnake'>
 
@@ -19,7 +20,6 @@ menu_parent = Entity(parent=camera.ui, visible_self=False)
 right_button_x = (.5*aspect_ratio)-.005
 left_button_x = right_button_x-.055
 sunsnake.define(*Button(,Entity(parent=menu_parent, roundness=.01, origin=[.5,.5], text_origin=[0,0], x=(.5*aspect_ratio)-.01, scale=[.05,.05], z=-1, text_size=1.5, color=hsv(0,0,.03), text_color=hsv(0,.0,.8),)
-
 
 
 new_canvas_handler = Entity(visible_self=False)
@@ -141,8 +141,6 @@ def set_layer(layer):
     current_layer.layer_button.text_color = hsv(0,0,.2)
 
 
-# print('----------------', layers)
-
 selection_canvas = document.createElement('canvas');
 selection_canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
 selection_canvas.width = w
@@ -224,6 +222,8 @@ rotate_brush = True
 using_painterly_brush = True
 prev_brush_tip = -1
 set_brush(poke_brush)
+# set_brush(round_brush)
+# set_brush_size([64,64])
 IMG = new Image()
 current_color = [32, 32, 32, 255]
 drawing = False
@@ -232,11 +232,19 @@ prev_pos = None
 start_position = None
 snap_to_hex = False
 tool = 'brush'
+ERASING = False
 SMUDGE = False
 SMUDGE_STRENGTH = 1
 # cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enabled=False)
 
 brush_tool = Entity(name='brush_tool', render=False)
+brush_tool.on_disable = def():
+    brush_cursor.enabled = False
+    mouse.visible = True
+brush_tool.on_enable = def():
+    brush_cursor.enabled = True
+    mouse.visible = False
+
 
 brush_tool.input = def brush_tool_input(key):
     if mouse.hovered_entity == bg and key == 'left mouse down':
@@ -260,11 +268,11 @@ brush_tool.input = def brush_tool_input(key):
                 if not SMUDGE:
                     img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
 
-                    for i in range(0, img_data.data.length, 4):
-                        img_data.data[i] = img_data.data[i] * (current_color[0]/255)
-                        img_data.data[i+1] = img_data.data[i+1] * (current_color[1]/255)
-                        img_data.data[i+2] = img_data.data[i+2] * (current_color[2]/255)
-                        img_data.data[i+3] = img_data.data[i+3] * (current_color[3]/255)
+                    # for i in range(0, img_data.data.length, 4):
+                    #     img_data.data[i] = img_data.data[i] * (current_color[0]/255)
+                    #     img_data.data[i+1] = img_data.data[i+1] * (current_color[1]/255)
+                    #     img_data.data[i+2] = img_data.data[i+2] * (current_color[2]/255)
+                    #     img_data.data[i+3] = img_data.data[i+3] * (current_color[3]/255)
 
                 elif SMUDGE:
                 #     print('SMUDGE')
@@ -351,13 +359,21 @@ def get_canvas_position(layer=current_layer):
 
 
 def draw_circle(x, y):
+    current_layer.ctx.globalAlpha = current_color[3]/255
     current_layer.ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
+    if ERASING:
+        current_layer.ctx.globalAlpha = 0
+        # current_layer.ctx.fillStyle = `rgba(256, 256, 256, 64)`
+        print('aaa')
+
+
     if not selection.active:
         # current_layer.ctx.fillRect(x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
         current_layer.ctx.beginPath()
         current_layer.ctx.arc(x, y, brush_size[0], 0, 2*Math.PI)
         current_layer.ctx.fill()
         current_layer.ctx.closePath()
+        print('fill')
         return
 
     brush_half_w = brush_size[0] / 2
@@ -382,9 +398,34 @@ def draw_rect(x, y):
             if selection.active and selection.matrix[int(_x)][int(_y)]:
                 current_layer.ctx.fillRect(int(_x), int(_y), 1, 1);
 
-def draw_brush_image(img, x, y):
-    if not lists_are_equal(current_color, color.clear):
-        current_layer.ctx.drawImage(img, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+var a = 0
+
+def lerp(a, b, t):
+    return ((1-t)*a) + (t*b)
+
+def draw_brush_image(brush_canvas, x, y):
+    img_data = current_layer.ctx.getImageData(x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+    brush_data = brush_canvas.getContext("2d", {willReadFrequently: true}).getImageData(0, 0, brush_size[0], brush_size[1])
+
+    if not ERASING:
+        for (i=0; i<len(img_data.data); i+=4):
+            a = img_data.data[i+3]/255
+
+            for (j=0; j<3; j+=1):
+                start_color = lerp(canvas_entity.color[j], img_data.data[i+j], clamp(a*2.2, 0, 1))
+                img_data.data[i+j] = lerp(start_color, (current_color[j]), (brush_data.data[i+3]/255))
+
+            img_data.data[i+3] += brush_data.data[i+3]
+
+        current_layer.ctx.putImageData(img_data, x-(brush_size[0]/2), y-(brush_size[1]/2))
+        # IMG.src = brush_canvas.toDataURL()
+        # current_layer.ctx.drawImage(IMG, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+
+    else:
+        for (i=3; i<len(img_data.data); i+=4):
+            img_data.data[i] -= brush_data.data[i] / 2.2
+
+        current_layer.ctx.putImageData(img_data, x-(brush_size[0]/2), y-(brush_size[1]/2))
 
 
 def paint():
@@ -432,19 +473,18 @@ def paint():
 
     if prev_pos == None:
         if draw_on_click:
-            if not brush_tips: # no, brush texture, so draw a rect
-                if current_brush.shape == 'rect':
-                    draw_rect(x, y)
-
-                elif current_brush.shape == 'circle':
-                    draw_circle(x, y)
-            else:
+            if brush_tips:
                 prev_brush_tip += 1
                 if prev_brush_tip >= brush_tips.length:
                     prev_brush_tip = 0
-                IMG.src = brush_canvases[prev_brush_tip].toDataURL()
 
-                draw_brush_image(IMG, x, y)
+                    draw_brush_image(brush_canvases[prev_brush_tip], x, y)
+
+            elif current_brush.shape == 'rect':
+                draw_rect(x, y)
+
+            elif current_brush.shape == 'circle':
+                draw_circle(x, y)
 
 
         start_position = [x,y]
@@ -481,21 +521,19 @@ def paint():
         let _x = lerp(prev_pos[0], x, t)
         let _y = lerp(prev_pos[1], y, t)
 
-        if brush_tips:
-            IMG.src = brush_canvases[prev_brush_tip].toDataURL()
 
 
         if not rotate_brush:
             if brush_tips:
-                current_layer.ctx.drawImage(IMG, _x-(brush_size[0]/2), _y-(brush_size[1]/2), brush_size[0], brush_size[1])
-            else: # draw rect
-                # print(current_color, `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`)
-                if current_brush.shape == 'rect':
-                    draw_rect(_x, _y)
-                elif current_brush.shape == 'circle':
+                draw_brush_image(brush_canvases[prev_brush_tip], _x, _y)
+            elif current_brush.shape == 'rect':
+                draw_rect(_x, _y)
+            elif current_brush.shape == 'circle':
+                draw_circle(_x, _y)
 
-                    draw_circle(_x, _y)
         elif rotate_brush == True:
+            if brush_tips:
+                IMG.src = brush_canvases[prev_brush_tip].toDataURL()
             invoke(def anon():
                 current_layer.ctx.translate(_x, _y)
                 current_layer.ctx.rotate(radians)
@@ -504,6 +542,8 @@ def paint():
                 current_layer.ctx.translate(-_x, -_y)
             , delay=0)
         elif rotate_brush == 'random':
+            if brush_tips:
+                IMG.src = brush_canvases[prev_brush_tip].toDataURL()
             invoke(def anon():
                 random_radian = random_int(0, 360) * Math.PI / 180
                 current_layer.ctx.translate(_x, _y)
@@ -559,14 +599,18 @@ def input(key):
     #     render_selection()
 
     if held_keys['control'] and key == 'c':
-        copy_image_from_canvas()
+        image_data = copy_selection()
+        # data = Uint8ClampedArray.from(image_data.data)
+        data = Uint8ClampedArray.from(image_data.data)
+        navigator.clipboard.writeText(`local_image:${JSON.stringify([data, selection_x, selection_y, selection_width, selection_height])}`)
 
 
-    if key == 'i' or key == 's':
+
+    if key in ['i','s','gamepad y']:
         new_size = [clamp(int(e*2), 1, 2048) for e in brush_size]
         set_brush_size(new_size)
 
-    if key == 'j' or key == 'x':
+    if key in ['j','x','gamepad x']:
         new_size = [clamp(int(e/2), 1, 2048) for e in brush_size]
         set_brush_size(new_size)
 
@@ -640,7 +684,7 @@ def flip_image_data_vertically(imageData):
 
 def update():
     if mouse.hovered_entity == bg:
-        if not held_keys['alt'] and not held_keys['h']: # if not sampling color
+        if not held_keys['alt'] and not held_keys['h'] and current_tool == brush_tool: # if not sampling color
             document.body.style.cursor = 'none'
         else:
             document.body.style.cursor = 'crosshair'
@@ -759,7 +803,7 @@ window.onfocus = def():
 
 save_button = *Button(xy=[(-.5*aspect_ratio)+.06,.5], origin=[-.5,.5], scale=[.05,.025], text='save', text_size=1)
 save_button.on_click = def save():
-    save_file()
+    save_file(current_layer.canvas)
     # dataURL = canvas.toDataURL("image")
     # window.localStorage.setItem("image", dataURL)
 save_button.input = def input(key):
@@ -767,35 +811,28 @@ save_button.input = def input(key):
         save_button.on_click()
 
 
-# saved_image = window.localStorage.getItem("image")
-# if saved_image:
-#     load_image_to_canvas(saved_image)
-#
-# def load_image_to_canvas(image):
-#     var loaded_image = new Image()
-#     loaded_image.src = image
-#     loaded_image.onload = def on_load():
-#         current_layer.ctx.drawImage(loaded_image, 0, 0)
-#
-# local_image_data = None
-
-def copy_image_from_canvas():
+def copy_selection():
     if selection.active:
         selection_x = selection.bounds[0]
         selection_y = selection.bounds[1]
         selection_width = selection.bounds[2] - selection.bounds[0]
         selection_height = selection.bounds[3] - selection.bounds[1]
 
-        _image_data = current_layer.ctx.getImageData(selection_x, selection_y, selection_width, selection_height)
-        local_image_data = Uint8ClampedArray.from(_image_data.data)
-        flat_selection = selection.matrix.flat()
-        # print(flat_selection[0] === true)
-        print('ffffffffff', int(flat_selection[0]))
-        # print(local_image_data[0], int(flat_selection[0]))
-        for i in range(0, len(local_image_data), 4):
-            local_image_data[i+3] = 255
-        # print('--------', local_image_data)
-        navigator.clipboard.writeText(`local_image:${JSON.stringify([selection_x, selection_y, selection_width, selection_height])}`)
+        image_data = current_layer.ctx.getImageData(selection_x, selection_y, selection_width, selection_height)
+        # return image_data
+
+        # i = 0
+        # for y in range(selection_height):
+        #     for x in range(selection_width):
+        #         # if not selection.matrix[selection_x+x][selection_y+y]:
+        #         #     image_data.data[i+0] = image_data.data[i+0]
+        #         #     image_data.data[i+1] = image_data.data[i+1]
+        #         #     image_data.data[i+2] = image_data.data[i+2]
+        #             # image_data.data[i+3] = 0
+        #         image_data.data[i+3] *= selection.matrix[selection_x+x][selection_y+y]
+        #         i += 4
+
+        return image_data
 
 
 async def paste(e):
@@ -808,10 +845,14 @@ async def paste(e):
         paste_data.getAsString(def anon(value):
             # print('paste local data', value)
             if value.startsWith('local_image:'):
-                [_x, _y, _w, _h] = JSON.parse(value.split('local_image:')[1])
-                # print('-----------', _x, _y, _w, _h)
-                current_layer = add_layer()
-                current_layer.ctx.putImageData(new ImageData(local_image_data, _w, _h), _x, _y)
+                [data, _x, _y, _w, _h] = JSON.parse(value.split('local_image:')[1])
+                values = []
+                for key, value in data.items():
+                    values.append(value)
+
+                data = new Uint8ClampedArray(values)
+                image_data = new ImageData(data, _w, _h)
+                current_layer.ctx.putImageData(image_data, _x, _y)
                 record_undo()
         )
         return False
@@ -921,7 +962,9 @@ lasso_tool.input = def lasso_tool_input(key):
         # print('END SELECTION')
         start = lasso_tool.start_point
         end = selection.points[len(selection.points)-1]
-        dist = distanceApprox(start, end)
+        if not start or not end:
+            return
+        dist = distance(start, end)
         if not dist:
             return
 
@@ -1149,14 +1192,19 @@ set_current_tool(brush_tool)
 
 tool_toggler = Entity(visible_self=False)
 tool_toggler.input = def tool_toggler_input(key):
-    if key == 'l' or key == 'b':
+    if key in ['b',]:
         set_current_tool(brush_tool)
         SMUDGE = False
+        ERASING = False
     # elif key == 'alt' and current_tool == brush_tool:
     #     set_current_tool(eyedropper)
     # elif key == 'alt up' and current_tool == eyedropper:
     #     set_current_tool(brush_tool)
-    elif key == 'p':
+    elif key == 'e':
+        ERASING = True
+        set_current_tool(brush_tool)
+
+    elif key in ['l','p']:
         set_current_tool(lasso_tool)
     elif key == 'm':
         set_current_tool(rect_select_tool)
@@ -1186,7 +1234,7 @@ async def open_file():
     reader.readAsDataURL(file);
 
 
-async def save_file(json_obj, suggested_name='untitled.png'):
+async def save_file(canvas, suggested_name='untitled.png'):
     const options = {
     types: [{
       description: 'png transparent',
@@ -1202,7 +1250,7 @@ async def save_file(json_obj, suggested_name='untitled.png'):
     const newHandle = await window.showSaveFilePicker(options)
     const writableStream = await newHandle.createWritable()
 
-    imgBlob = await new Promise(resolve => current_layer.canvas.toBlob(resolve, 'image/png'));
+    imgBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
     await writableStream.write(imgBlob)
     await writableStream.close()
 
@@ -1245,8 +1293,25 @@ shortcut_menu = Entity(parent=camera.ui, visible_self=False, enabled=True)
 shortcut_menu.menu = Entity(parent=shortcut_menu, visible_self=False, enabled=False)
 Entity(parent=shortcut_menu.menu, scale=.05, color=color.azure, shadow=True, alpha=.5, roundness=.5)
 
+sunsnake.define(*ShortcutMenuButton(,Button(parent=shortcut_menu.menu, roundness=.2, color=color.black, text_color=color.white, alpha=.9, text_size=2, ignore_collision=False, shadow=True, )
+save_selected_button = *ShortcutMenuButton(text='download \nselection', x=.25, )
+save_selected_button.on_click = def():
+    if not selection.active:
+        return
+    _image_data = copy_selection()
+    # print(image_data.data)
+    temp_canvas = document.createElement('canvas');
+    temp_canvas.width = image_data.width
+    temp_canvas.height = image_data.height
+    temp_canvas.getContext('2d').putImageData(_image_data, 0, 0)
+    # temp_canvas.getContext('2d').fillStyle = 'red'
+    # temp_canvas.getContext('2d').fillRect(0,0, temp_canvas.width/2, temp_canvas.height/2)
+    save_file(temp_canvas)
+
+
+
 shortcut_menu.buttons = [
-    Button(parent=shortcut_menu.menu, text='download \nselection', x=.25, roundness=.2, on_click=def():print('aawejaoij')),
+    save_selected_button,
 ]
 
 shortcut_menu.input = def shortcut_menu_input(key):
@@ -1265,8 +1330,8 @@ shortcut_menu.input = def shortcut_menu_input(key):
 
 </script>
 
-<script src="https://cdn.cde.run/Joycon.min.js"></script>
-
-<script type="text/sunsnake" src="joycon_input.sunsnake"></script>
+// <script src="https://cdn.cde.run/Joycon.min.js"></script>
+//
+// <script type="text/sunsnake" src="joycon_input.sunsnake"></script>
 
 <script src="../taptapir/sunsnake_compiler.js"></script>

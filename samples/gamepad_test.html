@@ -1,0 +1,21 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" />
+<title>taptapir gamepad test</title><link rel="icon" href="icon.png">
+</head><body></body>
+<script src="../taptapir/taptapir.js"></script>
+<script src="../taptapir/taptapir_gamepad.js"></script>
+<script type='text/sunsnake'>
+
+set_window_color('#123')
+
+Text(text='Try using the controller!')
+player = Entity(scale=.2, roundness=.1, color=color.orange, shadow=True, text_size=1, text_color=color.black, text_origin=[0,0])
+
+def update():
+    player.x += held_keys['gamepad left stick x'] * .01
+    player.y += held_keys['gamepad left stick y'] * .01
+
+
+def input(key):
+    player.text = key
+
+</script><script src="../taptapir/sunsnake_compiler.js"></script></html>
