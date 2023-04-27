@@ -599,10 +599,10 @@ def input(key):
     #     render_selection()
 
     if held_keys['control'] and key == 'c':
-        image_data = copy_selection()
+        copied_image_data = copy_selection()
         # data = Uint8ClampedArray.from(image_data.data)
-        data = Uint8ClampedArray.from(image_data.data)
-        navigator.clipboard.writeText(`local_image:${JSON.stringify([data, selection_x, selection_y, selection_width, selection_height])}`)
+        data = Uint8ClampedArray.from(copied_image_data.data)
+        navigator.clipboard.writeText(`local_image:${JSON.stringify([data, selection.bounds[0], selection.bounds[1], selection.bounds[2]-selection.bounds[0], selection.bounds[3]-selection.bounds[1]])}`)
 
 
 
@@ -820,17 +820,15 @@ def copy_selection():
 
         image_data = current_layer.ctx.getImageData(selection_x, selection_y, selection_width, selection_height)
         # return image_data
+        local_selection = Array_2d(selection_width, selection_height)
+        local_selection = []
+        for y in range(selection_height):
+            for x in range(selection_width):
+                local_selection.append(selection.matrix[selection_x+x][selection_y+y])
 
-        # i = 0
-        # for y in range(selection_height):
-        #     for x in range(selection_width):
-        #         # if not selection.matrix[selection_x+x][selection_y+y]:
-        #         #     image_data.data[i+0] = image_data.data[i+0]
-        #         #     image_data.data[i+1] = image_data.data[i+1]
-        #         #     image_data.data[i+2] = image_data.data[i+2]
-        #             # image_data.data[i+3] = 0
-        #         image_data.data[i+3] *= selection.matrix[selection_x+x][selection_y+y]
-        #         i += 4
+        for i in range(0, len(image_data.data), 4):
+            if local_selection[i/4] == 0:
+                image_data.data[i+3] = 0
 
         return image_data
 
@@ -948,12 +946,13 @@ def render_selection():
 
 lasso_tool = Entity(enabled=False, render=False)
 lasso_tool.input = def lasso_tool_input(key):
-    if key == 'left mouse down':
+    if key == 'left mouse down' and mouse.hovered_entity == bg:
         pos = get_canvas_position()
         lasso_prev_pos = pos
         selection.points = []
         if not held_keys['shift'] and not held_keys['alt']:
             selection.matrix = Array_2d(w,h)
+            render_selection()
             # print('clear selection')
         lasso_tool.start_point = pos
 
@@ -1295,17 +1294,21 @@ Entity(parent=shortcut_menu.menu, scale=.05, color=color.azure, shadow=True, alp
 
 sunsnake.define(*ShortcutMenuButton(,Button(parent=shortcut_menu.menu, roundness=.2, color=color.black, text_color=color.white, alpha=.9, text_size=2, ignore_collision=False, shadow=True, )
 save_selected_button = *ShortcutMenuButton(text='download \nselection', x=.25, )
+# e = Entity(xy=[-.5,.3], visible_self=True, shadow=True, scale=.2)
+temp_canvas = document.createElement('canvas');
+# temp_canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
 save_selected_button.on_click = def():
     if not selection.active:
         return
-    _image_data = copy_selection()
+    image_data = copy_selection()
+
     # print(image_data.data)
-    temp_canvas = document.createElement('canvas');
+    # e.model.appendChild(temp_canvas)
+    # e.scale=[image_data.width*.001, image_data.height*.001]
     temp_canvas.width = image_data.width
     temp_canvas.height = image_data.height
-    temp_canvas.getContext('2d').putImageData(_image_data, 0, 0)
-    # temp_canvas.getContext('2d').fillStyle = 'red'
-    # temp_canvas.getContext('2d').fillRect(0,0, temp_canvas.width/2, temp_canvas.height/2)
+    temp_canvas.getContext('2d').clearRect(0, 0, image_data.width, image_data.height)
+    temp_canvas.getContext('2d').putImageData(image_data, 0, 0)
     save_file(temp_canvas)
 
 
@@ -1315,13 +1318,17 @@ shortcut_menu.buttons = [
 ]
 
 shortcut_menu.input = def shortcut_menu_input(key):
+    if key == 'u':
+        save_selected_button.on_click()
+
     if key == 'a':
         shortcut_menu.menu.enabled = True
         shortcut_menu.menu.xy = mouse.position
+        render_selection()
     elif key == 'a up':
         shortcut_menu.menu.enabled = False
-        # if mouse.hovered_entity in shortcut_menu.buttons:
-        #     mouse.hovered_entity.on_click()
+        if mouse.hovered_entity in shortcut_menu.buttons:
+            mouse.hovered_entity.on_click()
 
 # shortcut_menu.update = def():
 
