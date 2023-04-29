@@ -61,6 +61,7 @@ for i, col in ['#000000', '#404040', '#606060', '#bfbfbf', '#ffffff']:
     let change_bg_color_button = *Button(parent=background_color_menu, x=-.5+(i/5), color=col, origin=[-.5,-.5], scale=[1/6,1], roundness=.25, on_click=def():canvas_entity.color=col)
 
 add_layer_button = *Button(text='+', scale=[layer_menu.scale_x/2,.03], roundness=.005, origin=[.5,-.5], x=layer_menu.x, y=layer_menu.y-.05, on_click=add_layer)
+delete_layer_button = *Button(text='-', scale=[layer_menu.scale_x/2,.03], roundness=.005, origin=[.5,-.5], x=layer_menu.x+layer_menu.scale_x/2, y=layer_menu.y-.05, on_click=delete_layer)
 
 def add_layer(name='layer', _w=w, _h=h, enabled=True, select=True):
     if name == 'layer':
@@ -104,6 +105,12 @@ def add_layer(name='layer', _w=w, _h=h, enabled=True, select=True):
 
     return layer
 
+def delete_layer(layer=current_layer):
+    if len(layers) == 0:
+        return
+
+    current_layer
+
 
 w = 1920
 h = 1080
@@ -119,6 +126,8 @@ def new_document(_w, _h, fill_color=color.clear):
     canvas_aspect = w/h
     print('new_document', canvas_aspect)
     bg.scale = [2*canvas_scale*canvas_aspect, 2*canvas_scale]
+    selection_canvas.width = w
+    selection_canvas.height = h
 
     first_layer = add_layer()
     if fill_color == color.clear:
@@ -146,10 +155,8 @@ def set_layer(layer):
     current_layer.layer_button.text_color = hsv(0,0,.2)
 
 
-selection_canvas = document.createElement('canvas');
+selection_canvas = document.createElement('canvas')
 selection_canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
-selection_canvas.width = w
-selection_canvas.height = h
 selection_canvas.willReadFrequently = True
 
 selection_canvas_entity = Entity(name='selection_canvas', parent=bg, color=color.clear, scale=[1/2,1/2], z=-1)
@@ -163,7 +170,7 @@ selection_ctx.clearRect(0, 0, w, h)
 square_brush = {'textures':None, 'shape':'rect', 'size':[50, 50], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 round_brush = {'textures':None, 'shape':'circle', 'size':[1, 1], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 round_bitmap_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
-poke_brush = {'textures':["pokebrush.png", ], 'size':[256, 256], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
+poke_brush = {'textures':["pokebrush.png", ], 'size':[64, 64], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 poke_brush_small = {'textures':["pokebrush.png", ], 'size':[16, 16], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
 poke_brush_scatter = {'textures':["pokebrush.png", 'pokebrush.png'], 'size':[256, 256], 'spacing':.25, 'painterly_brush':False, 'rotate':'random', 'draw_on_click':False}
 painterly_brush = {'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[178, 400], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':False}
@@ -265,10 +272,9 @@ brush_tool.input = def brush_tool_input(key):
             prev_pos = None
 
         drawing = True
-        print('start drawing')
+        # print('start drawing')
         # temp_ctx.clearRect(0, 0, w, h)
         # current_layer.ctx.putImageData(img_data, x-(brush_size[0]/2), y-(brush_size[1]/2))
-
 
         if tool == 'eyedropper' or not brush_tips:
             paint()
@@ -359,7 +365,7 @@ brush_tool.input = def brush_tool_input(key):
 
     if drawing and key == 'left mouse up':
         drawing = False
-        print('stop drawing')
+        # print('stop drawing')
         # img_data = temp_ctx.getImageData(0, 0, w, h)
         # current_layer.ctx.putImageData(img_data, 0, 0)
         # current_layer.ctx.drawImage(temp_canvas)
@@ -836,19 +842,12 @@ def copy_selection():
         selection_height = selection.bounds[3] - selection.bounds[1]
 
         image_data = current_layer.ctx.getImageData(selection_x, selection_y, selection_width, selection_height)
-        # return image_data
 
-        local_selection = []
+        i = 0
         for y in range(selection_height):
             for x in range(selection_width):
-                local_selection.append(selection.matrix[selection_x+x][selection_y+y])
-
-        print('aaaaaaaaa', local_selection)
-        for i in range(0, len(image_data.data), 4):
-            if local_selection[i/4] == 0:
-                print(i)
-                # image_data.data[i+3] = 0
-                image_data.data[i+0] = 255
+                image_data.data[i+3] *= int(selection.matrix[selection_x+x][selection_y+y])
+                i += 4
 
         return image_data
 
@@ -909,6 +908,16 @@ def undo():
     if undo_index > 0:
         undo_index -= 1
 
+    # [type, data] = undo_data[undo_index]
+    # print('ddd', type, data)
+    # if type == 'paint_stroke':
+    #     [layer, data] = data
+    #     var loaded_image = new Image
+    #     loaded_image.src = data
+    #     loaded_image.onload = def on_load():
+    #         layer.ctx.clearRect(0, 0, w, h)
+    #         layer.ctx.drawImage(loaded_image, 0, 0)
+
     var loaded_image = new Image
     loaded_image.src = undo_data[undo_index]
     loaded_image.onload = def on_load():
@@ -932,11 +941,12 @@ def record_undo():
         # print('delete old undo data')
 
     undo_data.push(current_layer.canvas.toDataURL())
+    # undo_data.push(['paint_stroke', [current_layer, current_layer.canvas.toDataURL()]])
     print('record undo')
     undo_index += 1
 
 
-selection = {'active':False, 'points':[], 'matrix':Array_2d(w,h), 'bounds':[w,h,0,0]}
+selection = {'active':False, 'points':[], 'matrix':Array_2d(w,h,default_value=False), 'bounds':[w,h,0,0]}
 
 def render_selection():
     selection.active = False
@@ -1308,23 +1318,67 @@ if '?' in window.location.href:
     args = window.local_image.href.split('?',1)[1]
     print('---------------', args)
 
-shortcut_menu = Entity(parent=camera.ui, visible_self=False, enabled=True)
-shortcut_menu.menu = Entity(parent=shortcut_menu, visible_self=False, enabled=False)
-Entity(parent=shortcut_menu.menu, scale=.05, color=color.azure, shadow=True, alpha=.5, roundness=.5)
 
-sunsnake.define(*ShortcutMenuButton(,Button(parent=shortcut_menu.menu, roundness=.2, color=color.black, text_color=color.white, alpha=.9, text_size=2, ignore_collision=False, shadow=True, )
-save_selected_button = *ShortcutMenuButton(text='download \nselection', x=.25, )
-# e = Entity(xy=[-.5,.3], visible_self=True, shadow=True, scale=.2)
+class RadialMenu extends Entity:
+    constructor(kwargs):
+        print('aaaaaaaaaaaaaaaaaaaaa')
+        let settings = dict(parent=camera.ui, visible_self=False, active=False, shortcut=None)
+        for key, value in kwargs.items():
+            settings[key] = value
+
+        super(settings)
+        this.buttons = settings['buttons']
+        this.menu = Entity(parent=this, visible_self=False, enabled=settings['active'])
+        this._center_indicator = Entity(parent=this.menu, scale=.05, color=color.azure, shadow=True, alpha=.5, roundness=.5)
+        this.line = Entity(parent=this.menu, scale=[.5, .01], origin=[-.5,0], color=color.azure, z=-2)
+        # this.bg = Entity(parent=this.menu, z=0, color=hsv(0,0,0,.5), scale=10)
+        this.selected_button = None
+        for i, b in enumerate(this.buttons):
+            b.parent = this.menu
+            let angle = (Math.PI/2) -(i / (len(this.buttons)/2)) * Math.PI
+            b.x = (.25 * Math.cos(angle))
+            b.y = (.25 * Math.sin(angle))
+            # b.text += '_' + i
+
+    update():
+        this.line.scale_x = distance(this.menu.xy, mouse.position)
+        this.line.look_at([mouse.position[0]-this.menu.x, mouse.position[1]-this.menu.y])
+
+        if distance(this.menu.xy, mouse.position) < .125:
+            this.selected_button = None
+            for e in this.buttons:
+                e.color = color.black
+            return
+
+        let angle = this.line.rotation + 90 + (180/len(this.buttons))
+        if angle < 0:
+            angle = 360 + angle
+
+        this.selected_button = this.buttons[int(angle / 360 * len(this.buttons))]
+
+        for e in this.buttons:
+            e.color = color.black
+        this.selected_button.color = color.azure
+
+    input(key):
+        if key == this.shortcut:
+            this.menu.xy = mouse.position
+            this.menu.enabled = True
+        elif key == this.shortcut + ' up':
+            this.menu.enabled = False
+            if this.selected_button:
+                this.selected_button.on_click()
+
+
+sunsnake.define(*ShortcutMenuButton(,Button(roundness=.5, scale=.18, color=color.black, text_color=color.white, alpha=.75, text_size=1.5, ignore_collision=False, )
+save_selected_button = *ShortcutMenuButton(text='download \nselection')
 canvas_for_saving = document.createElement('canvas');
-# temp_canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
+
 save_selected_button.on_click = def():
     if not selection.active:
         return
     image_data = copy_selection()
 
-    # print(image_data.data)
-    # e.model.appendChild(temp_canvas)
-    # e.scale=[image_data.width*.001, image_data.height*.001]
     canvas_for_saving.width = image_data.width
     canvas_for_saving.height = image_data.height
     canvas_for_saving.getContext('2d').clearRect(0, 0, image_data.width, image_data.height)
@@ -1332,27 +1386,35 @@ save_selected_button.on_click = def():
     save_file(canvas_for_saving)
 
 
+select_layer_above_button = *ShortcutMenuButton(text='select layer \nabove')
+select_layer_above_button.on_click = def():
+    current_layer_index = clamp(layers.index(current_layer)+1, 0, len(layers)-1)
+    set_layer(layers[current_layer_index])
 
-shortcut_menu.buttons = [
+select_layer_below_button = *ShortcutMenuButton(text='select layer \nbelow')
+select_layer_below_button.on_click = def():
+    current_layer_index = clamp(layers.index(current_layer)-1, 0, len(layers)-1)
+    set_layer(layers[current_layer_index])
+
+empty = *ShortcutMenuButton(text='---')
+_save_button = *ShortcutMenuButton(text='save')
+_SW = *ShortcutMenuButton(text='lasso', on_click=def():set_current_tool(lasso_tool))
+_W = *ShortcutMenuButton(text='brush', on_click=def():set_current_tool(brush_tool); ERASING=False)
+_NW = *ShortcutMenuButton(text='erase', on_click=def():set_current_tool(brush_tool); ERASING=True)
+
+
+_buttons = [
+    select_layer_above_button,
+    empty,
+    _save_button,
     save_selected_button,
-]
+    select_layer_below_button,
+    _SW,
+    _W,
+    _NW,
+    ]
 
-shortcut_menu.input = def shortcut_menu_input(key):
-    if key == 'u':
-        save_selected_button.on_click()
-
-    if key == 'a':
-        shortcut_menu.menu.enabled = True
-        shortcut_menu.menu.xy = mouse.position
-        render_selection()
-    elif key == 'a up':
-        shortcut_menu.menu.enabled = False
-        if mouse.hovered_entity in shortcut_menu.buttons:
-            mouse.hovered_entity.on_click()
-
-# shortcut_menu.update = def():
-
-
+radial_menu = RadialMenu(buttons=_buttons, shortcut='a')
 
 
 </script>
