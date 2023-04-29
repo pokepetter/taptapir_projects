@@ -731,7 +731,14 @@ color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=1, scale
 slider_height = .075
 sunsnake.define(*color_slider_style, parent=color_menu.menu, scale_y=.075, roundness=.1, draggable=True, lock_x=True, lock_y=True)
 # color_menu_bg = Entity(parent=color_menu.menu, x=.15, scale=[1.05+.3, (slider_height*1.1*3)+.05], color=color.black, alpha=.8, roundness=.05, z=2, ignore_collision=False)
-color_preview = Entity(parent=color_menu.menu, scale=slider_height*3*1.1, x=.55, origin=[-.5,0], roundness=.5, enabled=False)
+color_preview = Entity(parent=color_menu.menu, scale=[1, slider_height*2], y=-.25, origin=[0,0], roundness=.25)
+lighter_color_button = Entity(parent=color_preview, x=.5, origin=[.5,0], scale=[.2,1], roundness=color_preview.roundness)
+darker_color_button = Entity(parent=color_preview, x=-.5, origin=[-.5,0], scale=[.2,1], roundness=color_preview.roundness)
+
+for preview in [lighter_color_button, darker_color_button]:
+    let e = preview
+    e.on_click = def():
+        set_color(e.color)
 
 
 def move_color_slider(slider):
@@ -762,7 +769,7 @@ def set_color(value, move_sliders=True):
     if len(value) == 3:
         value.append(255)
 
-    print('set color:', value)
+    # print('set color:', value)
     current_color = value
     color_preview.color = current_color
     color_as_hsv = rgb_to_hsv(current_color)
@@ -771,6 +778,15 @@ def set_color(value, move_sliders=True):
     sat_slider.color = color_saturated
     # sat.overlay.color = rgb(color_desaturated[0]/255, color_desaturated[1]/255, color_desaturated[2]/255)
     # sat.overlay.alpha = current_color[3]/255
+    hue = color_as_hsv[0] - 10
+    if hue < 0:
+        hue = 360 + hue
+    lighter_color_button.color = hsv(hue, clamp(color_as_hsv[1]-.05,0,1), clamp(color_as_hsv[2]+.1, 0, 1))
+    hue = color_as_hsv[0] + 10
+    if hue < 0:
+        hue = hue - 360
+    darker_color_button.color = hsv(hue, color_as_hsv[1]+.05, color_as_hsv[2]-.1)
+
     if move_sliders:
         hue_slider.indicator.x = -.5 + color_as_hsv[0]/360
         sat_slider.indicator.x = -.5 + color_as_hsv[1]
@@ -1416,6 +1432,7 @@ _buttons = [
 
 radial_menu = RadialMenu(buttons=_buttons, shortcut='a')
 
+set_color(current_color)
 
 </script>
 
