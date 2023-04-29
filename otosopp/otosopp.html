@@ -11,6 +11,7 @@ set_orientation('horizontal')
 set_scale(1)
 # set_scale(.5)
 canvas_scale = .8
+document.addEventListener('contextmenu', event => event.preventDefault());
 
 
 bg = Entity(visible_self=False, scale=[2*canvas_scale, 2*canvas_scale], draggable=True, lock_x=True, lock_y=True, ignore_collision=False)
@@ -53,6 +54,7 @@ new_file_button = *Button(position=top_left, origin=[-.5,.5], text='+', scale=[.
 canvas_entity = Entity(parent=bg, color='#606060', scale=[1/2,1/2], z=-1)
 canvas_entity.el.style.overflow = 'hidden'
 shadow_entity = Entity(parent=bg, scale=canvas_entity.scale, shadow='0px 0px 100px #0008', visible_self=False)
+
 
 layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.045, y=-.39, visible_self=True, roundness=.005, color=hsv(0,0,.03), ignore_collision=False)
 
@@ -1346,21 +1348,21 @@ class RadialMenu extends Entity:
         this.buttons = settings['buttons']
         this.menu = Entity(parent=this, visible_self=False, enabled=settings['active'])
         this._center_indicator = Entity(parent=this.menu, scale=.05, color=color.azure, shadow=True, alpha=.5, roundness=.5)
-        this.line = Entity(parent=this.menu, scale=[.5, .01], origin=[-.5,0], color=color.azure, z=-2)
-        # this.bg = Entity(parent=this.menu, z=0, color=hsv(0,0,0,.5), scale=10)
+        this.line = Entity(parent=this.menu, scale=[.5, .005], origin=[-.5,0], color=color.azure, z=-2)
+        this.bg = Entity(parent=this.menu, z=0, color=color.black, alpha=.25, scale=10)
         this.selected_button = None
         for i, b in enumerate(this.buttons):
             b.parent = this.menu
             let angle = (Math.PI/2) -(i / (len(this.buttons)/2)) * Math.PI
-            b.x = (.25 * Math.cos(angle))
-            b.y = (.25 * Math.sin(angle))
+            b.x = (.15 * Math.cos(angle))
+            b.y = (.15 * Math.sin(angle))
             # b.text += '_' + i
 
     update():
         this.line.scale_x = distance(this.menu.xy, mouse.position)
         this.line.look_at([mouse.position[0]-this.menu.x, mouse.position[1]-this.menu.y])
 
-        if distance(this.menu.xy, mouse.position) < .125:
+        if distance(this.menu.xy, mouse.position) < .1:
             this.selected_button = None
             for e in this.buttons:
                 e.color = color.black
@@ -1386,7 +1388,7 @@ class RadialMenu extends Entity:
                 this.selected_button.on_click()
 
 
-sunsnake.define(*ShortcutMenuButton(,Button(roundness=.5, scale=.18, color=color.black, text_color=color.white, alpha=.75, text_size=1.5, ignore_collision=False, )
+sunsnake.define(*ShortcutMenuButton(,Button(roundness=.5, scale=.1, color=color.black, text_color=color.white, alpha=.75, text_size=1.5, ignore_collision=False, )
 save_selected_button = *ShortcutMenuButton(text='download \nselection')
 canvas_for_saving = document.createElement('canvas');
 
@@ -1431,6 +1433,13 @@ _buttons = [
     ]
 
 radial_menu = RadialMenu(buttons=_buttons, shortcut='a')
+Entity(visible_self=False).input = def input(key):
+    print('----', key)
+    if key == 'right mouse down':
+        radial_menu.input(radial_menu.shortcut)
+    if key == 'right mouse up':
+        radial_menu.input(radial_menu.shortcut + ' up')
+
 
 set_color(current_color)
 
