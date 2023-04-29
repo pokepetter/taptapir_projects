@@ -82,13 +82,13 @@ def add_layer(name='layer', _w=w, _h=h, enabled=True, select=True):
         return layer
 
     layer.layer_button = Button(enabled=enabled, x=layer_menu.x, origin=[0,-.5], scale=[.105,.03], roundness=.1, y=layer_menu.y+((len(layers)-1)*1.01*.03), text_size=1, text=name, text_color=color.light_gray,
-        draggable=True, lock_x=True, min_y=layer_menu.y-.015, max_y=layer_menu.y+layer_menu.scale_y+.015, color=hsv(0,0,.1))
+        draggable=False, lock_x=True, min_y=layer_menu.y-.015, max_y=layer_menu.y+layer_menu.scale_y+.015, color=hsv(0,0,.1))
     layer.layer_button.original_color = layer.layer_button.color
-    layer.layer_button.drop = def():
+    layer.layer_button.on_click = def():
         set_layer(layer)
 
-    layer.opacity_slider = RainbowSlider(parent=layer.layer_button, scale=[1,.2], x=.0, y=.125, z=-2, show_lines=True, max=20, color=color.red, default=20, gradient=[hsv(0,0,.6,), ], alpha=.25)
-    layer.opacity_slider.bar.alpha = .25
+    layer.opacity_slider = RainbowSlider(parent=layer.layer_button, scale=[1,.2], x=.0, y=.125, z=-2, show_lines=True, max=20, color=color.red, default=20, gradient=[hsv(210,.5,.6,), ], alpha=.75)
+    # layer.opacity_slider.bar.alpha = .25
     layer.opacity_slider.on_value_changed = def():
         layer.canvas.style.opacity = layer.opacity_slider.value/layer.opacity_slider.max
 
