@@ -1485,9 +1485,13 @@ hsv_menu = Entity(scale=[.25*2,.125*2], enabled=False, roundness=.05, shadow=Tru
 hsv_menu.on_enable = def():
     hsv_menu.original_data = current_layer.ctx.getImageData(0, 0, w, h).data
     print('get fresh')
-    hsv_menu.hue_slider.value = 180
+
 hsv_menu.close = def():
     hsv_menu.enabled = False
+    hsv_menu.hue_slider.value = 180
+    hsv_menu.sat_slider.value = 50
+    hsv_menu.val_slider.value = 50
+
     if hsv_menu.original_data:
         current_layer.ctx.putImageData(new ImageData(hsv_menu.original_data, w, h), 0, 0)
         print('reset')
@@ -1497,32 +1501,56 @@ hsv_menu.apply_button.on_click = def():
     hsv_menu.enabled = False
     record_undo()
 
-hsv_menu.discard_button = Button(parent=hsv_menu, text='Discard', color=color.gray, text_color=color.white, scale=[.4,.15], x=-.025, y=-.35, text_size=2, roundness=.5, origin=[.5,0])
-
+hsv_menu.discard_button = Button(parent=hsv_menu, text='Discard', color=color.gray, text_color=color.white, scale=[.4,.15], x=-.025, y=-.35, text_size=2, roundness=.5, origin=[.5,0], on_click=hsv_menu.close)
 hsv_menu.close_button = Entity(parent=hsv_menu, text='x', scale=[.05,.1], color=color.red, text_color=color.white, text_origin=[0,0], text_size=2, roundness=.5, xy=[.5,.5], origin=[.5,0], on_click=hsv_menu.close)
 hsv_menu.bg = Entity(parent=hsv_menu, visible_self=False, scale=10, on_click=hsv_menu.close, z=1)
-hsv_menu.hue_slider = RainbowSlider(parent=hsv_menu, min=0, max=360, default=180, prev_value=180)
-hsv_menu.absolute_color_toggle = Button(parent=hsv_menu, scale=.05, text='colorize', value=False, xy=[-.5,-.25], origin=[-.5,0], text_size=1,)
+hsv_menu.hue_slider = RainbowSlider(parent=hsv_menu, min=0, max=360, default=180, prev_value=180, y=.3)
+hsv_menu.sat_slider = RainbowSlider(parent=hsv_menu, min=0, max=100, default=50, prev_value=50, y=.15)
+hsv_menu.val_slider = RainbowSlider(parent=hsv_menu, min=0, max=100, default=50, prev_value=50, y=0)
+hsv_menu.colorize_toggle_parent = Button(parent=hsv_menu, scale=[.1,.1], roundness=.1, text_origin=[-.5,0], text=' Colorize:', value=False, xy=[-.325,-.15], origin=[0,0], text_size=1, text_color=color.white, color=color.clear)
+hsv_menu.colorize_toggle = Button(parent=hsv_menu.colorize_toggle_parent, scale=[.5,1], roundness=.1, text_origin=[0,0], text=' ', value=False, xy=[.5,0], origin=[-.5,0], text_size=2, color=color.dark_gray, text_color=color.white)
+hsv_menu.colorize_toggle.on_click = def():
+    hsv_menu.colorize_toggle.value = not hsv_menu.colorize_toggle.value
+    hsv_menu.colorize_toggle.text = [' ', '✓'][int(hsv_menu.colorize_toggle.value)]
+    apply_hsv_filter()
+
+def apply_hsv_filter():
+    if not hsv_menu.colorize_toggle.value:
+        apply_relative_hsv_adjustment(hsv_menu.hue_slider.value - 180, (hsv_menu.sat_slider.value-50)/100, (hsv_menu.val_slider.value-50)/100)
+    else:
+        apply_absolute_hsv_adjustment(hsv_menu.hue_slider.value, hsv_menu.sat_slider.value/100, hsv_menu.val_slider.value/100)
 
 
+hsv_menu.hue_slider.on_value_changed = apply_hsv_filter
+hsv_menu.sat_slider.on_value_changed = apply_hsv_filter
+hsv_menu.val_slider.on_value_changed = apply_hsv_filter
 
-hsv_menu.hue_slider.on_value_changed = def():
-    if not hsv_menu.absolute_color_toggle.value:
-        apply_relative_hsv_adjustment(hsv_menu.hue_slider.value - 180, 0, 0)
 
-
-def apply_relative_hsv_adjustment(h_change, s_change, v_change):
+def apply_relative_hsv_adjustment(hue, sat, val):
     new_data = new Uint8ClampedArray(hsv_menu.original_data);
 
     for i in range(0, len(new_data), 4)
         _color_as_hsv = rgb_to_hsv([new_data[i], new_data[i+1], new_data[i+2]])
-        _color_as_hsv = [_color_as_hsv[0]+h_change, _color_as_hsv[1]+s_change, _color_as_hsv[2]+v_change]
+        _color_as_hsv = [_color_as_hsv[0]+hue, _color_as_hsv[1]+sat, _color_as_hsv[2]+val]
         if _color_as_hsv[0] < 0:
             _color_as_hsv[0] = 360 + _color_as_hsv[0]
         if _color_as_hsv[0] > 360:
             _color_as_hsv[0] = _color_as_hsv[0] - 360
 
         _rgb_color = hsv(_color_as_hsv[0], _color_as_hsv[1], _color_as_hsv[2])
+        new_data[i] = _rgb_color[0]
+        new_data[i+1] = _rgb_color[1]
+        new_data[i+2] = _rgb_color[2]
+
+    new_image_data = new ImageData(new_data, w, h)
+    current_layer.ctx.putImageData(new_image_data, 0, 0)
+
+
+def apply_absolute_hsv_adjustment(hue, sat, val):
+    new_data = new Uint8ClampedArray(hsv_menu.original_data);
+    _rgb_color = hsv(hue, sat, val)
+
+    for i in range(0, len(new_data), 4)
         new_data[i] = _rgb_color[0]
         new_data[i+1] = _rgb_color[1]
         new_data[i+2] = _rgb_color[2]
