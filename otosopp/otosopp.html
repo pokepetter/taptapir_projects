@@ -50,6 +50,30 @@ new_canvas_handler.input = def input(key):
 
 resolution_info = *Button(origin=[-.5,-.5], position=bottom_left, scale=[.075,.015], text='??? x ???', roundness=0, alpha=.5, text_size=1)
 new_file_button = *Button(position=top_left, origin=[-.5,.5], text='+', scale=[.05,.025], on_click=def():new_canvas_prompt.enabled=True)
+info_button = *Button(xy=[(-.5*aspect_ratio)+.125,.5], origin=[-.5,.5], text='ⓘ', scale=[.025,.025], ignore_collision=False)
+info_button.el.onmouseenter = def():
+    info_window.enabled = True
+info_button.el.onmouseleave = def():
+    info_window.enabled = False
+
+info_text = `Shortcuts:
+[b] brush
+[x] smaller brush
+[s] bigger brush
+[e] erase
+[l] lasso select tool
+[m] rect select tool
+[ctrl+z] undo
+[ctrl+y] redo
+[alt] sample color
+[ctrl+alt] sample current layer
+[a] / [right click] radial menu
+`
+info_window = Text(parent=info_button.parent, text=info_text, text_size=1.5, text_color=color.light_gray, color=color.black, alpha=.9, roundness=.005, enabled=False)
+info_window.fit_to_text()
+info_window.origin=[-.5,.5]
+info_window.xy = [info_button.x, info_button.y-info_button.scale_y]
+info_window.el.style.fontFamily = 'monospace'
 
 canvas_entity = Entity(parent=bg, color='#606060', scale=[1/2,1/2], z=-1)
 canvas_entity.el.style.overflow = 'hidden'
@@ -84,10 +108,22 @@ def add_layer(name='layer', _w=w, _h=h, enabled=True, select=True):
         return layer
 
     layer.layer_button = Button(enabled=enabled, x=layer_menu.x, origin=[0,-.5], scale=[.105,.03], roundness=.1, y=layer_menu.y+((len(layers)-1)*1.01*.03), text_size=1, text=name, text_color=color.light_gray,
-        draggable=False, lock_x=True, min_y=layer_menu.y-.015, max_y=layer_menu.y+layer_menu.scale_y+.015, color=hsv(0,0,.1))
+        draggable=True, lock_x=True, min_y=layer_menu.y-.015, max_y=layer_menu.y+layer_menu.scale_y+.015, color=hsv(0,0,.1), layer=layer)
     layer.layer_button.original_color = layer.layer_button.color
     layer.layer_button.on_click = def():
         set_layer(layer)
+    layer.layer_button.drop = def():
+        layer_buttons = [l.layer_button for l in layers]
+        def sort_by_y(first, second):
+            return first.y - second.y
+
+        layer_buttons.sort(sort_by_y)
+        for i, lb in layer_buttons:
+            lb.y = layer_menu.y+((i)*1.01*.03)
+
+        layers = [lb.layer for lb in layer_buttons]
+        set_layer(layer)
+
 
     layer.opacity_slider = RainbowSlider(parent=layer.layer_button, scale=[1,.2], x=.0, y=.125, z=-2, show_lines=True, max=20, color=color.red, default=20, gradient=[hsv(210,.5,.6,), ], alpha=.75)
     # layer.opacity_slider.bar.alpha = .25
@@ -459,28 +495,30 @@ def paint():
     if held_keys['alt'] and held_keys['control']: # sample current layer
         pos = get_canvas_position()
         sampled_color = current_layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
+        for i in range(3):
+            sampled_color[i] = lerp(canvas_entity.color[i], sampled_color[i], sampled_color[3]/255)
+
         sampled_color[3] = 255
         set_color(sampled_color)
         return
 
     # sample combined
     if (held_keys['alt'] and not held_keys['control']) or held_keys['h']:
-        sampled_colors = []
+        # sampled_colors = []
+        # canv_col = canvas_entity.color
+        combined_sample = canvas_entity.color
         for layer in layers:
             pos = get_canvas_position(layer)
             sampled_color = layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
-            sampled_colors.append(sampled_color)
+            # sampled_colors.append(sampled_color)
+            for i in range(3):
+                combined_sample[i] = lerp(combined_sample[i], sampled_color[i], sampled_color[3]/255)
 
-        combined_color = [0,0,0]
-        for i in range(3):
-            average = [c[i] for c in sampled_colors]
-            average = int(sum(average) / len(sampled_colors))
-            combined_color[i] = average
-
-        alphas = [e[3] for e in sampled_colors]
-        alpha = min(sum(alphas), 255)
-        combined_color = [lerp(canvas_entity.color[i], combined_color[i], alpha/255) for i in range(3)]
-        set_color(combined_color)
+        combined_sample[3] = 255
+        # alphas = [e[3] for e in sampled_colors]
+        # alpha = min(sum(alphas), 255)
+        # combined_color = [lerp(canvas_entity.color[i], combined_color[i], alpha/255) for i in range(3)]
+        set_color(combined_sample)
 
         return
 
@@ -610,7 +648,7 @@ def input(key):
                 else:
                     SMUDGE_STRENGTH = int(i) / 10
                     print(SMUDGE_STRENGTH)
-    if (held_keys['control'] and key == 'z') or key == 'u':
+    if (held_keys['control'] and key == 'z'):
         undo()
 
     # if held_keys['control'] and key == 'y':
@@ -1339,7 +1377,6 @@ if '?' in window.location.href:
 
 class RadialMenu extends Entity:
     constructor(kwargs):
-        print('aaaaaaaaaaaaaaaaaaaaa')
         let settings = dict(parent=camera.ui, visible_self=False, active=False, shortcut=None)
         for key, value in kwargs.items():
             settings[key] = value
@@ -1348,7 +1385,7 @@ class RadialMenu extends Entity:
         this.buttons = settings['buttons']
         this.menu = Entity(parent=this, visible_self=False, enabled=settings['active'])
         this._center_indicator = Entity(parent=this.menu, scale=.05, color=color.azure, shadow=True, alpha=.5, roundness=.5)
-        this.line = Entity(parent=this.menu, scale=[.5, .005], origin=[-.5,0], color=color.azure, z=-2)
+        this.line = Entity(parent=this.menu, scale=[.5, .005], origin=[-.5,0], color=color.azure, z=-2, roundness=.5)
         this.bg = Entity(parent=this.menu, z=0, color=color.black, alpha=.25, scale=10)
         this.selected_button = None
         for i, b in enumerate(this.buttons):
@@ -1356,7 +1393,6 @@ class RadialMenu extends Entity:
             let angle = (Math.PI/2) -(i / (len(this.buttons)/2)) * Math.PI
             b.x = (.15 * Math.cos(angle))
             b.y = (.15 * Math.sin(angle))
-            # b.text += '_' + i
 
     update():
         this.line.scale_x = distance(this.menu.xy, mouse.position)
@@ -1434,14 +1470,71 @@ _buttons = [
 
 radial_menu = RadialMenu(buttons=_buttons, shortcut='a')
 Entity(visible_self=False).input = def input(key):
-    print('----', key)
     if key == 'right mouse down':
         radial_menu.input(radial_menu.shortcut)
     if key == 'right mouse up':
         radial_menu.input(radial_menu.shortcut + ' up')
 
 
+hsv_menu_handler = Entity(visible_self=False)
+hsv_menu_handler.input = def input(key):
+    if key == 'u':
+        hsv_menu.enabled = not hsv_menu.enabled
+
+hsv_menu = Entity(scale=[.25*2,.125*2], enabled=False, roundness=.05, shadow=True, parent=camera.ui, color=color.black, alpha=.8, text_origin=[0,.5], text='HSV', text_color=color.light_gray, text_size=2, ignore_collision=False)
+hsv_menu.on_enable = def():
+    hsv_menu.original_data = current_layer.ctx.getImageData(0, 0, w, h).data
+    print('get fresh')
+    hsv_menu.hue_slider.value = 180
+hsv_menu.close = def():
+    hsv_menu.enabled = False
+    if hsv_menu.original_data:
+        current_layer.ctx.putImageData(new ImageData(hsv_menu.original_data, w, h), 0, 0)
+        print('reset')
+
+hsv_menu.apply_button = Button(parent=hsv_menu, text='Apply', color=color.pink, text_color=color.white, scale=[.4,.15], x=.025, y=-.35, text_size=2, roundness=.5, origin=[-.5,0])
+hsv_menu.apply_button.on_click = def():
+    hsv_menu.enabled = False
+    record_undo()
+
+hsv_menu.discard_button = Button(parent=hsv_menu, text='Discard', color=color.gray, text_color=color.white, scale=[.4,.15], x=-.025, y=-.35, text_size=2, roundness=.5, origin=[.5,0])
+
+hsv_menu.close_button = Entity(parent=hsv_menu, text='x', scale=[.05,.1], color=color.red, text_color=color.white, text_origin=[0,0], text_size=2, roundness=.5, xy=[.5,.5], origin=[.5,0], on_click=hsv_menu.close)
+hsv_menu.bg = Entity(parent=hsv_menu, visible_self=False, scale=10, on_click=hsv_menu.close, z=1)
+hsv_menu.hue_slider = RainbowSlider(parent=hsv_menu, min=0, max=360, default=180, prev_value=180)
+hsv_menu.absolute_color_toggle = Button(parent=hsv_menu, scale=.05, text='colorize', value=False, xy=[-.5,-.25], origin=[-.5,0], text_size=1,)
+
+
+
+hsv_menu.hue_slider.on_value_changed = def():
+    if not hsv_menu.absolute_color_toggle.value:
+        apply_relative_hsv_adjustment(hsv_menu.hue_slider.value - 180, 0, 0)
+
+
+def apply_relative_hsv_adjustment(h_change, s_change, v_change):
+    new_data = new Uint8ClampedArray(hsv_menu.original_data);
+
+    for i in range(0, len(new_data), 4)
+        _color_as_hsv = rgb_to_hsv([new_data[i], new_data[i+1], new_data[i+2]])
+        _color_as_hsv = [_color_as_hsv[0]+h_change, _color_as_hsv[1]+s_change, _color_as_hsv[2]+v_change]
+        if _color_as_hsv[0] < 0:
+            _color_as_hsv[0] = 360 + _color_as_hsv[0]
+        if _color_as_hsv[0] > 360:
+            _color_as_hsv[0] = _color_as_hsv[0] - 360
+
+        _rgb_color = hsv(_color_as_hsv[0], _color_as_hsv[1], _color_as_hsv[2])
+        new_data[i] = _rgb_color[0]
+        new_data[i+1] = _rgb_color[1]
+        new_data[i+2] = _rgb_color[2]
+
+    new_image_data = new ImageData(new_data, w, h)
+    current_layer.ctx.putImageData(new_image_data, 0, 0)
+
 set_color(current_color)
+set_color(color.red)
+
+add_layer()
+add_layer()
 
 </script>
 
