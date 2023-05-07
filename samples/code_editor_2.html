@@ -1,0 +1,101 @@
+<html><title>code_editor_2.js</title><body>
+<script src="../taptapir/taptapir.js"></script>
+<script type='text/sunsnake'>
+
+set_window_color("#21496b")
+
+button_size = .1
+button_color = 'smoke'
+
+text = ''
+text =  'print(\'hello world!\')\n\n'
+text += 'for i in range(10):\n'
+text += '    print(i)\n\n'
+
+text += 'player = Button(scale=.25, color=color.azure)\n'
+text += 'player.on_click = def():\n'
+text += '    print(\'hi :D\')\n'
+text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
+
+text = text.replaceAll('print', '<span style="color:#3af">print</span>')
+text = text.replaceAll('range(', '<span style="color:#3af">range</span>(')
+text = text.replaceAll('Entity', '<span style="color:#fa3">Entity</span>')
+text = text.replaceAll('for ', '<span style="color:#d6f">for </span>')
+text = text.replaceAll('def(', '<span style="color:#d6f">def</span>(')
+# text_entity = Text(text=text, z=1, color='#000', text_color='#fff', x=-.475, y=(.5*aspect_ratio)-.05, draggable=True, max_x=-.475, min_y=0, max_y=100, scale=[.9,2], origin=[-.5,.5], text_size=1.9, roundness=.02)
+# text_entity.el.style.fontFamily = 'monospace'
+# text_entity.el.style.textOverflow = 'clip'
+# text_entity = InputField(z=-1, scale=[.9,1], roundness=.05, color=color.black, alpha=.9, text=text, text_color=color.white, padding=1)
+text_entity = Entity(scale=[.95,.95*aspect_ratio], color=hsv(0,0,.05), text_size=2, text_color=hsv(0,0,.8), roundness=.025, shadow=True)
+text_area = document.createElement('textarea')
+text_entity.model.appendChild(text_area)
+text_area.value = '123120938120938'
+# text_entity.text_color = color.green
+text_area.style.padding='2em'
+text_area.addEventListener('keydown', def keydown(e):
+    if e.key == 'Tab':
+        e.preventDefault()
+        start = this.selectionStart
+        end = this.selectionEnd
+        # // set textarea value to: text before caret + tab + text after caret
+        this.value = this.value.substring(0, start) + "\t" + this.value.substring(end)
+        #// put caret at right position again
+        this.selectionStart = this.selectionEnd = start + 1
+)
+
+# text_area.style = 'width:100%; height:100%; background-color:#111; font-color:#fff; z-index:2'
+# text_area
+
+# text_entity.el.style.textOverflow = 'clip'
+# text_entity.text = '123'
+
+# text_entity.fit_to_text()
+# text_entity.scale_x = .95
+run_button = Button(text='>', scale=.1, origin=[.5,-.5], position=[.5,.5*aspect_ratio])
+# run_button.on_click = def():
+#     pass
+preview_canvas = Entity(name='preview_canvas', parent=camera.ui, scale=[.9,aspect_ratio*.9], y=.05, z=-1, color=color.black, shadow=1, enabled=False)
+preview_canvas.entity_parent = None
+
+close_button = Button(scale=[.2,.1], origin=[.5,-.5], position=[.5-.2,-.5*aspect_ratio], text='close', color=color.gray, enabled=False, text_size=2.5)
+close_button.on_click = def close():
+    if preview_canvas.entity_parent:
+        destroy(preview_canvas.entity_parent)
+    preview_canvas.enabled = False
+    close_button.enabled = False
+
+preview_button = Button(scale=[.2,.1], origin=[.5,-.5], position=bottom_right, text='preview', color=color.azure, text_color=color.white, text_size=2.5)
+preview_button.on_click = def preview():
+    preview_canvas.enabled = True
+    close_button.enabled = True
+
+    text_to_compile = text_entity.text
+    _original_scene = scene
+    _original_camera_ui = camera.ui
+
+    preview_canvas.entity_parent = Entity(parent=preview_canvas, visible_self=False, scale_y=1/aspect_ratio)
+    fake_camera_ui = Entity(parent=preview_canvas.entity_parent, visible_self=False)
+    scene = preview_canvas.entity_parent.el
+    camera.ui = fake_camera_ui
+    result = compile(text_to_compile)
+    eval(result)
+    scene = _original_scene
+    camera.ui = _original_camera_ui
+
+    # eval(text_to_compile)
+
+blocks = ['Ent', 'sca', 'xy', 'tex']
+for i, e in enumerate(blocks):
+    let b = Button(text=e, xy=[-.5,.5-(i*.065)], origin=[-.5,0])
+    b.fit_to_text()
+    b.on_click = def():
+        clone = Entity(text=e, position=mouse.position, draggable=True, dragging=True)
+        clone.fit_to_text()
+        clone.z = -1
+    b.update = def():
+        if not self.dragging:
+            return
+        b.position = mouse.position
+
+</script><script src="../taptapir/sunsnake_compiler.js"></script>
+<script type='text/sunsnake'>
