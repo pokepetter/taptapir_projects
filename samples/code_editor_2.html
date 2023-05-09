@@ -21,10 +21,13 @@ text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
 # text_entity.el.style.fontFamily = 'monospace'
 # text_entity.el.style.textOverflow = 'clip'
 # text_entity = InputField(z=-1, scale=[.9,1], roundness=.05, color=color.black, alpha=.9, text=text, text_color=color.white, padding=1)
-text_entity = Entity(scale=[.95,.95*aspect_ratio], color=hsv(0,0,.05), text_size=1.75, text_color=hsv(0,0,.8), roundness=.025, shadow=True)
-fake_text = Entity(scale=[.95,.95*aspect_ratio], alpha=1, text_color=text_entity.text_color, z=-2, color=color.clear, text=text, text_size=text_entity.text_size)
+fake_text = Entity(scale=[.95,.95*aspect_ratio], color=hsv(0,0,.05,0), text_size=1.75, text_color=hsv(0,0,.8), roundness=.025, ignore_collision=True, enabled=True)
+text_entity = Entity(scale=[.95,.95*aspect_ratio], color=hsv(0,0,.05), text_size=1.75, text_color=hsv(0,0,.8,1), roundness=.025, shadow=True)
+# fake_text = Entity(scale=[.95,.95*aspect_ratio], alpha=1, text_color=text_entity.text_color, z=-2, color=color.clear, text=text, text_size=text_entity.text_size, roundness=.025)
 fake_text.el.style.textIndent = '.5em'
 fake_text.el.style.fontFamily = 'monospace'
+fake_text.el.style.pointerEvents = 'none'
+fake_text.model.style.pointerEvents = 'none'
 
 text_area = document.createElement('textarea')
 text_entity.model.appendChild(text_area)
@@ -97,7 +100,19 @@ preview_button.on_click = def preview():
     scene = _original_scene
     camera.ui = _original_camera_ui
 
-    # eval(text_to_compile)
+keyboard = Entity(color=color.black, origin=[0,.5], y=-.25, ignore_collision=False)
+sunsnake.define(*KeyboardButton(,Button(parent=keyboard, text=e, scale=[(1/11)-.005, h], color=hsv(0,0,.05), text_color=color.gray, text_size=2, )
+h = .1
+for i, e in '.1234567890'.split(''):
+    *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01))
+for i, e in 'qwertyuiopå'.split(''):
+    *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01)*2)
+for i, e in 'asdfghjkløæ'.split(''):
+    *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01)*3)
+for i, e in '  zxcvbnm  '.split(''):
+    *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01)*4)
+for i, e in '   |   |.  '.split(''):
+    *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01)*5)
 
 </script><script src="../taptapir/sunsnake_compiler.js"></script>
 <script type='text/sunsnake'>
