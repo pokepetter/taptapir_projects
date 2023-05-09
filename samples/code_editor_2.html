@@ -21,8 +21,8 @@ text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
 # text_entity.el.style.fontFamily = 'monospace'
 # text_entity.el.style.textOverflow = 'clip'
 # text_entity = InputField(z=-1, scale=[.9,1], roundness=.05, color=color.black, alpha=.9, text=text, text_color=color.white, padding=1)
-fake_text = Entity(scale=[.95,.95*aspect_ratio], color=hsv(0,0,.05,0), text_size=1.75, text_color=hsv(0,0,.8), roundness=.025, ignore_collision=True, enabled=True)
-text_entity = Entity(scale=[.95,.95*aspect_ratio], color=hsv(0,0,.05), text_size=1.75, text_color=hsv(0,0,.8,1), roundness=.025, shadow=True)
+fake_text = Entity(scale=[.95,.95*aspect_ratio], color=hsv(0,0,.05,0), text_size=1.5, text_color=hsv(0,0,.8), roundness=.025, ignore_collision=True, enabled=True)
+text_entity = Entity(scale=[.95,.95*aspect_ratio], color=hsv(0,0,.05), text_size=1.5, text_color=hsv(0,0,.8,1), roundness=.025, shadow=True)
 # fake_text = Entity(scale=[.95,.95*aspect_ratio], alpha=1, text_color=text_entity.text_color, z=-2, color=color.clear, text=text, text_size=text_entity.text_size, roundness=.025)
 fake_text.el.style.textIndent = '.5em'
 fake_text.el.style.fontFamily = 'monospace'
