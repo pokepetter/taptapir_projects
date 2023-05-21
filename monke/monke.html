@@ -1,0 +1,189 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" />
+<title>Monke</title></head><body></body>
+<script src="../taptapir/taptapir.js"></script>
+<script src="levels.js"></script>
+<script type='text/sunsnake'>
+
+
+set_window_color('#050505')
+set_window_color('#030b06')
+set_background_color('#000000')
+# set_scale(.75)
+inventory = Entity(parent=camera.ui, origin=[0,-.5], scale=[1.1,.15], y=(-.5*aspect_ratio)+.01, color=hsv(0,0,.05), alpha=1, shadow=True)
+banana_counter = Entity(parent=camera.ui, xy=[-.5+.05,(-.5*aspect_ratio)+.025], scale=.125, origin=[-.5,-.5], text=`🍌???`, text_origin=[-.5,0], text_color=color.white, color=color.clear)
+
+camera.fov = 5
+class Player extends Entity:
+    constructor(kwargs):
+        super(kwargs)
+        this.num_bananans = 0
+
+    get num_bananans():
+        return this._num_bananas
+    set num_bananans(value):
+        this._num_bananans = value
+        banana_counter.text = `🍌${this.num_bananans}`
+
+
+player = Player(visible_self=False)
+print('-----------------', player.num_bananans)
+# player_graphics = Entity(texture='monke.png', scale=.6, z=-3)
+player_graphics = Entity(text='🐒', scale=.6, z=-3, color=color.clear, text_size=5)
+Entity(texture='radial_gradient.png', parent=player_graphics, y=-.3, scale=[1,.5], z=1)
+
+player_graphics.update = def():
+    player_graphics.x = lerp(player_graphics.x, player.x, .25)
+    player_graphics.y = lerp(player_graphics.y, player.y, .25)
+
+# fog_of_war = Entity(texture='fog_of_war.png', parent=player, scale=20)
+
+# bg = Entity(texture='https:#game-icons.net/icons/ffffff/000000/1x1/skoll/balkenkreuz.svg', tileset_size=[.2,.2], alpha=.5)
+h=0
+s=0
+v=.05
+variation = [0,0,.002]
+
+h=60
+s=.7
+v=.4
+variation = [2,0,.002]
+
+
+level_size = [16,16]
+player.x = level_size[0]/2
+tiles = Array_2d(level_size[0],level_size[1])
+for y in range(level_size[0]):
+    for x in range(level_size[1]):
+        let tile = Entity(scale=1, xy=[x,y], z=1, color=color.white, shadow=1, roundness=.15, scale=1.1, color=hsv(h+random_int(0,10)*variation[0],s+random_int(0,10)*variation[1],v+random_int(0,10)*variation[2]), tile_type='a')
+        tile.rotation = random_int(-10,10)*.1
+        tiles[y][x] = tile
+
+
+player.num_bananans = 0
+
+def goto_level(i):
+    camera.overlay.animate('alpha', 1, .2)
+    after .3s:
+        camera.overlay.animate('alpha', 0, .2)
+
+        current_level = levels[i]
+        # print('------------goto-', current_level)
+        for y in range(level_size[0]):
+            for x in range(level_size[1]):
+                if current_level[x][y] == 0:
+                    tiles[x][y].enabled = False
+                else:
+                    tiles[x][y].enabled = True
+
+                if current_level[x][y] == 2:
+                    tiles[x][y].tile_type = 'banana'
+                    tiles[x][y].content = Entity(parent=tiles[x][y], scale=.75, text='🍌', text_origin=[0,0], color=color.clear, text_size=4, z=-2)
+                    Entity(texture='radial_gradient.png', parent=tiles[x][y].content, y=-.25, scale=[1,.5], z=1)
+
+                # if current_level[x][y] == 3:
+                #     player.xy = [y,x]
+
+                if current_level[x][y] == 5:
+                    tiles[x][y].tile_type = 'enemy'
+                    tiles[x][y].content = Entity(parent=tiles[x][y], scale=.75, text='🐧', text_origin=[0,0], color=color.clear, text_size=6)
+
+                if current_level[x][y] == 6:
+                    tiles[x][y].tile_type = 'palm_tree'
+                    tiles[x][y].content = Entity(parent=tiles[x][y], scale=.75, text='🌴', text_origin=[0,0], color=color.clear, text_size=10, y=.3)
+                    Entity(texture='radial_gradient.png', parent=tiles[x][y].content, y=-.6, x=.2, scale=[1,.5], z=1)
+
+
+        for y in range(level_size[0]):
+            for x in range(level_size[1]):
+                if current_level[x][y] == 4:
+                    let tile = tiles[x][y]
+                    tile.tile_type = 'monke'
+                    tile.content = Entity(parent=tile, scale=1, texture='https://static.wikia.nocookie.net/amogus/images/c/c2/Le_monk.png/revision/latest?cb=20210830232252', color=color.clear, bananas_eaten=0, bananas_needed=7)
+                    tile.label = Entity(parent=tile.content, scale=1, text='7', color=color.clear, text_color=color.white)
+                    tile.update_content = def():
+                        tile.label.text = `${tile.content.bananas_eaten} / ${tile.content.bananas_needed}`
+
+
+goto_level(0)
+player.xy = [7,4]
+# 📦🍊🍎🐧🐒🌴🥥
+
+def move(_x, _y):
+    next_tile = tiles[int(player.y+_y)][int(player.x+_x)]
+    if not next_tile.enabled:
+        return
+    if next_tile.tile_type == 'monke':
+        if next_tile.content:
+            if next_tile.content.bananas_eaten < next_tile.content.bananas_needed:
+                if player.num_bananans <= 0:
+                    return
+                print('give banana')
+                next_tile.content.bananas_eaten += 1
+                player.num_bananans -= 1
+                if next_tile.content.bananas_eaten >= next_tile.content.bananas_needed:
+                    destroy(next_tile.content)
+                    next_tile.content = None
+                else:
+                    next_tile.update_content()
+
+                return
+        # else:
+        #     print('goto next level')
+
+    if next_tile.tile_type == 'enemy':
+        return
+    elif next_tile.tile_type == 'palm_tree':
+        player.x += _x
+        player.y += _y
+        after .1s:
+            player.x -= _x
+            player.y -= _y
+
+        return
+
+
+    if next_tile.content and next_tile.tile_type == 'banana':
+        destroy(next_tile.content)
+        next_tile.content = None
+        player.num_bananans += 1
+        print('picked up banana, you now have', player.num_bananans)
+
+
+    player.x += _x
+    player.y += _y
+
+    print(player.y, level_size[1])
+    if player.y >= level_size[1]-1:
+        player.y = 1
+        player_graphics.y = player.y
+        camera.y = player.y
+        goto_level(1)
+    if player.y <= 0:
+        goto_level(0)
+        player.y = level_size[1]-2
+        player_graphics.y = player.y
+        camera.y = player.y
+
+
+
+
+def input(key):
+    if key == 'w':
+        move(0,1)
+    elif key == 's':
+        move(0,-1)
+    elif key == 'd':
+        move(1,0)
+    elif key == 'a':
+        move(-1,0)
+
+def update():
+    camera.x = lerp(camera.x, player.x, .1)
+    camera.x = clamp(camera.x, 1, level_size[0]-1)
+    camera.y = lerp(camera.y, player.y+1, .1)
+    camera.y = clamp(camera.y, 1, level_size[1]-2)
+
+
+
+
+</script><script src="../taptapir/sunsnake_compiler.js"></script></html>
