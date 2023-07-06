@@ -205,13 +205,13 @@ selection_ctx.fillStyle = rgb(128/255, 0/255, 0/255, 255/255)
 selection_ctx.clearRect(0, 0, w, h)
 
 
-square_brush = {'textures':None, 'shape':'rect', 'size':[50, 50], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
-round_brush = {'textures':None, 'shape':'circle', 'size':[1, 1], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
-round_bitmap_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
-poke_brush = {'textures':["pokebrush.png", ], 'size':[64, 64], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
-poke_brush_small = {'textures':["pokebrush.png", ], 'size':[16, 16], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True}
-poke_brush_scatter = {'textures':["pokebrush.png", 'pokebrush.png'], 'size':[256, 256], 'spacing':.25, 'painterly_brush':False, 'rotate':'random', 'draw_on_click':False}
-painterly_brush = {'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[178, 400], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':False}
+square_brush = {'textures':None, 'shape':'rect', 'size':[50, 50], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'pressure_stremin_pressurength':1}
+round_brush = {'textures':None, 'shape':'circle', 'size':[1, 1], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'min_pressure':1}
+round_bitmap_brush = {'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'min_pressure':0}
+poke_brush = {'textures':["pokebrush.png", ], 'size':[64, 64], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'min_pressure':0}
+poke_brush_small = {'textures':["pokebrush.png", ], 'size':[16, 16], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'min_pressure':1}
+poke_brush_scatter = {'textures':["pokebrush.png", 'pokebrush.png'], 'size':[256, 256], 'spacing':.25, 'painterly_brush':False, 'rotate':'random', 'draw_on_click':False, 'min_pressure':1}
+painterly_brush = {'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[178, 400], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':False, 'min_pressure':1}
 
 brushes = [round_brush, square_brush, round_bitmap_brush, poke_brush, poke_brush_small, painterly_brush, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter]
 current_brush = None
@@ -287,7 +287,7 @@ SMUDGE = False
 SMUDGE_STRENGTH = 1
 # cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enabled=False)
 
-brush_tool = Entity(name='brush_tool', render=False)
+brush_tool = Entity(name='brush_tool', visible_self=False)
 brush_tool.on_disable = def():
     brush_cursor.enabled = False
     mouse.visible = True
@@ -302,6 +302,86 @@ temp_canvas.width = w
 temp_canvas.height = h
 # temp_layer_entity.model.appendChild(temp_canvas)
 temp_ctx = temp_canvas.getContext('2d', {willReadFrequently: true})
+
+def update_brush_tip():
+    if not using_painterly_brush: # tint the temporary brush tip
+        for j in range(brush_tips.length):
+            brush_canvas = brush_canvases[j]
+            brush = brush_tips[j]
+
+            print(brush_size[0], mouse.pressure, int(max(brush_size[0] * mouse.pressure, 10)))
+            brush_canvas.width = brush_size[0]
+            brush_canvas.height = brush_size[1]
+            if mouse.pressure < 1:
+                brush_canvas.width *= mouse.pressure
+                brush_canvas.height *= mouse.pressure
+            brush_canvas_context = brush_canvas.getContext("2d", {willReadFrequently: true})
+            brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
+            if not SMUDGE:
+                img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
+
+                for i in range(0, img_data.data.length, 4):
+                    img_data.data[i] = img_data.data[i] * (current_color[0]/255)
+                    img_data.data[i+1] = img_data.data[i+1] * (current_color[1]/255)
+                    img_data.data[i+2] = img_data.data[i+2] * (current_color[2]/255)
+                    img_data.data[i+3] = img_data.data[i+3] * (current_color[3]/255)
+
+            elif SMUDGE:
+            #     print('SMUDGE')
+            #     # sample the canvas for colors and multiply with brush alpha
+                pos = get_canvas_position()
+                img_data = current_layer.ctx.getImageData(pos[0]-(brush_size[0]/2), pos[1]-brush_size[1]/2, brush_size[0], brush_size[1])
+                brush_pixels = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
+
+                for i in range(0, img_data.data.length, 4):
+                    img_data.data[i+3] = img_data.data[i+3] * brush_pixels.data[i+3] * (1/255*SMUDGE_STRENGTH)
+                    # img_data.data[i+3] = img_data.data[i+3]
+            #     # brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
+            #     # img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
+            #     # self.smudge_IMG = self.parent.current_layer.img_data.crop((
+            #     #         stamp_pos[0], stamp_pos[1],
+            #     #         stamp_pos[0]+self.brush.width, stamp_pos[1]+self.brush.height))
+            #     #
+            #     #     try:
+            #     #         self.smudge_IMG.putalpha(self.brush.split()[-1])
+            #     #     except:
+            #     #         pass
+
+            brush_canvas_context.putImageData(img_data, 0, 0)
+    else: # special tint for paiterly brushes to keep contrast
+        color_as_hsv = rgb_to_hsv(current_color)
+        c = color_as_hsv[2] * 255
+        c = (current_color[0] + current_color[1] + current_color[2])/3
+        # print('------------', c)
+        sat = color_as_hsv[1]
+        contrast = 64
+        dark = c-contrast
+        light = c+contrast
+        # adjust contrast and brighten based on saturation
+        dark = c-contrast + (sat*contrast*1.2)
+        light = c+contrast + contrast + (sat*contrast*1.2)
+
+        for j in range(brush_tips.length):
+            brush_canvas = brush_canvases[j]
+            brush = brush_tips[j]
+
+            brush_canvas.width = brush_size[0]
+            brush_canvas.height = brush_size[1]
+            brush_canvas_context = brush_canvas.getContext("2d", {willReadFrequently: true})
+            brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
+            img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
+
+            for i in range(0, img_data.data.length, 4):
+                # img_data.data[i] = lerp(dark, light, img_data.data[i]/255) * lerp(1, current_color[0]/255, sat)
+                # img_data.data[i+1] = lerp(dark, light, img_data.data[i+1]/255) * lerp(1, current_color[1]/255, sat)
+                # img_data.data[i+2] = lerp(dark, light, img_data.data[i+2]/255) * lerp(1, current_color[2]/255, sat)
+                img_data.data[i] = lerp(dark, light, img_data.data[i]/255) * current_color[0]/255
+                img_data.data[i+1] = lerp(dark, light, img_data.data[i+1]/255) * current_color[1]/255
+                img_data.data[i+2] = lerp(dark, light, img_data.data[i+2]/255) * current_color[2]/255
+                img_data.data[i+3] = img_data.data[i+3] * current_color[3]/255
+
+            brush_canvas_context.putImageData(img_data, 0, 0)
+
 
 
 brush_tool.input = def brush_tool_input(key):
@@ -318,83 +398,11 @@ brush_tool.input = def brush_tool_input(key):
             paint()
             return
 
-        if not using_painterly_brush: # tint the temporary brush tip
-            for j in range(brush_tips.length):
-                brush_canvas = brush_canvases[j]
-                brush = brush_tips[j]
-
-                brush_canvas.width = brush_size[0]
-                brush_canvas.height = brush_size[1]
-                brush_canvas_context = brush_canvas.getContext("2d", {willReadFrequently: true})
-                brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
-                if not SMUDGE:
-                    img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
-
-                    for i in range(0, img_data.data.length, 4):
-                        img_data.data[i] = img_data.data[i] * (current_color[0]/255)
-                        img_data.data[i+1] = img_data.data[i+1] * (current_color[1]/255)
-                        img_data.data[i+2] = img_data.data[i+2] * (current_color[2]/255)
-                        img_data.data[i+3] = img_data.data[i+3] * (current_color[3]/255)
-
-                elif SMUDGE:
-                #     print('SMUDGE')
-                #     # sample the canvas for colors and multiply with brush alpha
-                    pos = get_canvas_position()
-                    img_data = current_layer.ctx.getImageData(pos[0]-(brush_size[0]/2), pos[1]-brush_size[1]/2, brush_size[0], brush_size[1])
-                    brush_pixels = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
-
-                    for i in range(0, img_data.data.length, 4):
-                        img_data.data[i+3] = img_data.data[i+3] * brush_pixels.data[i+3] * (1/255*SMUDGE_STRENGTH)
-                        # img_data.data[i+3] = img_data.data[i+3]
-                #     # brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
-                #     # img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
-                #     # self.smudge_IMG = self.parent.current_layer.img_data.crop((
-                #     #         stamp_pos[0], stamp_pos[1],
-                #     #         stamp_pos[0]+self.brush.width, stamp_pos[1]+self.brush.height))
-                #     #
-                #     #     try:
-                #     #         self.smudge_IMG.putalpha(self.brush.split()[-1])
-                #     #     except:
-                #     #         pass
-
-                brush_canvas_context.putImageData(img_data, 0, 0)
-        else: # special tint for paiterly brushes to keep contrast
-            color_as_hsv = rgb_to_hsv(current_color)
-            c = color_as_hsv[2] * 255
-            c = (current_color[0] + current_color[1] + current_color[2])/3
-            # print('------------', c)
-            sat = color_as_hsv[1]
-            contrast = 64
-            dark = c-contrast
-            light = c+contrast
-            # adjust contrast and brighten based on saturation
-            dark = c-contrast + (sat*contrast*1.2)
-            light = c+contrast + contrast + (sat*contrast*1.2)
-
-            for j in range(brush_tips.length):
-                brush_canvas = brush_canvases[j]
-                brush = brush_tips[j]
-
-                brush_canvas.width = brush_size[0]
-                brush_canvas.height = brush_size[1]
-                brush_canvas_context = brush_canvas.getContext("2d", {willReadFrequently: true})
-                brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
-                img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
-
-                for i in range(0, img_data.data.length, 4):
-                    # img_data.data[i] = lerp(dark, light, img_data.data[i]/255) * lerp(1, current_color[0]/255, sat)
-                    # img_data.data[i+1] = lerp(dark, light, img_data.data[i+1]/255) * lerp(1, current_color[1]/255, sat)
-                    # img_data.data[i+2] = lerp(dark, light, img_data.data[i+2]/255) * lerp(1, current_color[2]/255, sat)
-                    img_data.data[i] = lerp(dark, light, img_data.data[i]/255) * current_color[0]/255
-                    img_data.data[i+1] = lerp(dark, light, img_data.data[i+1]/255) * current_color[1]/255
-                    img_data.data[i+2] = lerp(dark, light, img_data.data[i+2]/255) * current_color[2]/255
-                    img_data.data[i+3] = img_data.data[i+3] * current_color[3]/255
-
-                brush_canvas_context.putImageData(img_data, 0, 0)
-
 
         if tool == 'eyedropper':
             drawing = True
+
+        update_brush_tip()
 
         try:
             paint()
@@ -528,7 +536,11 @@ def paint():
     if held_keys['space']:
         return
 
+
+
     [x, y] = get_canvas_position()
+    if current_brush['min_pressure'] < 1:
+        update_brush_tip()
 
     if held_keys['w'] and prev_pos:
         x = lerp(prev_pos[0], x, .025)
@@ -759,6 +771,7 @@ def update():
         document.body.style.cursor = 'auto'
 
 
+    # brush_size = [e*mouse.pressure for e in brush]
 
 color_menu = Entity(parent=camera.ui, visible_self=False, position=[left_button_x,.465,-1])
 color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=1, scale=[.1,.2], enabled=True)
@@ -1030,7 +1043,7 @@ def render_selection():
                     selection_ctx.fillRect(x, y, 1, 1);
     # print('selection bounds', selection.bounds)
 
-lasso_tool = Entity(enabled=False, render=False)
+lasso_tool = Entity(enabled=False, visible_self=False)
 lasso_tool.input = def lasso_tool_input(key):
     if key == 'left mouse down' and mouse.hovered_entity == bg:
         pos = get_canvas_position()
@@ -1219,7 +1232,7 @@ lasso_tool.update = def():
     #     ctx.fillStyle = rgb(0/255, 0/255, 0/255, 255/255)
     #     ctx.fillRect(x, y, 2, 2);
 
-rect_select_tool = Entity(name='rect_select_tool', render=False, enabled=False)
+rect_select_tool = Entity(name='rect_select_tool', visible_self=False, enabled=False)
 rect_select_tool.input = def rect_select_tool_input(key):
     if key == 'left mouse down':
         self.start_pos = get_canvas_position()
@@ -1470,7 +1483,7 @@ _buttons = [
 
 radial_menu = RadialMenu(buttons=_buttons, shortcut='a')
 Entity(visible_self=False).input = def input(key):
-    if key == 'right mouse down':
+    if key == 'right mouse down' and not held_keys['control']:
         radial_menu.input(radial_menu.shortcut)
     if key == 'right mouse up':
         radial_menu.input(radial_menu.shortcut + ' up')
