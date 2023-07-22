@@ -21,43 +21,49 @@ text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
 # text_entity.el.style.fontFamily = 'monospace'
 # text_entity.el.style.textOverflow = 'clip'
 # text_entity = InputField(z=-1, scale=[.9,1], roundness=.05, color=color.black, alpha=.9, text=text, text_color=color.white, padding=1)
-fake_text = Entity(scale=[.95,.95*aspect_ratio], color=hsv(0,0,.05,0), text_size=1.5, text_color=hsv(0,0,.8), roundness=.025, ignore_collision=True, enabled=True)
-text_entity = Entity(scale=[.95,.95*aspect_ratio], color=hsv(0,0,.05), text_size=1.5, text_color=hsv(0,0,.8,1), roundness=.025, shadow=True)
-# fake_text = Entity(scale=[.95,.95*aspect_ratio], alpha=1, text_color=text_entity.text_color, z=-2, color=color.clear, text=text, text_size=text_entity.text_size, roundness=.025)
-fake_text.el.style.textIndent = '.5em'
-fake_text.el.style.fontFamily = 'monospace'
-fake_text.el.style.pointerEvents = 'none'
-fake_text.model.style.pointerEvents = 'none'
 
-text_area = document.createElement('textarea')
-text_entity.model.appendChild(text_area)
-text_area.value = text
+
+# fake_text = Entity(scale=[.95,.95*aspect_ratio], color=hsv(0,0,.05,0), text_size=1.5, text_color=hsv(0,0,.8), roundness=.025, ignore_collision=True, enabled=True)
+# text_entity = Entity(scale=[.95,.95*aspect_ratio], color=hsv(0,0,.05), text_size=1.5, text_color=hsv(0,0,.8,1), roundness=.025, shadow=True)
+# # fake_text = Entity(scale=[.95,.95*aspect_ratio], alpha=1, text_color=text_entity.text_color, z=-2, color=color.clear, text=text, text_size=text_entity.text_size, roundness=.025)
+# fake_text.el.style.textIndent = '.5em'
+# fake_text.el.style.fontFamily = 'monospace'
+# fake_text.el.style.pointerEvents = 'none'
+# fake_text.model.style.pointerEvents = 'none'
+#
+# text_area = document.createElement('textarea')
+# text_entity.model.appendChild(text_area)
+# text_area.value = text
+
+
 # text_entity.text_color = color.green
 # text_area.style.padding='.25em'
 # text_entity.style.padding='.25em'
-text_area.addEventListener('keydown', def keydown(e):
-    if e.key == 'Tab':
-        e.preventDefault()
-        start = this.selectionStart
-        end = this.selectionEnd
-        # // set textarea value to: text before caret + tab + text after caret
-        this.value = this.value.substring(0, start) + "\t" + this.value.substring(end)
-        #// put caret at right position again
-        this.selectionStart = this.selectionEnd = start + 1
-)
-# fake_text = Text(text=text_area.value, scale=text_entity.scale)
-text_area.onkeyup = def a(e):
-    print(e.key)
-    # if e.key == ' ' or key == 'Backspace':
-    text = text_area.value
-    text = text.replaceAll('print', '<span style="color:#3af">print</span>')
-    text = text.replaceAll('range(', '<span style="color:#3af">range</span>(')
-    text = text.replaceAll('Entity', '<span style="color:#fa3">Entity</span>')
-    text = text.replaceAll('for ', '<span style="color:#d6f">for </span>')
-    text = text.replaceAll('def(', '<span style="color:#d6f">def</span>(')
-    fake_text.text = text
-    print('aaaaaaaaaaaaaaa')
+text_area = Entity(visible_self=False)
 
+# w = 10
+# h = 10
+# char_grid = Array_2d(w,h)
+# for y in range(h):
+#     for x in range(w):
+#         char_grid[y][x] = Entity(scale=[.02,.04], text='', roundness=.25, xy=[-.5+.05+(x*.025), y*.04], text_origin=[0,0], color=color.clear, text_size=2)
+
+
+def render_text(text):
+    x = 0
+    y = 0
+    for char in text:
+        if char == '\n':
+            y += 1
+            x = 0
+
+
+        char_grid[y][x].text = char
+        x += 1
+        if x > w:
+            y += 1
+            x = 0
+# render_text(text)
 
 # text_area.style = 'width:100%; height:100%; background-color:#111; font-color:#fff; z-index:2'
 # text_area
@@ -82,7 +88,7 @@ close_button.on_click = def close():
     preview_canvas.enabled = False
     close_button.enabled = False
 
-preview_button = Button(scale=[.2,.1], origin=[.5,-.5], position=bottom_right, text='preview', color=color.azure, text_color=color.white, text_size=2.5)
+preview_button = Button(scale=[.2,.075], origin=[.5,-.5], position=bottom_right, text='preview', color=color.azure, text_color=color.white, text_size=2.5)
 preview_button.on_click = def preview():
     preview_canvas.enabled = True
     close_button.enabled = True
@@ -103,16 +109,29 @@ preview_button.on_click = def preview():
 keyboard = Entity(color=color.black, origin=[0,.5], y=-.25, ignore_collision=False)
 sunsnake.define(*KeyboardButton(,Button(parent=keyboard, text=e, scale=[(1/11)-.005, h], color=hsv(0,0,.05), text_color=color.gray, text_size=2, )
 h = .1
-for i, e in '.1234567890'.split(''):
+
+math_symbols_parent = Entity(visible_self=False, parent=keyboard, scale=.9)
+for i, e in '+-/*'.split(''):
+    *KeyboardButton(parent=math_symbols_parent, x=-(1/15*4/2) + (i/15) + (1/11/2), y=.11+(-h-.01), origin=[0,-.5], scale=1/15, roundness=.25)
+
+for i, e in '0123456789.'.split(''):
     *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01))
-for i, e in 'qwertyuiopå'.split(''):
+for i, e in 'qwertyuiop`'.split(''):
     *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01)*2)
-for i, e in 'asdfghjkløæ'.split(''):
+for i, e in 'asdfghjkl[]'.split(''):
     *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01)*3)
-for i, e in '  zxcvbnm  '.split(''):
+for i, e in '<>zxcvbnm,:'.split(''):
     *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01)*4)
-for i, e in '   |   |.  '.split(''):
+for i, e in '()'.split(''):
     *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01)*5)
+# a = *KeyboardButton(x=-.5 + (0/11) + (1/11/2), y=.05+(-h-.01)*5, text=' ')
+underscore = *KeyboardButton(x=-.5 + (2.5/11) + (1/11/2), y=.05+(-h-.01)*5, text='_', scale_x=(1/11*2)-.005)
+space = *KeyboardButton(x=-.5 + (5/11) + (1/11/2), y=.05+(-h-.01)*5, text='space', scale_x=(1/11*3)-.005)
+dot = *KeyboardButton(x=-.5 + (7.5/11) + (1/11/2), y=.05+(-h-.01)*5, text='.', scale_x=(1/11*2)-.005)
+enter = *KeyboardButton(x=-.5 + (9.5/11) + (1/11/2), y=.05+(-h-.01)*5, text='⏎', scale_x=(1/11*2)-.005)
+
+# for i, e in '1234'.split(''):
+#     *KeyboardButton(x=-.5 + ((i+7)/11) + (1/11/2), y=.05+(-h-.01)*5)
 
 </script><script src="../taptapir/sunsnake_compiler.js"></script>
 <script type='text/sunsnake'>
