@@ -1,6 +1,6 @@
 <html><title>code_editor_2.js</title><body>
-<script src="//cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
+# <script src="//cdn.jsdelivr.net/npm/eruda"></script>
+# <script>eruda.init();</script>
 
 <script src="../taptapir/taptapir.js"></script>
 <script type='text/javascript'>
@@ -34,6 +34,16 @@ for y in range(3):
 # text += '    print(\'hi :D\')\n'
 # text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
 # text += '    player.xy = [random_int(-5,5)*.1, random_int(-5,5)*.1]\n'
+
+ingame_console = Text(text='', color=color.clear, xy=top_left, origin=[-.5,.5], text_size=2, text_color=color.white, color=color.black, alpha=.8)
+ingame_console.model.style.wordBreak = 'break-word'
+ingame_console.model.style.whiteSpace = 'pre-wrap'
+original_print = print
+def print_ingame(message):
+    ingame_console.text += '\n' + message
+console.error = print_ingame
+print = print_ingame
+print('------')
 
 w = 512
 h = w * 2
@@ -127,13 +137,6 @@ close_button.on_click = def close():
     camera.ui = _original_camera_ui
     print = original_print
     ingame_console.text = ''
-
-ingame_console = Text(text='', color=color.clear, xy=top_left, origin=[-.5,.5], text_size=2, text_color=color.white)
-ingame_console.model.style.wordBreak = 'break-word'
-ingame_console.model.style.whiteSpace = 'pre-wrap'
-original_print = print
-def print_ingame(message):
-    ingame_console.text += '\n' + message
 
 preview_button = Button(scale=[.2,.075], origin=[.5,-.5], position=bottom_right, text='preview', color=color.azure, text_color=color.white, text_size=2.5)
 preview_button.on_click = def preview():
