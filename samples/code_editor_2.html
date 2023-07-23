@@ -21,29 +21,40 @@ text += '    player.xy = [random_int(-5,5)*.1, random_int(-5,5)*.1]\n'
 w = 512
 h = w * 2
 text_renderer = Entity(scale=[.9,.9*2], origin=[0,.5], y=(.5*aspect_ratio)-.05, color=color.black)
-text_canvas = document.createElement('canvas')
-text_renderer.model.appendChild(text_canvas)
-text_canvas.style.width = '100%'
-text_canvas.style.height = '100%'
-text_canvas.width = w
-text_canvas.height = h
-ctx = text_canvas.getContext('2d', {willReadFrequently: true})
+canvas = document.createElement('canvas')
+text_renderer.model.appendChild(canvas)
+canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
+canvas.width = w
+canvas.height = h
+ctx = canvas.getContext('2d', {willReadFrequently: true})
 fill_color = color.white
-ctx.fillStyle = rgb(...fill_color)
 # ctx.fillRect(0, 0, 1, 2)
 text_size = 20
 ctx.font = `${text_size}px monospace`
-y = 0
-for l in text.split('\n'):
-    x = 0
-    y += 1
-    for char in l.split(''):
-        ctx.fillText(char, x*10, (y*text_size))
-        x += 1
-        # if x > 50:
-        #     x = 0
-        #     y += 1
+def render_text():
+    ctx.fillStyle = rgb(...color.black)
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
 
+    ctx.fillStyle = rgb(...fill_color)
+    y = 0
+    for l in text.split('\n'):
+        x = 0
+        y += 1
+        for char in l.split(''):
+            ctx.fillText(char, x*10, (y*text_size))
+            x += 1
+            # if x > 50:
+            #     x = 0
+            #     y += 1
+render_text()
+
+cursor_parent = Entity(parent=text_renderer, xy=[-.5,0], scale=[1/w*10, 1/h*text_size], visible_self=False)
+cursor = Entity(parent=cursor_parent, scale=[1,1], z=-1, origin=[-.5,.5], color=color.azure, alpha=.5, xy=[5,-8])
+text_renderer.on_click = def set_cursor_position():
+    y = ceil((mouse.point[1] - .5) * canvas.height / text_size)
+    cursor.y = y
+    x = floor((mouse.point[0] + .5) * canvas.width / 10)
+    cursor.x = x
 
 preview_canvas = Entity(name='preview_canvas', parent=camera.ui, scale=[.9,aspect_ratio*.9], y=.05, z=-1, color=color.black, shadow=1, enabled=False)
 preview_canvas.entity_parent = None
@@ -59,7 +70,7 @@ close_button.on_click = def close():
     print = original_print
     ingame_console.text = ''
 
-ingame_console = Text(text='console:', color=color.clear, xy=top_left, origin=[-.5,.5], text_size=2, text_color=color.white)
+ingame_console = Text(text='', color=color.clear, xy=top_left, origin=[-.5,.5], text_size=2, text_color=color.white)
 ingame_console.model.style.wordBreak = 'break-word'
 ingame_console.model.style.whiteSpace = 'pre-wrap'
 original_print = print
@@ -126,8 +137,17 @@ space = *KeyboardButton(x=-.5 + (5/11) + (1/11/2), y=.05+(-h-.01)*5, text=' ', s
 dot = *KeyboardButton(x=-.5 + (7.5/11) + (1/11/2), y=.05+(-h-.01)*5, text='.', scale_x=(1/11*2)-.005)
 enter = *KeyboardButton(x=-.5 + (9.5/11) + (1/11/2), y=.05+(-h-.01)*5, text='⏎', scale_x=(1/11*2)-.005, key='newline')
 
-for _e in keyboard.children:
-    let e = _e
+for e in keyboard.children:
+    if e == math_symbols_parent:
+        continue
+    assign_on_click(e)
+
+for e in math_symbols_parent.children:
+    assign_on_click(e)
+
+
+def assign_on_click(keyboard_button):
+    let e = keyboard_button
     e.on_click = def():
         char = e.text
         if e.key:
@@ -139,9 +159,10 @@ def add_text(value):
     if value == 'erase':
         return
     if value == 'newline':
-        return
+        value = '\n'
 
     text += value
+    render_text()
 
 </script><script src="../taptapir/sunsnake_compiler.js"></script>
 <script type='text/sunsnake'>
