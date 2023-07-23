@@ -39,13 +39,14 @@ text_renderer.min_y = text_renderer.y
 text_renderer.max_y = text_renderer.y + (text_renderer.scale_y/2)
 canvas = document.createElement('canvas')
 text_renderer.model.appendChild(canvas)
-canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
+canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none; image-rendering:auto'
 canvas.width = w
 canvas.height = h
 ctx = canvas.getContext('2d', {willReadFrequently: true})
 fill_color = color.white
 # ctx.fillRect(0, 0, 1, 2)
 text_size = 20
+character_spacing = 11
 ctx.font = `${text_size}px monospace`
 
 text_color = hsv(0,0,.9)
@@ -82,7 +83,6 @@ def render_text():
                 ctx.fillStyle = rgb32(...text_color)
             if char == '.':
                 ctx.fillStyle = rgb32(...hsv(200,.3,.8))
-                print(ctx.fillStyle, rgb(...hsv(90,1,1)))
             if char in '0123456789+-*/'.split(''):
                 ctx.fillStyle = rgb32(...hsv(60,1,1))
 
@@ -96,19 +96,19 @@ def render_text():
             # else:
             #     ctx.fillStyle = rgb(...color.white)
 
-            ctx.fillText(char, x*10, (y*text_size))
+            ctx.fillText(char, x*character_spacing, (y*text_size))
             x += 1
             # if x > 50:
             #     x = 0
             #     y += 1
 render_text()
 
-cursor_parent = Entity(parent=text_renderer, xy=[-.5,0], scale=[1/w*10, 1/h*text_size], visible_self=False)
+cursor_parent = Entity(parent=text_renderer, xy=[-.5,0], scale=[1/w*character_spacing, 1/h*text_size], visible_self=False)
 cursor = Entity(parent=cursor_parent, scale=[1,1], z=-1, origin=[-.5,.5], color=color.azure, alpha=.5, xy=[5,-8])
 text_renderer.on_click = def set_cursor_position():
     y = ceil((mouse.point[1] - .5) * canvas.height / text_size)
     cursor.y = y
-    x = floor((mouse.point[0] + .5) * canvas.width / 10)
+    x = floor((mouse.point[0] + .5) * canvas.width / character_spacing)
     cursor.x = x
 
 preview_canvas = Entity(name='preview_canvas', parent=camera.ui, scale=[.9,aspect_ratio*.9], y=.05, z=-1, color=color.black, shadow=1, enabled=False)
@@ -174,7 +174,7 @@ math_symbols_parent = Entity(visible_self=False, parent=keyboard, scale=.9)
 for i, e in '+-/*'.split(''):
     *KeyboardButton(parent=math_symbols_parent, x=-(1/15*4/2) + (i/15) + (1/11/2), y=.11+(-h-.01), origin=[0,-.5], scale=1/15, roundness=.25)
 
-for i, e in `0123456789f`.split(''):
+for i, e in `1234567890=`.split(''):
     *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01))
 for i, e in 'qwertyuiop`'.split(''):
     *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01)*2)
@@ -210,14 +210,17 @@ def assign_on_click(keyboard_button):
         add_text(char)
 
 def add_text(value):
-    print('add text:', value)
+    # print('add text:', value)
     if value == 'erase':
         text = text.slice(0, -1)
         render_text()
         return
 
     if value == 'newline':
-        value = '\n'
+        current_line = text.split('\n')[int(-cursor.y)]
+        indent = get_indent(current_line)
+        print('-----', current_line, indent)
+        value = '\n' + '-----'.repeat(current_indent)
 
     text += value
     render_text()
