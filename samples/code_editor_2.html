@@ -1,26 +1,42 @@
 <html><title>code_editor_2.js</title><body>
 <script src="../taptapir/taptapir.js"></script>
+<script type='text/javascript'>
+text = `
+player = Entity(name='o', color=p1_color, enabled=False)
+# bg = Entity(parent=scene, model='quad', texture='shore', scale=(16,8), z=10, color=color.light_gray)
+board = Array_2d(3,3)
+turns_taken = 0
+for y in range(3):
+    for x in range(3):
+        let b = Entity(scale=1, position=[x,y], roundness=.1, text_origin=[0,0], text_size=8, text_color=color.white, clicked=False)
+        board[x][y] = b
+
+        b.on_click = def():
+            if b.clicked:
+                return
+            b.text = player.name
+            b.color = player.color
+            b.clicked = True
+            turns_taken += 1
+            check_for_victory()
+`
+</script>
 <script type='text/sunsnake'>
-
-set_window_color("#21496b")
-
-button_size = .1
-button_color = 'smoke'
-
-text = ''
-text =  'print(\'hello world!\')\n\n'
-text += 'for i in range(10):\n'
-text += '    print(i)\n\n'
-
-text += 'player = Button(scale=.25, color=color.azure)\n'
-text += 'player.on_click = def():\n'
-text += '    print(\'hi :D\')\n'
-text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
-text += '    player.xy = [random_int(-5,5)*.1, random_int(-5,5)*.1]\n'
+# text =  'print(\'hello world!\')\n\n'
+# text += 'for i in range(10):\n'
+# text += '    print(i)\n\n'
+#
+# text += 'player = Button(scale=.25, color=color.azure)\n'
+# text += 'player.on_click = def():\n'
+# text += '    print(\'hi :D\')\n'
+# text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
+# text += '    player.xy = [random_int(-5,5)*.1, random_int(-5,5)*.1]\n'
 
 w = 512
 h = w * 2
-text_renderer = Entity(scale=[.9,.9*2], origin=[0,.5], y=(.5*aspect_ratio)-.05, color=color.black)
+text_renderer = Entity(scale=[.9,.9*2], origin=[0,.5], y=(.5*aspect_ratio)-.05, color=color.black, draggable=True, max_x=0)
+text_renderer.min_y = text_renderer.y
+text_renderer.max_y = text_renderer.y + (text_renderer.scale_y/2)
 canvas = document.createElement('canvas')
 text_renderer.model.appendChild(canvas)
 canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
@@ -31,16 +47,55 @@ fill_color = color.white
 # ctx.fillRect(0, 0, 1, 2)
 text_size = 20
 ctx.font = `${text_size}px monospace`
-def render_text():
-    ctx.fillStyle = rgb(...color.black)
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-    ctx.fillStyle = rgb(...fill_color)
+text_color = hsv(0,0,.9)
+background_color = '#0a0a0a'
+set_window_color(background_color)
+
+def render_text():
+    ctx.fillStyle = background_color
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.fillStyle = rgb(...text_color)
+
     y = 0
     for l in text.split('\n'):
         x = 0
         y += 1
-        for char in l.split(''):
+        ctx.fillStyle = rgb(...text_color)
+        line = l.split('')
+        for char in line:
+            # if char == '(':
+            #     ctx.fillStyle = rgb(...color.azure)
+            if char == ')':
+                ctx.fillStyle = rgb32(...text_color)
+            if char == '[':
+                ctx.fillStyle = rgb32(...text_color)
+            if char == '(':
+                ctx.fillStyle = rgb32(...text_color)
+            if char == '=':
+                ctx.fillStyle = rgb32(...hsv(40,1,1))
+            if char == ':':
+                ctx.fillStyle = rgb32(...hsv(210,1,1))
+            # elif char == 'i':
+            #     ctx.fillStyle = rgb32(...color.orange)
+            if char == ' ':
+                ctx.fillStyle = rgb32(...text_color)
+            if char == '.':
+                ctx.fillStyle = rgb32(...hsv(200,.3,.8))
+                print(ctx.fillStyle, rgb(...hsv(90,1,1)))
+            if char in '0123456789+-*/'.split(''):
+                ctx.fillStyle = rgb32(...hsv(60,1,1))
+
+            if char == 'i' and x < len(line)-2 and line[x+1] == 'f' and line[x+2] == ' ':
+                ctx.fillStyle = rgb32(...hsv(280,1,1))
+            if char == 'f' and x < len(line)-3 and line[x+1] == 'o' and line[x+2] == 'r'  and line[x+3] == ' ':
+                ctx.fillStyle = rgb32(...hsv(180,.5,1))
+            if char == 'd' and x < len(line)-3 and line[x+1] == 'e' and line[x+2] == 'f'  and (line[x+3] == ' ' or line[x+3] == '('):
+                ctx.fillStyle = rgb32(...hsv(210,.8,1))
+
+            # else:
+            #     ctx.fillStyle = rgb(...color.white)
+
             ctx.fillText(char, x*10, (y*text_size))
             x += 1
             # if x > 50:
@@ -157,12 +212,25 @@ def assign_on_click(keyboard_button):
 def add_text(value):
     print('add text:', value)
     if value == 'erase':
+        text = text.slice(0, -1)
+        render_text()
         return
+
     if value == 'newline':
         value = '\n'
 
     text += value
     render_text()
+
+def input(key):
+    if len(key) == 1:
+        add_text(key)
+    elif key == 'enter':
+        add_text('newline')
+    elif key == 'space':
+        add_text(' ')
+    elif key == 'backspace':
+        add_text('erase')
 
 </script><script src="../taptapir/sunsnake_compiler.js"></script>
 <script type='text/sunsnake'>
