@@ -25,19 +25,19 @@ for y in range(3):
 `
 </script>
 <script type='text/sunsnake'>
-# text =  'print(\'hello world!\')\n\n'
-# text += 'for i in range(10):\n'
-# text += '    print(i)\n\n'
-#
-# text += 'player = Button(scale=.25, color=color.azure)\n'
-# text += 'player.on_click = def():\n'
-# text += '    print(\'hi :D\')\n'
-# text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
-# text += '    player.xy = [random_int(-5,5)*.1, random_int(-5,5)*.1]\n'
+text =  'print(\'hello world!\')\n\n'
+text += 'for i in range(10):\n'
+text += '    print(i)\n\n'
 
-# ingame_console = Text(text='', color=color.clear, xy=top_left, origin=[-.5,.5], text_size=2, text_color=color.white, color=color.black, alpha=.8)
-# ingame_console.model.style.wordBreak = 'break-word'
-# ingame_console.model.style.whiteSpace = 'pre-wrap'
+text += 'player = Button(scale=.25, color=color.azure)\n'
+text += 'player.on_click = def():\n'
+text += '    print(\'hi :D\')\n'
+text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
+text += '    player.xy = [random_int(-5,5)*.1, random_int(-5,5)*.1]\n'
+
+ingame_console = Text(text='', color=color.clear, xy=top_left, origin=[-.5,.5], text_size=2, text_color=color.white, color=color.black, alpha=.8, enabled=False)
+ingame_console.model.style.wordBreak = 'break-word'
+ingame_console.model.style.whiteSpace = 'pre-wrap'
 # original_print = print
 # def print_ingame(message):
 #     ingame_console.text += '\n' + message
@@ -124,10 +124,15 @@ text_renderer.on_click = def set_cursor_position():
     x = floor((mouse.point[0] + .5) * canvas.width / character_spacing)
     cursor.x = x
 
-preview_canvas = Entity(name='preview_canvas', parent=camera.ui, scale=[.9,aspect_ratio*.9], y=.05, z=-1, color=color.black, shadow=1, enabled=False)
+preview_canvas = Entity(name='preview_canvas', parent=camera.ui, scale=[.9,aspect_ratio*.9], y=.05, z=-1, color=hsv(0,0,.1), shadow=1, enabled=False)
 preview_canvas.entity_parent = None
+border_parent = Entity(parent=preview_canvas, visible_self=False, z=-2)
+Entity(parent=border_parent, origin=[-.5,0], scale=2, color=color.black, z=-1, x=.5)
+Entity(parent=border_parent, origin=[.5,0], scale=2, color=color.black, z=-1, x=-.5)
+Entity(parent=border_parent, origin=[0,-.5], scale=2, color=color.black, z=-1, y=.5)
+Entity(parent=border_parent, origin=[0,.5], scale=2, color=color.black, z=-1, y=-.5)
 
-close_button = Button(scale=[.2,.1], origin=[.5,-.5], position=[.5-.2,-.5*aspect_ratio], text='close', color=color.gray, enabled=False, text_size=2.5)
+close_button = Button(scale=[.15,.075], origin=[.5,-.5], position=[.5-.2,-.5*aspect_ratio], text='close', color=color.gray, enabled=False, text_size=2.5, z=-2)
 close_button.on_click = def close():
     if preview_canvas.entity_parent:
         destroy(preview_canvas.entity_parent)
@@ -138,14 +143,14 @@ close_button.on_click = def close():
     print = original_print
     ingame_console.text = ''
 
-preview_button = Button(scale=[.2,.075], origin=[.5,-.5], position=bottom_right, text='preview', color=color.azure, text_color=color.white, text_size=2.5)
+preview_button = Button(scale=[.2,.075], origin=[.5,-.5], position=bottom_right, text='preview', color=color.azure, text_color=color.white, text_size=2.5, z=-2)
 preview_button.on_click = def preview():
     preview_canvas.enabled = True
     close_button.enabled = True
     ingame_console.text = ''
-    print = print_ingame
-    console.error = print_ingame
-    console.log = print_ingame
+    # print = print_ingame
+    # console.error = print_ingame
+    # console.log = print_ingame
 
     text_to_compile = text
     _original_scene = scene
@@ -157,10 +162,12 @@ preview_button.on_click = def preview():
     camera.ui = fake_camera_ui
     try:
         result = compile(text_to_compile)
+        print('compiled sucessfully')
     catch (error):
         print('error compiling:', error)
     try:
         eval(result)
+        print('evaluated sucessfully')
     catch (error):
         line_number = ''
         for l in error.stack.split('\n'): # get line number
