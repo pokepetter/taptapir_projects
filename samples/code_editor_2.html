@@ -1,77 +1,129 @@
 <html><title>code_editor_2.js</title><body>
+# <script src="//cdn.jsdelivr.net/npm/eruda"></script>
+# <script>eruda.init();</script>
+
 <script src="../taptapir/taptapir.js"></script>
+<script type='text/javascript'>
+text = `
+player = Entity(name='o', color=p1_color, enabled=False)
+# bg = Entity(parent=scene, model='quad', texture='shore', scale=(16,8), z=10, color=color.light_gray)
+board = Array_2d(3,3)
+turns_taken = 0
+for y in range(3):
+    for x in range(3):
+        let b = Entity(scale=1, position=[x,y], roundness=.1, text_origin=[0,0], text_size=8, text_color=color.white, clicked=False)
+        board[x][y] = b
+
+        b.on_click = def():
+            if b.clicked:
+                return
+            b.text = player.name
+            b.color = player.color
+            b.clicked = True
+            turns_taken += 1
+            check_for_victory()
+`
+</script>
 <script type='text/sunsnake'>
+# text =  'print(\'hello world!\')\n\n'
+# text += 'for i in range(10):\n'
+# text += '    print(i)\n\n'
+#
+# text += 'player = Button(scale=.25, color=color.azure)\n'
+# text += 'player.on_click = def():\n'
+# text += '    print(\'hi :D\')\n'
+# text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
+# text += '    player.xy = [random_int(-5,5)*.1, random_int(-5,5)*.1]\n'
 
-set_window_color("#21496b")
+ingame_console = Text(text='', color=color.clear, xy=top_left, origin=[-.5,.5], text_size=2, text_color=color.white, color=color.black, alpha=.8)
+ingame_console.model.style.wordBreak = 'break-word'
+ingame_console.model.style.whiteSpace = 'pre-wrap'
+original_print = print
+def print_ingame(message):
+    ingame_console.text += '\n' + message
+console.error = print_ingame
+print = print_ingame
+print('------')
 
-button_size = .1
-button_color = 'smoke'
+w = 512
+h = w * 2
+text_renderer = Entity(scale=[.9,.9*2], origin=[0,.5], y=(.5*aspect_ratio)-.05, color=color.black, draggable=True, max_x=0)
+text_renderer.min_y = text_renderer.y
+text_renderer.max_y = text_renderer.y + (text_renderer.scale_y/2)
+canvas = document.createElement('canvas')
+text_renderer.model.appendChild(canvas)
+canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none; image-rendering:auto'
+canvas.width = w
+canvas.height = h
+ctx = canvas.getContext('2d', {willReadFrequently: true})
+fill_color = color.white
+# ctx.fillRect(0, 0, 1, 2)
+text_size = 20
+character_spacing = 11
+ctx.font = `${text_size}px monospace`
 
-text = ''
-text =  'print(\'hello world!\')\n\n'
-text += 'for i in range(10):\n'
-text += '    print(i)\n\n'
+text_color = hsv(0,0,.9)
+background_color = '#0a0a0a'
+set_window_color(background_color)
 
-text += 'player = Button(scale=.25, color=color.azure)\n'
-text += 'player.on_click = def():\n'
-text += '    print(\'hi :D\')\n'
-text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
+def render_text():
+    ctx.fillStyle = background_color
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.fillStyle = rgb(...text_color)
 
-# text_entity = Text(text=text, z=1, color='#000', text_color='#fff', x=-.475, y=(.5*aspect_ratio)-.05, draggable=True, max_x=-.475, min_y=0, max_y=100, scale=[.9,2], origin=[-.5,.5], text_size=1.9, roundness=.02)
-# text_entity.el.style.fontFamily = 'monospace'
-# text_entity.el.style.textOverflow = 'clip'
-# text_entity = InputField(z=-1, scale=[.9,1], roundness=.05, color=color.black, alpha=.9, text=text, text_color=color.white, padding=1)
-fake_text = Entity(scale=[.95,.95*aspect_ratio], color=hsv(0,0,.05,0), text_size=1.5, text_color=hsv(0,0,.8), roundness=.025, ignore_collision=True, enabled=True)
-text_entity = Entity(scale=[.95,.95*aspect_ratio], color=hsv(0,0,.05), text_size=1.5, text_color=hsv(0,0,.8,1), roundness=.025, shadow=True)
-# fake_text = Entity(scale=[.95,.95*aspect_ratio], alpha=1, text_color=text_entity.text_color, z=-2, color=color.clear, text=text, text_size=text_entity.text_size, roundness=.025)
-fake_text.el.style.textIndent = '.5em'
-fake_text.el.style.fontFamily = 'monospace'
-fake_text.el.style.pointerEvents = 'none'
-fake_text.model.style.pointerEvents = 'none'
+    y = 0
+    for l in text.split('\n'):
+        x = 0
+        y += 1
+        ctx.fillStyle = rgb(...text_color)
+        line = l.split('')
+        for char in line:
+            # if char == '(':
+            #     ctx.fillStyle = rgb(...color.azure)
+            if char == ')':
+                ctx.fillStyle = rgb32(...text_color)
+            if char == '[':
+                ctx.fillStyle = rgb32(...text_color)
+            if char == '(':
+                ctx.fillStyle = rgb32(...text_color)
+            if char == '=':
+                ctx.fillStyle = rgb32(...hsv(40,1,1))
+            if char == ':':
+                ctx.fillStyle = rgb32(...hsv(210,1,1))
+            # elif char == 'i':
+            #     ctx.fillStyle = rgb32(...color.orange)
+            if char == ' ':
+                ctx.fillStyle = rgb32(...text_color)
+            if char == '.':
+                ctx.fillStyle = rgb32(...hsv(200,.3,.8))
+            if char in '0123456789+-*/'.split(''):
+                ctx.fillStyle = rgb32(...hsv(60,1,1))
 
-text_area = document.createElement('textarea')
-text_entity.model.appendChild(text_area)
-text_area.value = text
-# text_entity.text_color = color.green
-# text_area.style.padding='.25em'
-# text_entity.style.padding='.25em'
-text_area.addEventListener('keydown', def keydown(e):
-    if e.key == 'Tab':
-        e.preventDefault()
-        start = this.selectionStart
-        end = this.selectionEnd
-        # // set textarea value to: text before caret + tab + text after caret
-        this.value = this.value.substring(0, start) + "\t" + this.value.substring(end)
-        #// put caret at right position again
-        this.selectionStart = this.selectionEnd = start + 1
-)
-# fake_text = Text(text=text_area.value, scale=text_entity.scale)
-text_area.onkeyup = def a(e):
-    print(e.key)
-    # if e.key == ' ' or key == 'Backspace':
-    text = text_area.value
-    text = text.replaceAll('print', '<span style="color:#3af">print</span>')
-    text = text.replaceAll('range(', '<span style="color:#3af">range</span>(')
-    text = text.replaceAll('Entity', '<span style="color:#fa3">Entity</span>')
-    text = text.replaceAll('for ', '<span style="color:#d6f">for </span>')
-    text = text.replaceAll('def(', '<span style="color:#d6f">def</span>(')
-    fake_text.text = text
-    print('aaaaaaaaaaaaaaa')
+            if char == 'i' and x < len(line)-2 and line[x+1] == 'f' and line[x+2] == ' ':
+                ctx.fillStyle = rgb32(...hsv(280,1,1))
+            if char == 'f' and x < len(line)-3 and line[x+1] == 'o' and line[x+2] == 'r'  and line[x+3] == ' ':
+                ctx.fillStyle = rgb32(...hsv(180,.5,1))
+            if char == 'd' and x < len(line)-3 and line[x+1] == 'e' and line[x+2] == 'f'  and (line[x+3] == ' ' or line[x+3] == '('):
+                ctx.fillStyle = rgb32(...hsv(210,.8,1))
 
+            # else:
+            #     ctx.fillStyle = rgb(...color.white)
 
-# text_area.style = 'width:100%; height:100%; background-color:#111; font-color:#fff; z-index:2'
-# text_area
+            ctx.fillText(char, x*character_spacing, (y*text_size))
+            x += 1
+            # if x > 50:
+            #     x = 0
+            #     y += 1
+render_text()
 
-# text_area.style.textOverflow = 'hidden'
-# text_area.style.fontStretch = 'ultra-condensed'
-# text_area.style.letterSpacing = -2
-# text_entity.text = '123'
+cursor_parent = Entity(parent=text_renderer, xy=[-.5,0], scale=[1/w*character_spacing, 1/h*text_size], visible_self=False)
+cursor = Entity(parent=cursor_parent, scale=[1,1], z=-1, origin=[-.5,.5], color=color.azure, alpha=.5, xy=[5,-8])
+text_renderer.on_click = def set_cursor_position():
+    y = ceil((mouse.point[1] - .5) * canvas.height / text_size)
+    cursor.y = y
+    x = floor((mouse.point[0] + .5) * canvas.width / character_spacing)
+    cursor.x = x
 
-# text_entity.fit_to_text()
-# text_entity.scale_x = .95
-run_button = Button(text='>', scale=.1, origin=[.5,-.5], position=[.5,.5*aspect_ratio])
-# run_button.on_click = def():
-#     pass
 preview_canvas = Entity(name='preview_canvas', parent=camera.ui, scale=[.9,aspect_ratio*.9], y=.05, z=-1, color=color.black, shadow=1, enabled=False)
 preview_canvas.entity_parent = None
 
@@ -81,13 +133,21 @@ close_button.on_click = def close():
         destroy(preview_canvas.entity_parent)
     preview_canvas.enabled = False
     close_button.enabled = False
+    scene = _original_scene
+    camera.ui = _original_camera_ui
+    print = original_print
+    ingame_console.text = ''
 
-preview_button = Button(scale=[.2,.1], origin=[.5,-.5], position=bottom_right, text='preview', color=color.azure, text_color=color.white, text_size=2.5)
+preview_button = Button(scale=[.2,.075], origin=[.5,-.5], position=bottom_right, text='preview', color=color.azure, text_color=color.white, text_size=2.5)
 preview_button.on_click = def preview():
     preview_canvas.enabled = True
     close_button.enabled = True
+    ingame_console.text = ''
+    print = print_ingame
+    console.error = print_ingame
+    console.log = print_ingame
 
-    text_to_compile = text_entity.text
+    text_to_compile = text
     _original_scene = scene
     _original_camera_ui = camera.ui
 
@@ -95,24 +155,91 @@ preview_button.on_click = def preview():
     fake_camera_ui = Entity(parent=preview_canvas.entity_parent, visible_self=False)
     scene = preview_canvas.entity_parent.el
     camera.ui = fake_camera_ui
-    result = compile(text_to_compile)
-    eval(result)
-    scene = _original_scene
-    camera.ui = _original_camera_ui
+    try:
+        result = compile(text_to_compile)
+    catch (error):
+        print('error compiling:', error)
+    try:
+        eval(result)
+    catch (error):
+        line_number = ''
+        for l in error.stack.split('\n'): # get line number
+            if 'eval:' in l:
+                line_number = 'line: ' + l.split('eval:')[1]
+                break
+
+        print(error + ' \n' + line_number);
+
+
 
 keyboard = Entity(color=color.black, origin=[0,.5], y=-.25, ignore_collision=False)
 sunsnake.define(*KeyboardButton(,Button(parent=keyboard, text=e, scale=[(1/11)-.005, h], color=hsv(0,0,.05), text_color=color.gray, text_size=2, )
 h = .1
-for i, e in '.1234567890'.split(''):
+
+math_symbols_parent = Entity(visible_self=False, parent=keyboard, scale=.9)
+for i, e in '+-/*'.split(''):
+    *KeyboardButton(parent=math_symbols_parent, x=-(1/15*4/2) + (i/15) + (1/11/2), y=.11+(-h-.01), origin=[0,-.5], scale=1/15, roundness=.25)
+
+for i, e in `1234567890=`.split(''):
     *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01))
-for i, e in 'qwertyuiopå'.split(''):
+for i, e in 'qwertyuiop`'.split(''):
     *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01)*2)
-for i, e in 'asdfghjkløæ'.split(''):
+for i, e in 'asdfghjkl,:'.split(''):
     *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01)*3)
-for i, e in '  zxcvbnm  '.split(''):
+for i, e in '[]zxcvbnm'.split(''):
     *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01)*4)
-for i, e in '   |   |.  '.split(''):
+erase = *KeyboardButton(x=-.5 + (9.5/11) + (1/11/2), y=.05+(-h-.01)*4, text='⌫', scale_x=(1/11*2)-.005, key='erase')
+
+for i, e in '()'.split(''):
     *KeyboardButton(x=-.5 + (i/11) + (1/11/2), y=.05+(-h-.01)*5)
+a = *KeyboardButton(x=-.5 + (0/11) + (1/11/2), y=.05+(-h-.01)*5, text=' ')
+underscore = *KeyboardButton(x=-.5 + (2.5/11) + (1/11/2), y=.05+(-h-.01)*5, text='_', scale_x=(1/11*2)-.005)
+space = *KeyboardButton(x=-.5 + (5/11) + (1/11/2), y=.05+(-h-.01)*5, text=' ', scale_x=(1/11*3)-.005)
+dot = *KeyboardButton(x=-.5 + (7.5/11) + (1/11/2), y=.05+(-h-.01)*5, text='.', scale_x=(1/11*2)-.005)
+enter = *KeyboardButton(x=-.5 + (9.5/11) + (1/11/2), y=.05+(-h-.01)*5, text='⏎', scale_x=(1/11*2)-.005, key='newline')
+
+for e in keyboard.children:
+    if e == math_symbols_parent:
+        continue
+    assign_on_click(e)
+
+for e in math_symbols_parent.children:
+    assign_on_click(e)
+
+
+def assign_on_click(keyboard_button):
+    let e = keyboard_button
+    e.on_click = def():
+        char = e.text
+        if e.key:
+            char = e.key
+        add_text(char)
+
+def add_text(value):
+    # print('add text:', value)
+    if value == 'erase':
+        text = text.slice(0, -1)
+        render_text()
+        return
+
+    if value == 'newline':
+        current_line = text.split('\n')[int(-cursor.y)]
+        indent = get_indent(current_line)
+        print('-----', current_line, indent)
+        value = '\n' + '-----'.repeat(current_indent)
+
+    text += value
+    render_text()
+
+def input(key):
+    if len(key) == 1:
+        add_text(key)
+    elif key == 'enter':
+        add_text('newline')
+    elif key == 'space':
+        add_text(' ')
+    elif key == 'backspace':
+        add_text('erase')
 
 </script><script src="../taptapir/sunsnake_compiler.js"></script>
 <script type='text/sunsnake'>
