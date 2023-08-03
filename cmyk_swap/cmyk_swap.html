@@ -1,0 +1,173 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" />
+<title>CMYK Swap</title><link rel="icon" href="icon.png">
+</head><body></body>
+<script src="taptapir.js"></script>
+<script type='text/sunsnake'>
+
+set_background_color("#111111")
+set_window_color("#222")
+
+SCORE = int(save_system_load('score'))
+
+slots = []
+draggables = []
+coordinates = []
+
+for x in range(5):
+    for y in range(5):
+        coordinate = [x,y]
+        coordinates.append(coordinate)
+
+colors = [color.cyan, color.magenta, color.yellow]
+color_names = ['cyan', 'magenta', 'yellow']
+block_size = 1/5*.9
+
+for i in range(3):
+    slot = Entity(color=colors[i], scale=.1, roundness=.0, color=color.clear)
+
+    slot.model.style.outline = `medium dashed ${color_names[i]}`
+    slots.append(slot)
+
+    let e = Entity(color=colors[i], scale=.16, draggable=True, roundness=.2, shadow=True, target_slot=slot, velocity=[0,0], min_x=-.5+.08, max_x=.5-.08, min_y=(-.5*aspect_ratio)+.08, max_y=(.5*aspect_ratio)-.08, duration_dragged=0, z=-1)
+    e.effect = Entity(parent=e, scale=2, z=-2, texture='impact_effect.gif', enabled=False)
+
+    draggables.append(e)
+    e.on_click = def():
+        e.start_pos = e.xy
+
+    e.drop = def():
+        e.scale_x -= .02
+        e.scale_y -= .02
+        after .05s:
+            e.scale_x += .02
+            e.scale_y += .02
+
+        e.snap_to_slot()
+
+        e.velocity = [e.x-e.start_pos[0], e.y-e.start_pos[1]]
+        e.duration_dragged = 0
+
+    e.snap_to_slot = def():
+        limit = .075
+
+        if distance(e.position, e.target_slot.position) < limit:
+            e.xy = e.target_slot.xy
+            e.draggable = False
+            r = [e.draggable for e in draggables].sum()
+            if r == 0:
+                win()
+
+
+    e.update = def():
+        if e.draggable and not e.dragging:
+            # print('a', e.velocity)
+
+            if e.x+e.scale_x > .5:
+                e.velocity[0] *= -1
+            if e.x-e.scale_x < -.5:
+                e.velocity[0] *= -1
+
+            if e.y+e.scale_y > .75:
+                e.velocity[1] *= -1
+            if e.y-e.scale_y < -.75:
+                e.velocity[1] *= -1
+
+            e.velocity = [
+                lerp(e.velocity[0], 0, .025),
+                lerp(e.velocity[1], 0, .025),
+                ]
+            e.x += e.velocity[0] * .05
+            e.y += e.velocity[1] * .05
+            e.x = clamp(e.x, -.5, .5)
+            e.y = clamp(e.y, -.75, .75)
+            e.snap_to_slot()
+
+def goto_next_level():
+    random_positions = sample(coordinates, 6)
+
+    for i in range(3)
+        e = slots[i]
+        e.x = (-2 + random_positions[(i*2)][0]) * block_size
+        e.y = (-2 + random_positions[(i*2)][1]) * block_size
+
+        e = draggables[i]
+        e.x = (-2 + random_positions[(i*2)+1][0]) * block_size
+        e.y = (-2 + random_positions[(i*2)+1][1]) * block_size
+        e.draggable = True
+        e.velocity = [0,0]
+
+goto_next_level()
+
+score_counter = Button(y=(.5*aspect_ratio)-.1, text=SCORE, origin=[0,0], text_color=color.white, color=color.clear, z=-10)
+score_counter.fit_to_text()
+
+win_text = Entity(text='Yay! :D', enabled=False, text_origin=[0,0], scale=[.25,.125], color=color.white, shadow=True, margin=10, roundness=.4)
+def set_score(value):
+    SCORE = value
+    score_counter.text= SCORE
+    save_system_save('score', SCORE)
+
+def win():
+    win_text.enabled = True
+    set_score(SCORE + 1)
+
+    for i, e in enumerate(draggables):
+        let _e = e
+        after i*.1s:
+            _e.effect.enabled = True
+            _e.effect.texture = 'impact_effect.gif'
+
+    after 1s:
+        win_text.enabled = False
+        goto_next_level()
+print('-')
+
+mouse.prev_pos = mouse.position
+def update():
+    mouse.velocity = [mouse.position[0]-mouse.prev_pos[0], mouse.position[1]-mouse.prev_pos[1]]
+
+
+shop_icon = Button(text='  💼  ', position=[-.5+.05,(.5*aspect_ratio)-.1], origin=[-.5,-.5], scale=[.1,.075], roundness=.5, text_size=2, color=hsv(0,0,.2), on_click=def():shop_menu.enabled=True)
+
+shop_menu = Entity(parent=camera.ui, z=-1, visible_self=False)
+shop_menu.on_enable = def():
+    shop_menu.bg.alpha = 0
+    shop_menu.bg.animate('alpha', .99)
+    ignore = [shop_menu.bg, shop_menu.back_button]
+    buttons_to_animate = [e for e in shop_menu.children if not e in ignore]
+    for i, e in buttons_to_animate:
+        e.x = .02 * (i+1)
+        e.animate('x', 0, duration=.005*(i+1))
+
+
+
+shop_menu.bg = Entity(parent=shop_menu, scale=2, color=hsv(0,0,.05), alpha=.99, ignore_collision=False)
+shop_menu.back_button = Button(parent=shop_menu, xy=top_left, origin=[-1,1], scale=.1, color=color.gray, z=-1, text='↩', color=color.clear, text_color=color.gray, text_size=5, on_click=def(): shop_menu.enabled=False)
+
+items = ['chest', '1 point']
+# -100p buy chest for chance of item
+# unlock green chance (3p)
+# unlock luck (change to spawn extra point play field)
+# unlock black chance (skin as black hole?) (10p)
+# unlock skins, maybe even animated blocks?
+# all: dragon, chameleon
+# C: whale, dolphin, peacock
+# M: flamingo, butterfly, bird, starfish,
+# Y: snake, lion, yellow fish
+# unlock backgrounds
+# wall chance? (avoid or you get no point)
+
+# achievements
+# share score
+
+watch_ad_button = Button(parent=shop_menu, text='-25 Bag', scale=[.4,.2], color=color.black, text_color=color.light_gray, y=.42)
+watch_ad_button = Button(parent=shop_menu, text='-100 Chest', scale=[.4,.2], color=color.black, text_color=color.light_gray, y=.21)
+watch_ad_button = Button(parent=shop_menu, text='-1000 Big Chest', scale=[.4,.2], color=color.black, text_color=color.light_gray, y=.0)
+watch_ad_button = Button(parent=shop_menu, text='-500\n green chance +.1%', scale=[.4,.2], color=color.black, text_color=color.light_gray, y=-.21, on_click=def():set_score(SCORE+10))
+watch_ad_button = Button(parent=shop_menu, text='-500\n +1 Luck', scale=[.4,.2], color=color.black, text_color=color.light_gray, y=-.42, on_click=def():set_score(SCORE+10))
+# watch_ad_button = Button(parent=shop_menu, text='Other Games', scale=[.4,.2], color=color.black, text_color=color.light_gray, y=-.63)
+# for e in ['']:
+# 🔑
+</script>
+<script src="sunsnake_compiler.js"></script>
+</html>
