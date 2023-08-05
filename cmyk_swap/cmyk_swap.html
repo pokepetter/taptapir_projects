@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8" />
 <title>CMYK Swap</title><link rel="icon" href="icon.png">
 </head><body></body>
-<script src="taptapir.js"></script>
+<script src="../taptapir/taptapir.js"></script>
 <script type='text/sunsnake'>
 
 set_background_color("#111111")
@@ -25,7 +25,7 @@ block_size = 1/5*.9
 for i in range(3):
     slot = Entity(color=colors[i], scale=.1, roundness=.0, color=color.clear)
 
-    slot.model.style.outline = `medium dashed ${color_names[i]}`
+    slot.model.style.outline = `4px dashed ${color_names[i]}`
     slots.append(slot)
 
     let e = Entity(color=colors[i], scale=.16, draggable=True, roundness=.2, shadow=True, target_slot=slot, velocity=[0,0], min_x=-.5+.08, max_x=.5-.08, min_y=(-.5*aspect_ratio)+.08, max_y=(.5*aspect_ratio)-.08, duration_dragged=0, z=-1)
@@ -76,8 +76,8 @@ for i in range(3):
                 lerp(e.velocity[0], 0, .025),
                 lerp(e.velocity[1], 0, .025),
                 ]
-            e.x += e.velocity[0] * .05
-            e.y += e.velocity[1] * .05
+            e.x += e.velocity[0] * .075
+            e.y += e.velocity[1] * .075
             e.x = clamp(e.x, -.5, .5)
             e.y = clamp(e.y, -.75, .75)
             e.snap_to_slot()
@@ -98,10 +98,11 @@ def goto_next_level():
 
 goto_next_level()
 
+
 score_counter = Button(y=(.5*aspect_ratio)-.1, text=SCORE, origin=[0,0], text_color=color.white, color=color.clear, z=-10)
 score_counter.fit_to_text()
 
-win_text = Entity(text='Yay! :D', enabled=False, text_origin=[0,0], scale=[.25,.125], color=color.white, shadow=True, margin=10, roundness=.4)
+win_text = Entity(text='Yay! :D', enabled=False, text_origin=[0,0], scale=[.25,.125], color=color.white, shadow=True, margin=10, roundness=.4, z=-3)
 def set_score(value):
     SCORE = value
     score_counter.text= SCORE
@@ -127,22 +128,33 @@ def update():
     mouse.velocity = [mouse.position[0]-mouse.prev_pos[0], mouse.position[1]-mouse.prev_pos[1]]
 
 
-shop_icon = Button(text='  💼  ', position=[-.5+.05,(.5*aspect_ratio)-.1], origin=[-.5,-.5], scale=[.1,.075], roundness=.5, text_size=2, color=hsv(0,0,.2), on_click=def():shop_menu.enabled=True)
-
-shop_menu = Entity(parent=camera.ui, z=-1, visible_self=False)
-shop_menu.on_enable = def():
-    shop_menu.bg.alpha = 0
-    shop_menu.bg.animate('alpha', .99)
-    ignore = [shop_menu.bg, shop_menu.back_button]
-    buttons_to_animate = [e for e in shop_menu.children if not e in ignore]
-    for i, e in buttons_to_animate:
-        e.x = .02 * (i+1)
-        e.animate('x', 0, duration=.005*(i+1))
+shop_icon = Button(text='  💼  ', position=[-.5+.05,(.5*aspect_ratio)-.1], origin=[-.5,-.0], scale=[.1,.075], roundness=.5, text_size=2, color=hsv(0,0,.2), on_click=def():menu.enabled=True)
 
 
 
-shop_menu.bg = Entity(parent=shop_menu, scale=2, color=hsv(0,0,.05), alpha=.99, ignore_collision=False)
-shop_menu.back_button = Button(parent=shop_menu, xy=top_left, origin=[-1,1], scale=.1, color=color.gray, z=-1, text='↩', color=color.clear, text_color=color.gray, text_size=5, on_click=def(): shop_menu.enabled=False)
+def grid_layout(l=[], max_x=5, spacing=[1.1,1.1], offset=[0,0]):
+    print('-----', l)
+    x = 0
+    y = 0
+    for i, e in l:
+        e.xy = [(x * l[0].scale_x * spacing[0]) + offset[0],
+                (-y * l[0].scale_y * spacing[1]) + offset[1]]
+
+        x += 1
+        if x >= max_x:
+            y += 1
+            x = 0
+
+
+
+menu = Entity(parent=camera.ui, z=-1, visible_self=False, enabled=False)
+menu.bg = Entity(parent=menu, scale=2, color=hsv(0,0,.05), alpha=.99, ignore_collision=False)
+menu.back_button = Button(parent=menu, xy=top_left, origin=[-1,1], scale=.1, color=color.gray, z=-1, text='↩', color=color.clear, text_color=color.gray, text_size=5, on_click=def(): menu.enabled=False)
+
+menu.on_enable = def():
+    menu.bg.alpha = 0
+    menu.bg.animate('alpha', .99)
+
 
 items = ['chest', '1 point']
 # -100p buy chest for chance of item
@@ -160,14 +172,85 @@ items = ['chest', '1 point']
 # achievements
 # share score
 
-watch_ad_button = Button(parent=shop_menu, text='-25 Bag', scale=[.4,.2], color=color.black, text_color=color.light_gray, y=.42)
-watch_ad_button = Button(parent=shop_menu, text='-100 Chest', scale=[.4,.2], color=color.black, text_color=color.light_gray, y=.21)
-watch_ad_button = Button(parent=shop_menu, text='-1000 Big Chest', scale=[.4,.2], color=color.black, text_color=color.light_gray, y=.0)
-watch_ad_button = Button(parent=shop_menu, text='-500\n green chance +.1%', scale=[.4,.2], color=color.black, text_color=color.light_gray, y=-.21, on_click=def():set_score(SCORE+10))
-watch_ad_button = Button(parent=shop_menu, text='-500\n +1 Luck', scale=[.4,.2], color=color.black, text_color=color.light_gray, y=-.42, on_click=def():set_score(SCORE+10))
-# watch_ad_button = Button(parent=shop_menu, text='Other Games', scale=[.4,.2], color=color.black, text_color=color.light_gray, y=-.63)
+shop_menu = Entity(visible_self=False, parent=menu, xy=[-.2,.5])
+
+sunsnake.define(ShopButton(, Button(parent=shop_menu, scale=[.3,.2], origin=[-.5,.5], color=color.black, text_color=color.light_gray, text_size=2, cost=1, )
+ShopButton(text='Bag\n\n🪙 25', cost=25)
+ShopButton(text='Chest\n\n🪙 100', cost=100)
+ShopButton(text='Big Chest\n\n🪙 1000', cost=1000)
+ShopButton(text='green chance +.1%\n\n🪙 500', cost=500)
+ShopButton(text='+1 Luck\n\n🪙 500', cost=500)
+ShopButton(text='Other Games')
+ShopButton(text='Other Games')
+ShopButton(text='+🪙 500\n\nWatch AD', cost=-100)
+
+grid_layout(l=shop_menu.children, max_x=2, spacing=[1.05,1.1])
+shop_menu.on_enable = def():
+
+    for i, e in shop_menu.children:
+        e.original_x = e.x
+        e.x += .2 + (i*.05)
+        e.animate('x', e.original_x, duration=.005+(.05*i))
+
+    update_shop()
+
+def update_shop():
+    for e in shop_menu.children:
+        # e.ignore_collision = SCORE < e.cost or e.cost <= 0
+        e.model.style.outline = `medium ${color_names[i]}`
+        if e.cost > SCORE:
+            e.text_color = hsv(0,0,.3)
+            e.color = hsv(0,0,.03)
+            e.ignore_collision = True
+            e.shadow = False
+        else:
+            e.color = hsv(0,0,.12)
+            e.text_color = hsv(40,.0,.9)
+            e.ignore_collision = False
+            e.shadow = True
+
+for _e in shop_menu.children:
+    let e = _e
+    e.on_click = def():
+        # if e.cost < SCORE or e.cost <= 0:
+        print('bought for', e.cost, e.text)
+        set_score(SCORE-e.cost)
+        update_shop()
+
+
+unlocks_menu = Entity(parent=menu, visible_self=False, xy=[-.11,.5])
+# sunsnake.define(UnlockButton(, Button(parent=unlocks_menu, scale=[.11,.2], origin=[-.5,.5], color=hsv(0,0,.12), text_color=color.light_gray, text_size=2, cost=1, )
+
+for y, e in ['Green chance', 'chest chance', 'black chance']:
+    y_pos = (-y*.2*1.5*1.1)
+    Button(parent=unlocks_menu, scale=[.8,.1], origin=[-.5,.0], color=color.clear, text_color=hsv(0,0,.6), text_size=2, x=-.125, y=.02+y_pos, text=`${e}`, roundness=.25, text_origin=[-.5,-.5])
+    let bar = RainbowSlider(parent=unlocks_menu, min=0, max=5, xy=[.125,-.1+y_pos], scale=[.5,.1], show_text=True, color=hsv(0,0,.03), text_color=color.gray)
+    upgrade_button = Button(parent=unlocks_menu, scale=[.2,.1], origin=[-.5,.0], color=hsv(0,0,.12), text_color=color.light_gray, text_size=2, x=.39, y=-.1+y_pos, text=`🪙 500`, roundness=.25, shadow=True)
+    upgrade_button.on_click = def():
+        bar.value += 1
+
+    # for x, cost in [1_000, 2_000, 4_000, 8_000, 16_000]:
+    #     _ = UnlockButton(text=`+0.1%\n\n🪙 ${cost}`, cost=cost, x=x*.12, y=-y*.2*1.1)
+
+skins_menu = Entity(visible_self=1)
+
+states = {'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu}
+menu_handler = StateHandler(states=states, fade=False)
+menu_handler.state = 'unlocks'
+
+tab_parent = Entity(visible_self=False, parent=menu, xy=[-.4,.4])
+sunsnake.define(TabButton(, Button(parent=tab_parent, scale=.1, color=color.black, text_color=color.black, text_size=1, rotation=45,)
+TabButton(text='chests', color=color.cyan, on_click=def():menu_handler.hard_state=shop_menu)
+TabButton(text='unlocks', on_click=def():menu_handler.hard_state=unlocks_menu)
+TabButton(text='skins', on_click=def():menu_handler.hard_state=skins_menu)
+TabButton(text='backgrounds')
+# TabButton(text='other games')
+TabButton(text='stats')
+
+grid_layout(tab_parent.children, max_x=1, spacing=[1,2.2], offset=[0,0])
+menu.enabled = True
 # for e in ['']:
 # 🔑
 </script>
-<script src="sunsnake_compiler.js"></script>
+<script src="../taptapir/sunsnake_compiler.js"></script>
 </html>
