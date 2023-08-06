@@ -121,7 +121,7 @@ def win():
     after 1s:
         win_text.enabled = False
         goto_next_level()
-print('-')
+
 
 mouse.prev_pos = mouse.position
 def update():
@@ -129,8 +129,6 @@ def update():
 
 
 shop_icon = Button(text='  💼  ', position=[-.5+.05,(.5*aspect_ratio)-.1], origin=[-.5,-.0], scale=[.1,.075], roundness=.5, text_size=2, color=hsv(0,0,.2), on_click=def():menu.enabled=True)
-
-
 
 def grid_layout(l=[], max_x=5, spacing=[1.1,1.1], offset=[0,0]):
     print('-----', l)
@@ -146,35 +144,22 @@ def grid_layout(l=[], max_x=5, spacing=[1.1,1.1], offset=[0,0]):
             x = 0
 
 
-
 menu = Entity(parent=camera.ui, z=-1, visible_self=False, enabled=False)
 menu.bg = Entity(parent=menu, scale=2, color=hsv(0,0,.05), alpha=.99, ignore_collision=False)
-menu.back_button = Button(parent=menu, xy=top_left, origin=[-1,1], scale=.1, color=color.gray, z=-1, text='↩', color=color.clear, text_color=color.gray, text_size=5, on_click=def(): menu.enabled=False)
+menu.back_button = Button(parent=menu, xy=top_left, origin=[-1,1], scale=.1, color=color.gray, z=-1, text='↩', color=color.clear, text_color=color.gray, text_size=5, on_click=def(): menu.enabled=False;menu_handler.state=None)
 
 menu.on_enable = def():
     menu.bg.alpha = 0
     menu.bg.animate('alpha', .99)
+    menu_handler.state = 'shop'
 
 
 items = ['chest', '1 point']
-# -100p buy chest for chance of item
-# unlock green chance (3p)
-# unlock luck (change to spawn extra point play field)
-# unlock black chance (skin as black hole?) (10p)
-# unlock skins, maybe even animated blocks?
-# all: dragon, chameleon
-# C: whale, dolphin, peacock
-# M: flamingo, butterfly, bird, starfish,
-# Y: snake, lion, yellow fish
-# unlock backgrounds
-# wall chance? (avoid or you get no point)
 
-# achievements
-# share score
 
-shop_menu = Entity(visible_self=False, parent=menu, xy=[-.2,.5])
+shop_menu = Entity(visible_self=False, parent=menu, xy=[-.27,.5])
 
-sunsnake.define(ShopButton(, Button(parent=shop_menu, scale=[.3,.2], origin=[-.5,.5], color=color.black, text_color=color.light_gray, text_size=2, cost=1, )
+sunsnake.define(ShopButton(, Button(parent=shop_menu, scale=[.36,.2], origin=[-.5,.5], color=color.black, text_color=color.light_gray, text_size=2, cost=1, )
 ShopButton(text='Bag\n\n🪙 25', cost=25)
 ShopButton(text='Chest\n\n🪙 100', cost=100)
 ShopButton(text='Big Chest\n\n🪙 1000', cost=1000)
@@ -218,14 +203,19 @@ for _e in shop_menu.children:
         update_shop()
 
 
-unlocks_menu = Entity(parent=menu, visible_self=False, xy=[-.11,.5])
-# sunsnake.define(UnlockButton(, Button(parent=unlocks_menu, scale=[.11,.2], origin=[-.5,.5], color=hsv(0,0,.12), text_color=color.light_gray, text_size=2, cost=1, )
-
-for y, e in ['Green chance', 'chest chance', 'black chance']:
-    y_pos = (-y*.2*1.5*1.1)
-    Button(parent=unlocks_menu, scale=[.8,.1], origin=[-.5,.0], color=color.clear, text_color=hsv(0,0,.6), text_size=2, x=-.125, y=.02+y_pos, text=`${e}`, roundness=.25, text_origin=[-.5,-.5])
-    let bar = RainbowSlider(parent=unlocks_menu, min=0, max=5, xy=[.125,-.1+y_pos], scale=[.5,.1], show_text=True, color=hsv(0,0,.03), text_color=color.gray)
-    upgrade_button = Button(parent=unlocks_menu, scale=[.2,.1], origin=[-.5,.0], color=hsv(0,0,.12), text_color=color.light_gray, text_size=2, x=.39, y=-.1+y_pos, text=`🪙 500`, roundness=.25, shadow=True)
+unlocks_menu = Entity(parent=menu, visible_self=False, xy=[-.145,.5])
+items = [
+['Ink Dispenser'],
+['G Cartridge', '‰ chance of spawning green slot'],
+['B Cartridge', '‰ chance of spawning black slot'],
+]
+gradient = [hsv(150+(i*40), .8, .7) for i in range(5)]
+for y, e in items:
+    y_pos = (-y*.2*1.1) -.05
+    title        = Button(parent=unlocks_menu, scale=[.8,.1], origin=[-.5,.5], color=color.clear, text_color=hsv(0,0,.9), text_size=2, x=-.125, y=y_pos+.08, text=`${items[y][0]}`, roundness=.25, text_origin=[-.5,-.5])
+    description  = Button(parent=unlocks_menu, scale=[.8,.1], origin=[-.5,.5], color=color.clear, text_color=hsv(0,0,.6), text_size=1.5, x=-.125, y=y_pos+.05, text=`${items[y][1]}`, roundness=.25, text_origin=[-.5,-.5])
+    let bar = RainbowSlider(parent=unlocks_menu, min=0, max=5, xy=[.14,y_pos-.075], scale=[.525,.03], show_text=True, text_size=1.5, color=hsv(0,0,.03), gradient=gradient)
+    upgrade_button = Button(parent=unlocks_menu, scale=[.2,.125], origin=[.5,-.5], color=hsv(0,0,.12), text_color=color.light_gray, text_size=2, x=.5+.115, y=y_pos-.1, text=`Upgrade\n🪙 500`, roundness=.25, shadow=True)
     upgrade_button.on_click = def():
         bar.value += 1
 
@@ -234,23 +224,58 @@ for y, e in ['Green chance', 'chest chance', 'black chance']:
 
 skins_menu = Entity(visible_self=1)
 
-states = {'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu}
-menu_handler = StateHandler(states=states, fade=False)
-menu_handler.state = 'unlocks'
+tab_parent = Entity(parent=menu, visible_self=False, xy=[-.4,.4])
+sunsnake.define(TabButton(, )
+for key, value in enumerate({'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu, 'backgrounds':skins_menu}):
+    let button = Button(parent=tab_parent, scale=.1, color=.12, text_color=hsv(0,0,.9), text_size=1.5, rotation=45, text=key)
+    button.on_click = def():
+        menu_handler.state = value
 
-tab_parent = Entity(visible_self=False, parent=menu, xy=[-.4,.4])
-sunsnake.define(TabButton(, Button(parent=tab_parent, scale=.1, color=color.black, text_color=color.black, text_size=1, rotation=45,)
-TabButton(text='chests', color=color.cyan, on_click=def():menu_handler.hard_state=shop_menu)
-TabButton(text='unlocks', on_click=def():menu_handler.hard_state=unlocks_menu)
-TabButton(text='skins', on_click=def():menu_handler.hard_state=skins_menu)
-TabButton(text='backgrounds')
-# TabButton(text='other games')
-TabButton(text='stats')
+        for e in tab_parent.children:
+            if e == button:
+                e.color = color.magenta
+                e.text_color = hsv(0,0,.1)
+            else:
+                e.color = .12
+                e.text_color = hsv(0,0,.9)
+
+
+# b = TabButton(text='unlocks', color=hsv(0,0,.12), on_click=def():menu_handler.state=unlocks_menu)
+# b = TabButton(text='skins', color=hsv(0,0,.12), on_click=def():menu_handler.state=skins_menu)
+# b = TabButton(text='backgrounds', color=hsv(0,0,.12))
+# b = TabButton(text='stats')
 
 grid_layout(tab_parent.children, max_x=1, spacing=[1,2.2], offset=[0,0])
-menu.enabled = True
+
+
+states = {'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu}
+menu_handler = StateHandler(states=states, fade=False)
+menu_handler.state = None
+
+# line = Entity(parent=menu, scale=[.0025,1], x=-.3, z=-1, color=hsv(0,0,.1))
+# line = Entity(parent=menu, scale=[.0025,1], x=-.27, z=-1, color=hsv(0,0,.1))
+# line = Entity(parent=menu, scale=[.0025,1], x=-.33, z=-1, color=hsv(0,0,.1))
+# line = Entity(parent=menu, scale=[.0025,1], x=.5-.03, z=-1, color=hsv(0,0,.1))
+# line = Entity(parent=menu, scale=[.0025,1], x=.5-.06, z=-1, color=hsv(0,0,.1))
+
+# menu.enabled = True
 # for e in ['']:
 # 🔑
+
+# -100p buy chest for chance of item
+# unlock green chance (3p)
+# unlock luck (change to spawn extra point play field)
+# unlock black chance (skin as black hole?) (10p)
+# unlock skins, maybe even animated blocks?
+# all: dragon, chameleon
+# C: whale, dolphin, peacock
+# M: flamingo, butterfly, bird, starfish,
+# Y: snake, lion, yellow fish
+# unlock backgrounds
+# wall chance? (avoid or you get no point)
+
+# achievements
+# share score
 </script>
 <script src="../taptapir/sunsnake_compiler.js"></script>
 </html>
