@@ -160,13 +160,17 @@ items = ['chest', '1 point']
 shop_menu = Entity(visible_self=False, parent=menu, xy=[-.27,.5])
 
 sunsnake.define(ShopButton(, Button(parent=shop_menu, scale=[.36,.2], origin=[-.5,.5], color=color.black, text_color=color.light_gray, text_size=2, cost=1, )
-ShopButton(text='Bag\n\n🪙 25', cost=25)
-ShopButton(text='Chest\n\n🪙 100', cost=100)
+ShopButton(text='Bag\n\n🪙 100', cost=100)
+ShopButton(text='Daily Reward\n\n🪙 0', cost=0)
+
+ShopButton(text='Chest\n\n🪙 500', cost=500)
 ShopButton(text='Big Chest\n\n🪙 1000', cost=1000)
-ShopButton(text='green chance +.1%\n\n🪙 500', cost=500)
-ShopButton(text='+1 Luck\n\n🪙 500', cost=500)
-ShopButton(text='Other Games')
-ShopButton(text='Other Games')
+ShopButton(text='Item Chest\n\n🪙 2000', cost=2000)
+ShopButton(text='Skin Chest\n\n🪙 2000', cost=2000)
+
+ShopButton(text='Green Cartridge\n\n🪙 10000', cost=10_000, amount=1)
+ShopButton(text='Random Skin\n\n🪙 10000', cost=10_000, amount=4)
+ShopButton(text='Random\nBackground\n\n🪙 10000', cost=10_000, amount=4)
 ShopButton(text='+🪙 500\n\nWatch AD', cost=-100)
 
 grid_layout(l=shop_menu.children, max_x=2, spacing=[1.05,1.1])
