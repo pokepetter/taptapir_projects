@@ -8,6 +8,8 @@ set_background_color("#111111")
 set_window_color("#222")
 
 SCORE = int(save_system_load('score'))
+if not Number.isInteger(SCORE):
+    SCORE = 0
 
 slots = []
 draggables = []
@@ -104,6 +106,7 @@ score_counter.fit_to_text()
 
 win_text = Entity(text='Yay! :D', enabled=False, text_origin=[0,0], scale=[.25,.125], color=color.white, shadow=True, margin=10, roundness=.4, z=-3)
 def set_score(value):
+    value = max(value, 0)
     SCORE = value
     score_counter.text= SCORE
     save_system_save('score', SCORE)
@@ -159,19 +162,173 @@ items = ['chest', '1 point']
 
 shop_menu = Entity(visible_self=False, parent=menu, xy=[-.27,.5])
 
-sunsnake.define(ShopButton(, Button(parent=shop_menu, scale=[.36,.2], origin=[-.5,.5], color=color.black, text_color=color.light_gray, text_size=2, cost=1, )
-ShopButton(text='Bag\n\n🪙 100', cost=100)
-ShopButton(text='Daily Reward\n\n🪙 0', cost=0)
+opening_parent = Entity(parent=camera.ui, z=-2, visible_self=False, enabled=False)
+opening_bg = Entity(parent=opening_parent, color=hsv(300,.5,.1), target_alpha=.9, scale=2, ignore_collision=False, on_click=def():print('a'))
+opening_frame = Entity(parent=opening_parent, z=-1, color=hsv(0,0,.2), alpha=.5, scale=.9, shadow=True, roundness=.02, y=.15)
 
-ShopButton(text='Chest\n\n🪙 500', cost=500)
-ShopButton(text='Big Chest\n\n🪙 1000', cost=1000)
-ShopButton(text='Item Chest\n\n🪙 2000', cost=2000)
-ShopButton(text='Skin Chest\n\n🪙 2000', cost=2000)
+opening_parent.on_enable = def():
+    opening_bg.alpha = 1
+    opening_bg.animate('alpha', opening_bg.target_alpha, duration=.1)
+    opening_parent.continue_button.enabled = False
+    # opening_frame.appear('scale') ## TODO: fix bug
 
-ShopButton(text='Green Cartridge\n\n🪙 10000', cost=10_000, amount=1)
-ShopButton(text='Random Skin\n\n🪙 10000', cost=10_000, amount=4)
-ShopButton(text='Random\nBackground\n\n🪙 10000', cost=10_000, amount=4)
-ShopButton(text='+🪙 500\n\nWatch AD', cost=-100)
+
+Entity.prototype['appear'] = function(anim_type, duration=.2):
+    entity = this
+    if anim_type == 'scale_x':
+        org_value = entity.scale_x
+        entity.scale_x = .1
+        entity.animate('scale_x', org_value, duration=duration)
+        return
+
+    if anim_type == 'scale':
+        org_scale_x = entity.scale_x
+        org_scale_y = entity.scale_y
+        entity.scale = .1
+        entity.animate('scale_x', org_scale_x, duration=duration)
+        after duration:
+            entity.animate('scale_y', org_scale_y, duration=.2)
+        return
+
+sunsnake.define(*button_style, color=hsv(0,0,.12), text_color=hsv(0,.0,.9), shadow=True)
+
+opening_parent.continue_button = Button(parent=opening_parent, z=-1, *button_style, text='Continue', scale=[.5,.15], roundness=.2, y=-.45, enabled=False)
+opening_parent.continue_button.on_enable = def():
+    opening_parent.continue_button.appear('scale', duration=.05)
+opening_parent.continue_button.on_click = def():
+    opening_bg.animate('alpha', 0, duration=.1)
+    after .1:
+        opening_parent.enabled = False
+        update_shop()
+
+
+
+bag_parent = Entity(parent=opening_parent, z=-2, visible_self=False)
+card_reveal_effect_normal = Entity(parent=opening_parent, scale=.2, z=-2, texture='impact_effect.gif', enabled=False)
+card_reveal_effect_rare =   Entity(parent=opening_parent, scale=.75, z=-2, texture='sparkle_impact.gif', enabled=False)
+
+for i in range(6):
+    let card = Button(parent=bag_parent, color=hsv(300, .0, .05), z=-1, scale=[.2,.25], enabled=False, shadow=True, roundness=.15, text_color=color.smoke)
+    # card.model.style.outline = `8px solid #333`
+    card.original_color = card.color
+    card.active_color = color.white
+    card.org_scale_x = card.scale_x
+    card.on_click = def():
+        bag_parent.items_left -= 1
+        if bag_parent.items_left <= 0:
+            after .4:
+                opening_parent.continue_button.enabled = True
+
+        card.animate('scale_x', 0, duration=.1)
+        after .2:
+            card.animate('scale_x', card.org_scale_x, duration=.1)
+            card.texture = card.front_texture
+            card.color = card.active_color
+            if card.value > 0 and card.value < 100:
+                card_reveal_effect_normal.xy = card.xy
+                card_reveal_effect_normal.enabled=True
+                card_reveal_effect_normal.texture = card_reveal_effect_normal.texture
+            elif card.value != 0:
+                card_reveal_effect_rare.xy = card.xy
+                card_reveal_effect_rare.enabled = True
+                card_reveal_effect_rare.texture = card_reveal_effect_rare.texture
+
+
+
+        after .4:
+            card.text = `${card.value}`
+            if len(card.value) > 5:
+                card.text_size = 2
+                print('lower size')
+            else:
+                card.text_size = 3
+
+            if Number.isInteger(card.value):
+                set_score(SCORE+card.value)
+
+            else:
+                print('GOT ITEM:', card.value)
+
+        card.ignore_collision = True
+
+grid_layout(bag_parent.children, max_x=3, spacing=[1.1,1.1], offset=[-.225,.2])
+for e in bag_parent.children:
+    e.target_y = e.y
+
+
+sunsnake.define(*ShopButton(, Button(parent=shop_menu, scale=[.36,.2], origin=[-.5,.5], color=color.black, text_color=color.light_gray, text_size=2, cost=1, )
+items = [
+[40, 20%, 'frame.png'],
+[30, 20%, 'frame.png'],
+[10, 20%, 'frame.png'],
+[50, 20%, 'frame.png'],
+[100, 5%, 'frame_gold.png'],
+]
+
+# ['Green \nCartridge', 3%, 'frame_2.png'],
+
+bag_button = *ShopButton(text='Bag\n\n🪙 100', cost=100, on_click=def():open_loot_box(cost=100, num=3, items=items))
+
+def open_loot_box(cost, num, items):
+    print('bought for', cost)
+    print(SCORE,)
+    set_score(SCORE-cost)
+    # play bag animation
+    opening_parent.enabled = True
+    bag_parent.items_left = num
+
+    # reset cards
+    for card in bag_parent.children:
+        card.enabled = False
+        card.y = card.target_y + .1
+        card.texture = 'card_back.png'
+        card.text = ''
+        card.ignore_collision = False
+
+    after .4:
+        for i in range(bag_parent.items_left):
+            let card = bag_parent.children[i]
+            let r = random_value()
+            cumulative = 0
+            card.value = 0
+            card.active_color = color.gray
+            card.front_texture = 'frame.png'
+            for e in items:
+                item = e[0]
+                chance = e[1]
+                tex = e[2]
+                cumulative += chance
+
+                if r <= cumulative:
+                    card.value = item
+                    card.front_texture = tex
+                    break
+
+
+
+            after i*.2:
+                card.enabled = True
+                card.animate('y', card.target_y)
+
+
+    update_shop()
+    # update_shop()
+bag_button.on_click()
+
+# b = *ShopButton(text='Daily Reward\n\n🪙 0', cost=0)
+#
+# b = *ShopButton(text='Chest\n\n🪙 500', cost=500)
+# b = *ShopButton(text='Big Chest\n\n🪙 1000', cost=1000)
+# b = *ShopButton(text='Item Chest\n\n🪙 2000', cost=2000)
+# b = *ShopButton(text='Skin Chest\n\n🪙 2000', cost=2000)
+#
+# b = *ShopButton(text='Green Cartridge\n\n🪙 10000', cost=10_000, amount=1)
+# b = *ShopButton(text='Random Skin\n\n🪙 10000', cost=10_000, amount=4)
+# b = *ShopButton(text='Random\nBackground\n\n🪙 10000', cost=10_000, amount=4)
+watch_ad_button = *ShopButton(text='+🪙 20\n\nWatch AD', cost=0)
+watch_ad_button.on_click = def():
+    set_score(SCORE+20)
+    update_shop()
 
 grid_layout(l=shop_menu.children, max_x=2, spacing=[1.05,1.1])
 shop_menu.on_enable = def():
@@ -184,6 +341,7 @@ shop_menu.on_enable = def():
     update_shop()
 
 def update_shop():
+    print('update shop')
     for e in shop_menu.children:
         # e.ignore_collision = SCORE < e.cost or e.cost <= 0
         e.model.style.outline = `medium ${color_names[i]}`
@@ -198,39 +356,32 @@ def update_shop():
             e.ignore_collision = False
             e.shadow = True
 
-for _e in shop_menu.children:
-    let e = _e
-    e.on_click = def():
-        # if e.cost < SCORE or e.cost <= 0:
-        print('bought for', e.cost, e.text)
-        set_score(SCORE-e.cost)
-        update_shop()
 
-
-unlocks_menu = Entity(parent=menu, visible_self=False, xy=[-.145,.5])
-items = [
-['Ink Dispenser'],
-['G Cartridge', '‰ chance of spawning green slot'],
-['B Cartridge', '‰ chance of spawning black slot'],
-]
-gradient = [hsv(150+(i*40), .8, .7) for i in range(5)]
-for y, e in items:
-    y_pos = (-y*.2*1.1) -.05
-    title        = Button(parent=unlocks_menu, scale=[.8,.1], origin=[-.5,.5], color=color.clear, text_color=hsv(0,0,.9), text_size=2, x=-.125, y=y_pos+.08, text=`${items[y][0]}`, roundness=.25, text_origin=[-.5,-.5])
-    description  = Button(parent=unlocks_menu, scale=[.8,.1], origin=[-.5,.5], color=color.clear, text_color=hsv(0,0,.6), text_size=1.5, x=-.125, y=y_pos+.05, text=`${items[y][1]}`, roundness=.25, text_origin=[-.5,-.5])
-    let bar = RainbowSlider(parent=unlocks_menu, min=0, max=5, xy=[.14,y_pos-.075], scale=[.525,.03], show_text=True, text_size=1.5, color=hsv(0,0,.03), gradient=gradient)
-    upgrade_button = Button(parent=unlocks_menu, scale=[.2,.125], origin=[.5,-.5], color=hsv(0,0,.12), text_color=color.light_gray, text_size=2, x=.5+.115, y=y_pos-.1, text=`Upgrade\n🪙 500`, roundness=.25, shadow=True)
-    upgrade_button.on_click = def():
-        bar.value += 1
-
-    # for x, cost in [1_000, 2_000, 4_000, 8_000, 16_000]:
-    #     _ = UnlockButton(text=`+0.1%\n\n🪙 ${cost}`, cost=cost, x=x*.12, y=-y*.2*1.1)
-
-skins_menu = Entity(visible_self=1)
-
+# unlocks_menu = Entity(parent=menu, visible_self=False, xy=[-.145,.5])
+# items = [
+# ['Ink Dispenser'],
+# ['G Cartridge', '‰ chance of spawning green slot'],
+# ['B Cartridge', '‰ chance of spawning black slot'],
+# ]
+# gradient = [hsv(150+(i*40), .8, .7) for i in range(5)]
+# for y, e in items:
+#     y_pos = (-y*.2*1.1) -.05
+#     title        = Button(parent=unlocks_menu, scale=[.8,.1], origin=[-.5,.5], color=color.clear, text_color=hsv(0,0,.9), text_size=2, x=-.125, y=y_pos+.08, text=`${items[y][0]}`, roundness=.25, text_origin=[-.5,-.5])
+#     description  = Button(parent=unlocks_menu, scale=[.8,.1], origin=[-.5,.5], color=color.clear, text_color=hsv(0,0,.6), text_size=1.5, x=-.125, y=y_pos+.05, text=`${items[y][1]}`, roundness=.25, text_origin=[-.5,-.5])
+#     let bar = RainbowSlider(parent=unlocks_menu, min=0, max=5, xy=[.14,y_pos-.075], scale=[.525,.03], show_text=True, text_size=1.5, color=hsv(0,0,.03), gradient=gradient)
+#     upgrade_button = Button(parent=unlocks_menu, scale=[.2,.125], origin=[.5,-.5], color=hsv(0,0,.12), text_color=color.light_gray, text_size=2, x=.5+.115, y=y_pos-.1, text=`Upgrade\n🪙 500`, roundness=.25, shadow=True)
+#     upgrade_button.on_click = def():
+#         bar.value += 1
+#
+#     # for x, cost in [1_000, 2_000, 4_000, 8_000, 16_000]:
+#     #     _ = UnlockButton(text=`+0.1%\n\n🪙 ${cost}`, cost=cost, x=x*.12, y=-y*.2*1.1)
+#
+# skins_menu = Entity(visible_self=1)
+#
 tab_parent = Entity(parent=menu, visible_self=False, xy=[-.4,.4])
 sunsnake.define(TabButton(, )
-for key, value in enumerate({'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu, 'backgrounds':skins_menu}):
+# for key, value in enumerate({'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu, 'backgrounds':skins_menu}):
+for key, value in enumerate({'shop':shop_menu, }):
     let button = Button(parent=tab_parent, scale=.1, color=.12, text_color=hsv(0,0,.9), text_size=1.5, rotation=45, text=key)
     button.on_click = def():
         menu_handler.state = value
@@ -243,16 +394,11 @@ for key, value in enumerate({'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':s
                 e.color = .12
                 e.text_color = hsv(0,0,.9)
 
-
-# b = TabButton(text='unlocks', color=hsv(0,0,.12), on_click=def():menu_handler.state=unlocks_menu)
-# b = TabButton(text='skins', color=hsv(0,0,.12), on_click=def():menu_handler.state=skins_menu)
-# b = TabButton(text='backgrounds', color=hsv(0,0,.12))
-# b = TabButton(text='stats')
-
 grid_layout(tab_parent.children, max_x=1, spacing=[1,2.2], offset=[0,0])
 
 
-states = {'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu}
+# states = {'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu}
+states = {'shop':shop_menu}
 menu_handler = StateHandler(states=states, fade=False)
 menu_handler.state = None
 
