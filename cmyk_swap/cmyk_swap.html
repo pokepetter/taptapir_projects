@@ -7,9 +7,9 @@
 set_background_color("#111111")
 set_window_color("#222")
 
-SCORE = int(save_system_load('score'))
-if not Number.isInteger(SCORE):
-    SCORE = 0
+SCORE = save_system_load('score')
+BLACK_COINS = save_system_load('black_coins')
+GREEN_COINS = save_system_load('green_coins')
 
 slots = []
 draggables = []
@@ -101,15 +101,30 @@ def goto_next_level():
 goto_next_level()
 
 
-score_counter = Button(y=(.5*aspect_ratio)-.1, text=SCORE, origin=[0,0], text_color=color.white, color=color.clear, z=-10)
+score_counter = Button(y=(.5*aspect_ratio)-.1, text=`🪙 ${SCORE}`, origin=[0,0], text_color=color.white, color=color.clear, z=-10)
 score_counter.fit_to_text()
+
 
 win_text = Entity(text='Yay! :D', enabled=False, text_origin=[0,0], scale=[.25,.125], color=color.white, shadow=True, margin=10, roundness=.4, z=-3)
 def set_score(value):
     value = max(value, 0)
     SCORE = value
-    score_counter.text= SCORE
+    score_counter.text= `🪙 ${SCORE}`
     save_system_save('score', SCORE)
+
+def set_black_coins(value):
+    value = max(value, 0)
+    BLACK_COINS = value
+    black_coin_counter.text = `⚫ ${BLACK_COINS}`
+    save_system_save('black_coins', BLACK_COINS)
+
+def set_green_coins(value):
+    value = max(value, 0)
+    GREEN_COINS = value
+    green_coin_counter.text = `🟢 ${GREEN_COINS}`
+    save_system_save('green_coins', GREEN_COINS)
+
+
 
 def win():
     win_text.enabled = True
@@ -130,6 +145,41 @@ mouse.prev_pos = mouse.position
 def update():
     mouse.velocity = [mouse.position[0]-mouse.prev_pos[0], mouse.position[1]-mouse.prev_pos[1]]
 
+
+sunsnake.define(*button_style, color=hsv(0,0,.12), text_color=hsv(0,.0,.9), shadow=True)
+
+share_icon = Button(text='🧾', position=[.5-.05,(.5*aspect_ratio)-.1, -1], origin=[.5,-.0], scale=[.1,.075], roundness=.5, text_size=2, color=hsv(0,0,.2), on_click=def():share_menu.enabled=True)
+share_menu = Entity(parent=camera.ui, visible_self=False, enabled=False, position=[share_icon.x, share_icon.y-.05, -10])
+share_menu_text = Button(parent=share_menu, font='monospace', text_size=2, origin=[.5,.5], z=-1, scale=[.6,.9], color=color.black, shadow=True, text_origin=[-.5,.5], padding=1, roundness=.1, text_color=hsv(0,0,.9))
+share_menu.on_enable = def():
+    share_menu_text.text = ```
+        CMYK Swap
+        —————————————————
+        score
+        8 1 7
+        —————————————————
+        Ink Dispenser lvl.
+        ▢ ▢ ▣ ▢ ▢ ▢
+        —————————————————
+        G Cartridge lvl.
+        ▣ ▢ ▢ ▢ ▢
+        —————————————————
+        Tile Skins
+        ▣ ▢ ▢ ▣ ▣ ▢ ▣
+        —————————————————
+        Backgrounds
+        ▣ ▢ ▢ ▣ ▣ ▢ ▣
+        —————————————————
+        ```
+# share_menu_text.model.style.lineHeight = '.75em'
+# share_menu_text.model.style.fontFamily = 'monospace'
+share_menu.bg = Entity(parent=share_menu, scale=10, color=hsv(0,0,.05), alpha=.99, ignore_collision=False, on_click=def():share_menu.enabled=False)
+share_menu.copy_button = Button(*button_style, parent=share_menu_text, z=-2, text='Copy', scale=[1,.125], roundness=.2, x=-.6, y=-1., enabled=1)
+share_menu.copy_button.on_click = copy_to_clipboard = def():
+    navigator.clipboard.writeText(share_menu_text.text)
+
+share_menu.enabled = 1
+# print('-------', share_menu.copy_button.enabled)
 
 shop_icon = Button(text='  💼  ', position=[-.5+.05,(.5*aspect_ratio)-.1], origin=[-.5,-.0], scale=[.1,.075], roundness=.5, text_size=2, color=hsv(0,0,.2), on_click=def():menu.enabled=True)
 
@@ -157,21 +207,12 @@ menu.on_enable = def():
     menu_handler.state = 'shop'
 
 
-items = ['chest', '1 point']
-
-
 shop_menu = Entity(visible_self=False, parent=menu, xy=[-.27,.5])
 
-opening_parent = Entity(parent=camera.ui, z=-2, visible_self=False, enabled=False)
-opening_bg = Entity(parent=opening_parent, color=hsv(300,.5,.1), target_alpha=.9, scale=2, ignore_collision=False, on_click=def():print('a'))
-opening_frame = Entity(parent=opening_parent, z=-1, color=hsv(0,0,.2), alpha=.5, scale=.9, shadow=True, roundness=.02, y=.15)
-
-opening_parent.on_enable = def():
-    opening_bg.alpha = 1
-    opening_bg.animate('alpha', opening_bg.target_alpha, duration=.1)
-    opening_parent.continue_button.enabled = False
-    # opening_frame.appear('scale') ## TODO: fix bug
-
+black_coin_counter = Button(parent=menu, y=(.5*aspect_ratio)-.2, text=`⚫ ${BLACK_COINS}`, origin=[.5,0], text_color=color.white, color=color.clear, z=-10, x=-.1)
+black_coin_counter.fit_to_text()
+green_coin_counter = Button(parent=menu, y=(.5*aspect_ratio)-.2, text=`🟢 ${GREEN_COINS}`, origin=[-.5,0], text_color=color.white, color=color.clear, z=-10, x=.1)
+green_coin_counter.fit_to_text()
 
 Entity.prototype['appear'] = function(anim_type, duration=.2):
     entity = this
@@ -190,7 +231,18 @@ Entity.prototype['appear'] = function(anim_type, duration=.2):
             entity.animate('scale_y', org_scale_y, duration=.2)
         return
 
-sunsnake.define(*button_style, color=hsv(0,0,.12), text_color=hsv(0,.0,.9), shadow=True)
+
+opening_parent = Entity(parent=camera.ui, z=-2, visible_self=False, enabled=False)
+opening_bg = Entity(parent=opening_parent, color=hsv(300,.5,.1), target_alpha=.9, scale=2, ignore_collision=False, on_click=def():print('a'))
+opening_frame = Entity(parent=opening_parent, z=-1, color=hsv(0,0,.2), alpha=.5, scale=.9, shadow=True, roundness=.02, y=.15)
+
+opening_parent.on_enable = def():
+    opening_bg.alpha = 1
+    opening_bg.animate('alpha', opening_bg.target_alpha, duration=.1)
+    opening_parent.continue_button.enabled = False
+    opening_frame.appear('scale', duration=.1)
+
+
 
 opening_parent.continue_button = Button(parent=opening_parent, z=-1, *button_style, text='Continue', scale=[.5,.15], roundness=.2, y=-.45, enabled=False)
 opening_parent.continue_button.on_enable = def():
@@ -247,6 +299,11 @@ for i in range(6):
                 set_score(SCORE+card.value)
 
             else:
+                if card.value == 'Black\nCoin':
+                    set_black_coins(BLACK_COINS+1)
+                elif card.value == 'Green\nCoin':
+                    set_green_coins(GREEN_COINS+1)
+
                 print('GOT ITEM:', card.value)
 
         card.ignore_collision = True
@@ -257,17 +314,49 @@ for e in bag_parent.children:
 
 
 sunsnake.define(*ShopButton(, Button(parent=shop_menu, scale=[.36,.2], origin=[-.5,.5], color=color.black, text_color=color.light_gray, text_size=2, cost=1, )
-items = [
-[40, 20%, 'frame.png'],
-[30, 20%, 'frame.png'],
-[10, 20%, 'frame.png'],
-[50, 20%, 'frame.png'],
-[100, 5%, 'frame_gold.png']
+lucky_bag_items = [
+    [20, 20%, 'frame.png'],
+    [15, 20%, 'frame.png'],
+    [5, 20%, 'frame.png'],
+    [25, 20%, 'frame.png'],
+    [50, 5%, 'frame_gold.png']
+]
+black_box_items = [
+    [100, 20%, 'frame.png'],
+    [150, 20%, 'frame.png'],
+    [50, 20%, 'frame.png'],
+    [25, 20%, 'frame.png'],
+    ['Black\nCoin', 5%, 'frame_2.png'],
+    [0, 100%, 'frame.png']
+]
+green_box_items = [
+    [50, 20%, 'frame.png'],
+    [100, 20%, 'frame.png'],
+    [200, 20%, 'frame.png'],
+    [250, 10%, 'frame.png'],
+    ['Green\nCoin', 5%, 'frame_2.png'],
+    [0, 100%, 'frame.png']
 ]
 
 # ['Green \nCartridge', 3%, 'frame_2.png'],
 
-bag_button = *ShopButton(text='Bag\n\n🪙 100', cost=100, on_click=def():open_loot_box(cost=100, num=3, items=items))
+bag_button = *ShopButton(text='Lucky Bag\n\n🪙 50', on_click=def():open_loot_box(cost=50, num=3, items=lucky_bag_items))
+
+watch_ad_button = *ShopButton(text='+🪙 20\n\nWatch AD', cost=0)
+watch_ad_button.on_click = def():
+    # Android.startRewardVideoAndroidFunction(paramFromJS)
+    set_score(SCORE+20)
+    update_shop()
+
+black_box = *ShopButton(text='Black Box\n\n🪙 500', cost=500, on_click=def():open_loot_box(cost=500, num=3, items=black_box_items))
+green_box = *ShopButton(text='Green Box\n\n🪙 600', cost=600, on_click=def():open_loot_box(cost=600, num=3, items=green_box_items))
+
+sell_green_coin_button = *ShopButton(text='+🪙 100\n\n🟢 1', cost=GreenCoin(1))
+sell_green_coin_button.on_click = def():
+    open_loot_box(cost=sell_green_coin_button.cost, num=3, items=green_box_items)
+# b = *ShopButton(text='Skin Chest\n\n🪙 2000', cost=2000)
+# b = *ShopButton(text='Background Chest\n\n🪙 2000', cost=2000)
+
 
 def open_loot_box(cost, num, items):
     print('bought for', cost)
@@ -294,6 +383,7 @@ def open_loot_box(cost, num, items):
             card.active_color = color.gray
             card.front_texture = 'frame.png'
             for e in items:
+                print('-----', e)
                 item = e[0]
                 chance = e[1]
                 tex = e[2]
@@ -303,8 +393,6 @@ def open_loot_box(cost, num, items):
                     card.value = item
                     card.front_texture = tex
                     break
-
-
 
             after i*.2:
                 card.enabled = True
@@ -317,18 +405,10 @@ def open_loot_box(cost, num, items):
 
 # b = *ShopButton(text='Daily Reward\n\n🪙 0', cost=0)
 #
-# b = *ShopButton(text='Chest\n\n🪙 500', cost=500)
-# b = *ShopButton(text='Big Chest\n\n🪙 1000', cost=1000)
-# b = *ShopButton(text='Item Chest\n\n🪙 2000', cost=2000)
-# b = *ShopButton(text='Skin Chest\n\n🪙 2000', cost=2000)
-#
+
 # b = *ShopButton(text='Green Cartridge\n\n🪙 10000', cost=10_000, amount=1)
 # b = *ShopButton(text='Random Skin\n\n🪙 10000', cost=10_000, amount=4)
 # b = *ShopButton(text='Random\nBackground\n\n🪙 10000', cost=10_000, amount=4)
-watch_ad_button = *ShopButton(text='+🪙 20\n\nWatch AD', cost=0)
-watch_ad_button.on_click = def():
-    set_score(SCORE+20)
-    update_shop()
 
 grid_layout(l=shop_menu.children, max_x=2, spacing=[1.05,1.1])
 shop_menu.on_enable = def():
@@ -357,31 +437,31 @@ def update_shop():
             e.shadow = True
 
 
-# unlocks_menu = Entity(parent=menu, visible_self=False, xy=[-.145,.5])
-# items = [
-# ['Ink Dispenser'],
-# ['G Cartridge', '‰ chance of spawning green slot'],
-# ['B Cartridge', '‰ chance of spawning black slot'],
-# ]
-# gradient = [hsv(150+(i*40), .8, .7) for i in range(5)]
-# for y, e in items:
-#     y_pos = (-y*.2*1.1) -.05
-#     title        = Button(parent=unlocks_menu, scale=[.8,.1], origin=[-.5,.5], color=color.clear, text_color=hsv(0,0,.9), text_size=2, x=-.125, y=y_pos+.08, text=`${items[y][0]}`, roundness=.25, text_origin=[-.5,-.5])
-#     description  = Button(parent=unlocks_menu, scale=[.8,.1], origin=[-.5,.5], color=color.clear, text_color=hsv(0,0,.6), text_size=1.5, x=-.125, y=y_pos+.05, text=`${items[y][1]}`, roundness=.25, text_origin=[-.5,-.5])
-#     let bar = RainbowSlider(parent=unlocks_menu, min=0, max=5, xy=[.14,y_pos-.075], scale=[.525,.03], show_text=True, text_size=1.5, color=hsv(0,0,.03), gradient=gradient)
-#     upgrade_button = Button(parent=unlocks_menu, scale=[.2,.125], origin=[.5,-.5], color=hsv(0,0,.12), text_color=color.light_gray, text_size=2, x=.5+.115, y=y_pos-.1, text=`Upgrade\n🪙 500`, roundness=.25, shadow=True)
-#     upgrade_button.on_click = def():
-#         bar.value += 1
-#
-#     # for x, cost in [1_000, 2_000, 4_000, 8_000, 16_000]:
-#     #     _ = UnlockButton(text=`+0.1%\n\n🪙 ${cost}`, cost=cost, x=x*.12, y=-y*.2*1.1)
-#
-# skins_menu = Entity(visible_self=1)
-#
+unlocks_menu = Entity(parent=menu, visible_self=False, xy=[-.145,.5])
+upgrades = [
+    ['Ink Dispenser', '% chance og spawning extra ink'],
+    ['G Cartridge', '% chance of spawning green slot'],
+    ['B Cartridge', '% chance of spawning black slot'],
+]
+gradient = [hsv(150+(i*40), .8, .7) for i in range(5)]
+for y, e in upgrades:
+    y_pos = (-y*.2*1.1) -.05
+    title        = Button(parent=unlocks_menu, scale=[.8,.1], origin=[-.5,.5], color=color.clear, text_color=hsv(0,0,.9), text_size=2, x=-.125, y=y_pos+.08, text=`${upgrades[y][0]}`, roundness=.25, text_origin=[-.5,-.5])
+    description  = Button(parent=unlocks_menu, scale=[.8,.1], origin=[-.5,.5], color=color.clear, text_color=hsv(0,0,.6), text_size=1.5, x=-.125, y=y_pos+.05, text=`${upgrades[y][1]}`, roundness=.25, text_origin=[-.5,-.5])
+    let bar = RainbowSlider(parent=unlocks_menu, min=0, max=5, xy=[.14,y_pos-.075], scale=[.525,.03], show_text=True, text_size=1.5, color=hsv(0,0,.03), gradient=gradient)
+    upgrade_button = Button(parent=unlocks_menu, scale=[.2,.125], origin=[.5,-.5], color=hsv(0,0,.12), text_color=color.light_gray, text_size=2, x=.5+.115, y=y_pos-.1, text=`Upgrade\n🪙 500`, roundness=.25, shadow=True)
+    upgrade_button.on_click = def():
+        bar.value += 1
+
+    # for x, cost in [1_000, 2_000, 4_000, 8_000, 16_000]:
+    #     _ = UnlockButton(text=`+0.1%\n\n🪙 ${cost}`, cost=cost, x=x*.12, y=-y*.2*1.1)
+
+skins_menu = Entity(parent=menu, visible_self=False)
+
 tab_parent = Entity(parent=menu, visible_self=False, xy=[-.4,.4])
 sunsnake.define(TabButton(, )
-# for key, value in enumerate({'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu, 'backgrounds':skins_menu}):
-for key, value in enumerate({'shop':shop_menu, }):
+for key, value in enumerate({'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu, 'backgrounds':skins_menu}):
+# for key, value in enumerate({'shop':shop_menu, }):
     let button = Button(parent=tab_parent, scale=.1, color=.12, text_color=hsv(0,0,.9), text_size=1.5, rotation=45, text=key)
     button.on_click = def():
         menu_handler.state = value
@@ -397,8 +477,8 @@ for key, value in enumerate({'shop':shop_menu, }):
 grid_layout(tab_parent.children, max_x=1, spacing=[1,2.2], offset=[0,0])
 
 
-# states = {'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu}
-states = {'shop':shop_menu}
+states = {'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu}
+# states = {'shop':shop_menu}
 menu_handler = StateHandler(states=states, fade=False)
 menu_handler.state = None
 
