@@ -351,7 +351,7 @@ watch_ad_button.on_click = def():
 black_box = *ShopButton(text='Black Box\n\n🪙 500', cost=500, on_click=def():open_loot_box(cost=500, num=3, items=black_box_items))
 green_box = *ShopButton(text='Green Box\n\n🪙 600', cost=600, on_click=def():open_loot_box(cost=600, num=3, items=green_box_items))
 
-sell_green_coin_button = *ShopButton(text='+🪙 100\n\n🟢 1', cost=GreenCoin(1))
+sell_green_coin_button = *ShopButton(text='+🪙 100\n\n🟢 1', cost={'green_coin':1})
 sell_green_coin_button.on_click = def():
     open_loot_box(cost=sell_green_coin_button.cost, num=3, items=green_box_items)
 # b = *ShopButton(text='Skin Chest\n\n🪙 2000', cost=2000)
