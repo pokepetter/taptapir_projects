@@ -82,7 +82,7 @@ def goto_page(page_index):
             pages[page_index][i][1] = e.slider.value
 
         e.delete_button = *Button(parent=e, color='#eeeeee', scale=[.08/e.scale_x,.08/e.scale_y], origin=[.5,0], x=.5-.01, text='✕', text_size=1.5, shadow=None)
-        e.delete_button.on_click = def():
+        e.delete_button.on_click = def delete_entry(e=e):
             confirm_delete_button.parent = e.delete_button
             confirm_delete_button.xy = [0,0]
             confirm_delete_button.enabled = True
