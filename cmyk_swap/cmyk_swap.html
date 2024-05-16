@@ -24,6 +24,20 @@ colors = [color.cyan, color.magenta, color.yellow]
 color_names = ['cyan', 'magenta', 'yellow']
 block_size = 1/5*.9
 
+extra_ink_button = Entity(color='gold', text='🪙', scale=.05, roundness=.4, color=color.yellow, text_color=color.white, enabled=False, z=-3)
+extra_ink_effect = Entity(scale=.1, z=-2, texture='impact_effect.gif', enabled=False)
+
+extra_ink_button.on_click = def():
+    extra_ink_effect.xy = extra_ink_button.xy
+    extra_ink_effect.enabled = True
+    extra_ink_effect.texture = 'impact_effect.gif'
+    extra_ink_button.text = '🪙 +100'
+    set_score(SCORE+100)
+    after .25s:
+        extra_ink_button.enabled = False
+        extra_ink_button.text = '🪙'
+
+
 for i in range(3):
     slot = Entity(color=colors[i], scale=.1, roundness=.0, color=color.clear)
 
@@ -85,7 +99,7 @@ for i in range(3):
             e.snap_to_slot()
 
 def goto_next_level():
-    random_positions = sample(coordinates, 6)
+    random_positions = sample(coordinates, 7)
 
     for i in range(3)
         e = slots[i]
@@ -97,6 +111,12 @@ def goto_next_level():
         e.y = (-2 + random_positions[(i*2)+1][1]) * block_size
         e.draggable = True
         e.velocity = [0,0]
+
+    if random_int(0, 100) < save_system_load('extra_ink_chance'):
+    # if random_int(0, 100) < 50:
+        extra_ink_button.enabled = True
+        extra_ink_button.x = (-2 + random_positions[6][0]) * block_size
+        extra_ink_button.y = (-2 + random_positions[6][1]) * block_size
 
 goto_next_level()
 
@@ -456,18 +476,15 @@ def refresh_shop():
 
 
 unlocks_menu = Entity(parent=menu, visible_self=False, xy=[-.145,.5])
+# upgrade_panel_data = [
+#     {'title':'Ink Dispenser', 'description':'% chance og spawning extra gold', 'varname':'extra_ink_chance', 'slider':None, 'button':None},
+#     {'title':'G Cartridge', 'description':'% chance of spawning green slot', 'varname':'green_slot_chance', 'slider':None, 'button':None},
+#     {'title':'B Cartridge', 'description':'% chance of spawning black slot', 'varname':'black_slot_chance', 'slider':None, 'button':None},
+# ]
 upgrade_panel_data = [
-    {'title':'Ink Dispenser', 'description':'% chance og spawning extra ink', 'varname':'extra_ink_chance', 'slider':None, 'button':None},
-    {'title':'G Cartridge', 'description':'% chance of spawning green slot', 'varname':'green_slot_chance', 'slider':None, 'button':None},
-    {'title':'B Cartridge', 'description':'% chance of spawning black slot', 'varname':'black_slot_chance', 'slider':None, 'button':None},
+    {'title':'Ink Dispenser', 'description':'% chance og spawning extra gold', 'varname':'extra_ink_chance', 'slider':None, 'button':None},
 ]
 gradient = [hsv(150+(i*40), .8, .7) for i in range(5)]
-UPGRADES = {
-    'extra_ink_chance'  : save_system_load('extra_ink_chance', 1),
-    'green_slot_chance' : save_system_load('green_slot_chance', 1),
-    'black_slot_chance' : save_system_load('black_slot_chance', 1),
-}
-
 upgrade_costs = [0, 500, 1000, 2000, 5000]
 
 for y, data in upgrade_panel_data:
@@ -478,10 +495,10 @@ for y, data in upgrade_panel_data:
     let bar = RainbowSlider(parent=unlocks_menu, min=0, max=5, xy=[.14,y_pos-.075], scale=[.525,.03], show_text=True, text_size=1.5, color=hsv(0,0,.03), gradient=gradient, default=save_system_load(data['varname'], 1))
     upgrade_panel_data[y]['slider'] = bar
 
-    let upgrade_button = Button(parent=unlocks_menu, scale=[.2,.125], origin=[.5,-.5], color=hsv(0,0,.12), text_color=color.light_gray, text_size=2, x=.5+.115, y=y_pos-.1, text=`Upgrade\n🪙 500`, roundness=.25, shadow=True)
+    let upgrade_button = Button(parent=unlocks_menu, scale=[.2,.125], origin=[.5,-.5], color=hsv(0,0,.12), text_color=color.light_gray, text_size=2, x=.5+.115, y=y_pos-.1, text=`Upgrade\n🪙 ???`, roundness=.25, shadow=True)
     upgrade_panel_data[y]['button'] = upgrade_button
     upgrade_button.on_click = def upgrade(varname=data['varname']):
-        current_level = UPGRADES[data['varname']]
+        current_level = save_system_load([data['varname']])
         cost = upgrade_costs[current_level]
         print(current_level, cost, bar.value)
 
@@ -489,15 +506,14 @@ for y, data in upgrade_panel_data:
             return
 
         set_score(SCORE - cost)
-        UPGRADES[varname] += 1
-        save_system_save(varname, UPGRADES[varname])
+        save_system_save(varname, current_level+1)
         bar.value += 1
         refresh_upgrade_menu()
 
 
 def refresh_upgrade_menu():
     for data in upgrade_panel_data:
-        current_level = UPGRADES[data['varname']]
+        current_level = save_system_load([data['varname']])
         upgrade_cost = upgrade_costs[current_level]
         data['slider'].value = current_level
         data['button'].text = `Upgrade\n🪙 ${upgrade_cost}`
@@ -516,14 +532,12 @@ def refresh_upgrade_menu():
 
 refresh_upgrade_menu()
 
-    # for x, cost in [1_000, 2_000, 4_000, 8_000, 16_000]:
-    #     _ = UnlockButton(text=`+0.1%\n\n🪙 ${cost}`, cost=cost, x=x*.12, y=-y*.2*1.1)
 
 skins_menu = Entity(parent=menu, visible_self=False)
-
 tab_parent = Entity(parent=menu, visible_self=False, xy=[-.4,.4])
 sunsnake.define(TabButton(, )
-for key, value in enumerate({'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu, 'backgrounds':skins_menu}):
+# for key, value in enumerate({'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu, 'backgrounds':skins_menu}):
+for key, value in enumerate({'shop':shop_menu, 'unlocks':unlocks_menu}):
 # for key, value in enumerate({'shop':shop_menu, }):
     let button = Button(parent=tab_parent, scale=.1, color=.12, text_color=hsv(0,0,.9), text_size=1.5, rotation=45, text=key)
     button.on_click = def():
