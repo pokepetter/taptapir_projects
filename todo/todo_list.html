@@ -82,11 +82,11 @@ def goto_page(page_index):
             pages[page_index][i][1] = e.slider.value
 
         e.delete_button = *Button(parent=e, color='#eeeeee', scale=[.08/e.scale_x,.08/e.scale_y], origin=[.5,0], x=.5-.01, text='✕', text_size=1.5, shadow=None)
-        e.delete_button.on_click = def delete_entry(e=e):
-            confirm_delete_button.parent = e.delete_button
+        e.delete_button.on_click = def delete_entry(target=e):
+            confirm_delete_button.parent = target.delete_button
             confirm_delete_button.xy = [0,0]
             confirm_delete_button.enabled = True
-            confirm_delete_button.target = e
+            confirm_delete_button.target = target
 
     for y, e in list_parent.children:
         e.y = (.5*aspect_ratio)-(.125*y) +.05
@@ -99,8 +99,9 @@ confirm_delete_button = Entity(parent=list_parent, color=color.pink, enabled=0, 
 confirm_delete_button.on_click = def():
     confirm_delete_button.parent = list_parent
     confirm_delete_button.enabled = False
-    items.pop(fields.index(confirm_delete_button.target))
+    pages[current_page_index].remove_at(fields.index(confirm_delete_button.target))
     goto_page(current_page_index)
+    
 confirm_delete_button.input = def input(key):
     if key == 'left mouse down' and mouse.hovered_entity != confirm_delete_button:
         confirm_delete_button.enabled = False
@@ -172,5 +173,16 @@ for i, tab in tabs:
         tab.text = name_change_field.value
 
 clear_data_button = *Button(text='clear data', parent=options_menu, scale=[.25,.1], text_size=2, position=[.5,-.5], origin=[.5,-.5], text_color=color.red, color=color.black, on_click=save_system_clear)
+
+# # test delete button
+# add_row_button.on_click()
+# add_row_button.on_click()
+# add_row_button.on_click()
+# pages[0][0][0] = '0'
+# pages[0][1][0] = '1'
+# pages[0][2][0] = '2'
+# goto_page(0)
+# fields[0].delete_button.on_click()
+# confirm_delete_button.on_click()
 
 </script><script src="../taptapir/sunsnake_compiler.js"></script></html>
