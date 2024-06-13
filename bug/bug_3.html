@@ -1,0 +1,336 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" />
+<title>CMYK Swap</title><link rel="icon" href="icon.png">
+</head><body></body>
+<script src="../taptapir/sunsnake_compiler.js"></script>
+<script src="../taptapir/taptapir.js"></script>
+
+<script type="text/javascript">
+
+set_background_color("#111111")
+set_window_color("#222")
+SCORE = int(save_system_load('score'))
+if (! Number.isInteger(SCORE)) {
+    SCORE = 0
+}
+slots = []
+draggables = []
+coordinates = []
+for (var x of range(5)) {
+    for (var y of range(5)) {
+        coordinate = [x,y]
+        coordinates.push(coordinate)
+    }
+}
+colors = [color.cyan, color.magenta, color.yellow]
+color_names = ['cyan', 'magenta', 'yellow']
+block_size = 1/5*.9
+for (var i of range(3)) {
+    slot = new Entity({name:'slot ', color:colors[i], scale:.1, roundness:.0, color:color.clear})
+    slot.model.style.outline = `4px dashed ${color_names[i]}`
+    slots.push(slot)
+    let e = new Entity({name:'e ', color:colors[i], scale:.16, draggable:True, roundness:.2, shadow:True, target_slot:slot, velocity:[0,0], min_x:-.5+.08, max_x:.5-.08, min_y:(-.5*aspect_ratio)+.08, max_y:(.5*aspect_ratio)-.08, duration_dragged:0, z:-1})
+    e.effect = new Entity({name:'e.effect ', parent:e, scale:2, z:-2, texture:'impact_effect.gif', enabled:False})
+    draggables.push(e)
+    e.on_click = function() {
+        e.start_pos = e.xy
+    }
+    e.drop = function() {
+        e.scale_x -= .02
+        e.scale_y -= .02
+        after(.05, function() {
+            e.scale_x += .02
+            e.scale_y += .02
+        })
+        e.snap_to_slot()
+        e.velocity = [e.x-e.start_pos[0], e.y-e.start_pos[1]]
+        e.duration_dragged = 0
+    }
+    e.snap_to_slot = function() {
+        limit = .075
+        if (distance(e.position, e.target_slot.position) < limit) {
+            e.xy = e.target_slot.xy
+            e.draggable = False
+            r = draggables.map(e => e.draggable).reduce((a, b) => a + b, 0)
+            if (r === 0) {
+                win()
+            }
+        }
+    }
+    e.update = function() {
+        if (e.draggable && ! e.dragging) {
+            if (e.x+e.scale_x > .5) {
+                e.velocity[0] *= -1
+            }
+            if (e.x-e.scale_x < -.5) {
+                e.velocity[0] *= -1
+            }
+            if (e.y+e.scale_y > .75) {
+                e.velocity[1] *= -1
+            }
+            if (e.y-e.scale_y < -.75) {
+                e.velocity[1] *= -1
+            }
+            e.velocity = [                lerp(e.velocity[0], 0, .025),                lerp(e.velocity[1], 0, .025),                ]
+            e.x += e.velocity[0] * .075
+            e.y += e.velocity[1] * .075
+            e.x = clamp(e.x, -.5, .5)
+            e.y = clamp(e.y, -.75, .75)
+            e.snap_to_slot()
+        }
+    }
+}
+function goto_next_level() {
+    random_positions = sample(coordinates, 6)
+    for (var i of range(3)) {
+        e = slots[i]
+        e.x = (-2 + random_positions[(i*2)][0]) * block_size
+        e.y = (-2 + random_positions[(i*2)][1]) * block_size
+        e = draggables[i]
+        e.x = (-2 + random_positions[(i*2)+1][0]) * block_size
+        e.y = (-2 + random_positions[(i*2)+1][1]) * block_size
+        e.draggable = True
+        e.velocity = [0,0]
+    }
+}
+goto_next_level()
+score_counter = new Button({name:'score_counter ', y:(.5*aspect_ratio)-.1, text:SCORE, origin:[0,0], text_color:color.white, color:color.clear, z:-10})
+score_counter.fit_to_text()
+win_text = new Entity({name:'win_text ', text:'Yay! :D', enabled:False, text_origin:[0,0], scale:[.25,.125], color:color.white, shadow:True, margin:10, roundness:.4, z:-3})
+function set_score(value) {
+    value = max(value, 0)
+    SCORE = value
+    score_counter.text= SCORE
+    save_system_save('score', SCORE)
+}
+function win() {
+    win_text.enabled = True
+    set_score(SCORE + 1)
+    for (let [i, e] of enumerate(draggables)) {
+        let _e = e
+        after(i*.1, function() {
+            _e.effect.enabled = True
+            _e.effect.texture = 'impact_effect.gif'
+        })
+    }
+    after(1, function() {
+        win_text.enabled = False
+        goto_next_level()
+    })
+}
+print('-----')
+mouse.prev_pos = mouse.position
+// function update() {
+//     mouse.velocity = [mouse.position[0]-mouse.prev_pos[0], mouse.position[1]-mouse.prev_pos[1]]
+// }
+shop_icon = new Button({name:'shop_icon ', text:'  💼  ', position:[-.5+.05,(.5*aspect_ratio)-.1], origin:[-.5,-.0], scale:[.1,.075], roundness:.5, text_size:2, color:hsv(0,0,.2), on_click:function(){menu.enabled=True}})
+function grid_layout(l=[], max_x=5, spacing=[1.1,1.1], offset=[0,0]) {
+    print('-----', l)
+    x = 0
+    y = 0
+    for (let [i, e] of enumerate(l)) {
+        e.xy = [(x * l[0].scale_x * spacing[0]) + offset[0],                (-y * l[0].scale_y * spacing[1]) + offset[1]]
+        x += 1
+        if (x >= max_x) {
+            y += 1
+            x = 0
+        }
+    }
+}
+menu = new Entity({name:'menu ', parent:camera.ui, z:-1, visible_self:False, enabled:False})
+menu.bg = new Entity({name:'menu.bg ', parent:menu, scale:2, color:hsv(0,0,.05), alpha:.99, ignore_collision:False})
+menu.back_button = new Button({name:'menu.back_button ', parent:menu, xy:top_left, origin:[-1,1], scale:.1, color:color.gray, z:-1, text:'↩', color:color.clear, text_color:color.gray, text_size:5, on_click:function(){ menu.enabled=False;menu_handler.state=None}})
+menu.on_enable = function() {
+    menu.bg.alpha = 0
+    menu.bg.animate('alpha', .99)
+    menu_handler.state = 'shop'
+}
+items = ['chest', '1 point']
+shop_menu = new Entity({name:'shop_menu ', visible_self:False, parent:menu, xy:[-.27,.5]})
+opening_parent = new Entity({name:'opening_parent ', parent:camera.ui, z:-2, visible_self:False, enabled:False})
+opening_bg = new Entity({name:'opening_bg ', parent:opening_parent, color:hsv(300,.5,.1), target_alpha:.9, scale:2, ignore_collision:False, on_click:function(){print('a')}})
+opening_frame = new Entity({name:'opening_frame ', parent:opening_parent, z:-1, color:hsv(0,0,.2), alpha:.5, scale:.9, shadow:True, roundness:.02, y:.15})
+opening_parent.on_enable = function() {
+    opening_bg.alpha = 1
+    opening_bg.animate('alpha', opening_bg.target_alpha, duration=.1)
+    opening_parent.continue_button.enabled = False
+}
+Entity.prototype['appear'] = function(anim_type, duration=.2) {
+    entity = this
+    if (anim_type === 'scale_x') {
+        org_value = entity.scale_x
+        entity.scale_x = .1
+        entity.animate('scale_x', org_value, duration=duration)
+        return
+    }
+    if (anim_type === 'scale') {
+        org_scale_x = entity.scale_x
+        org_scale_y = entity.scale_y
+        entity.scale = .1
+        entity.animate('scale_x', org_scale_x, duration=duration)
+        after(duration, function() {
+            entity.animate('scale_y', org_scale_y, duration=.2)
+        })
+        return
+    }
+}
+
+opening_parent.continue_button = new Button({name:'opening_parent.continue_button ', parent:opening_parent, z:-1,  color:hsv(0,0,.12), text_color:hsv(0,.0,.9), shadow:True, text:'Continue', scale:[.5,.15], roundness:.2, y:-.45, enabled:False})
+opening_parent.continue_button.on_enable = function() {
+    opening_parent.continue_button.appear('scale', duration=.05)
+}
+opening_parent.continue_button.on_click = function() {
+    opening_bg.animate('alpha', 0, duration=.1)
+    after(.1, function() {
+        opening_parent.enabled = False
+        update_shop()
+    })
+}
+bag_parent = new Entity({name:'bag_parent ', parent:opening_parent, z:-2, visible_self:False})
+card_reveal_effect_normal = new Entity({name:'card_reveal_effect_normal ', parent:opening_parent, scale:.2, z:-2, texture:'impact_effect.gif', enabled:False})
+card_reveal_effect_rare =   new Entity({parent:opening_parent, scale:.75, z:-2, texture:'sparkle_impact.gif', enabled:False})
+for (var i of range(6)) {
+    let card = new Button({name:'card ', parent:bag_parent, color:hsv(300, .0, .05), z:-1, scale:[.2,.25], enabled:False, shadow:True, roundness:.15, text_color:color.smoke})
+    card.original_color = card.color
+    card.active_color = color.white
+    card.org_scale_x = card.scale_x
+    card.on_click = function() {
+        bag_parent.items_left -= 1
+        if (bag_parent.items_left <= 0) {
+            after(.4, function() {
+                opening_parent.continue_button.enabled = True
+            })
+        }
+        card.animate('scale_x', 0, duration=.1)
+        after(.2, function() {
+            card.animate('scale_x', card.org_scale_x, duration=.1)
+            card.texture = card.front_texture
+            card.color = card.active_color
+            if (card.value > 0 && card.value < 100) {
+                card_reveal_effect_normal.xy = card.xy
+                card_reveal_effect_normal.enabled=True
+                card_reveal_effect_normal.texture = card_reveal_effect_normal.texture
+            }
+            else if (card.value != 0) {
+                card_reveal_effect_rare.xy = card.xy
+                card_reveal_effect_rare.enabled = True
+                card_reveal_effect_rare.texture = card_reveal_effect_rare.texture
+            }
+        })
+        after(.4, function() {
+            card.text = `${card.value}`
+            if (len(card.value) > 5) {
+                card.text_size = 2
+                print('lower size')
+            }
+            else {
+                card.text_size = 3
+            }
+            if (Number.isInteger(card.value)) {
+                set_score(SCORE+card.value)
+            }
+            else {
+                print('GOT ITEM:', card.value)
+            }
+        })
+        card.ignore_collision = True
+    }
+}
+grid_layout(bag_parent.children, max_x=3, spacing=[1.1,1.1], offset=[-.225,.2])
+for (var e of bag_parent.children) {
+    e.target_y = e.y
+}
+
+items = [[20, 20*.01, 'frame.png'],[15, 20*.01, 'frame.png'],[5, 20*.01, 'frame.png'],[25, 20*.01, 'frame.png'],[50, 5*.01, 'frame_gold.png']
+]
+bag_button =  new Button({parent:shop_menu, scale:[.36,.2], origin:[-.5,.5], color:color.black, text_color:color.light_gray, text_size:2, cost:1, text:'Lucky Bag\n\n🪙 50', cost:50, on_click:function(){open_loot_box(cost=50, num=3, items=items)}})
+function open_loot_box(cost, num, items) {
+    print('bought for', cost)
+    print(SCORE,)
+    set_score(SCORE-cost)
+    opening_parent.enabled = True
+    bag_parent.items_left = num
+    for (var card of bag_parent.children) {
+        card.enabled = False
+        card.y = card.target_y + .1
+        card.texture = 'card_back.png'
+        card.text = ''
+        card.ignore_collision = False
+    }
+    after(.4, function() {
+        for (var i of range(bag_parent.items_left)) {
+            let card = bag_parent.children[i]
+            let r = random_value()
+            cumulative = 0
+            card.value = 0
+            card.active_color = color.gray
+            card.front_texture = 'frame.png'
+            for (var e of items) {
+                item = e[0]
+                chance = e[1]
+                tex = e[2]
+                cumulative += chance
+                if (r <= cumulative) {
+                    card.value = item
+                    card.front_texture = tex
+                    break
+                }
+            }
+            after(i*.2, function() {
+                card.enabled = True
+                card.animate('y', card.target_y)
+            })
+        }
+    })
+    update_shop()
+}
+grid_layout(l=shop_menu.children, max_x=2, spacing=[1.05,1.1])
+shop_menu.on_enable = function() {
+    for (let [i, e] of enumerate(shop_menu.children)) {
+        e.original_x = e.x
+        e.x += .2 + (i*.05)
+        e.animate('x', e.original_x, duration=.005+(.05*i))
+    }
+    update_shop()
+}
+function update_shop() {
+    print('update shop')
+    for (var e of shop_menu.children) {
+        e.model.style.outline = `medium ${color_names[i]}`
+        if (e.cost > SCORE) {
+            e.text_color = hsv(0,0,.3)
+            e.color = hsv(0,0,.03)
+            e.ignore_collision = True
+            e.shadow = False
+        }
+        else {
+            e.color = hsv(0,0,.12)
+            e.text_color = hsv(40,.0,.9)
+            e.ignore_collision = False
+            e.shadow = True
+        }
+    }
+}
+tab_parent = new Entity({name:'tab_parent ', parent:menu, visible_self:False, xy:[-.4,.4]})
+
+for (let [key, value] of enumerate({'shop':shop_menu, })) {
+    let button = new Button({name:'button ', parent:tab_parent, scale:.1, color:.12, text_color:hsv(0,0,.9), text_size:1.5, rotation:45, text:key})
+    button.on_click = function() {
+        menu_handler.state = value
+        for (var e of tab_parent.children) {
+            if (e === button) {
+                e.color = color.magenta
+                e.text_color = hsv(0,0,.1)
+            }
+            else {
+                e.color = .12
+                e.text_color = hsv(0,0,.9)
+            }
+        }
+    }
+}
+grid_layout(tab_parent.children, max_x=1, spacing=[1,2.2], offset=[0,0])
+states = {'shop':shop_menu}
+menu_handler = new StateHandler({name:'menu_handler ', states:states, fade:False})
+menu_handler.state = None
+</script>
+</html>

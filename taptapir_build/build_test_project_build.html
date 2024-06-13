@@ -1,0 +1,1949 @@
+
+<html>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>
+<title>Build Test Project</title><link rel="icon" href="icon.png">
+</head><body></body>
+<script type='text/javascript'>
+// aspect_ratio = 16/9
+scale = 1
+print = console.log
+
+Array.prototype.remove = function (element) {
+    var index = this.indexOf(element)
+    if (index >= 0) {
+        this.splice(index, 1)
+    }
+}
+
+var _loading_text = document.getElementById('loading_text')
+if (_loading_text) {
+    _loading_text.remove()
+}
+const style = document.createElement('style')
+style.textContent = `
+.entity {
+  touch-action: none;
+  width:100%; height:100%; position:absolute; top:50%; left:50%; will-change: transform;
+  transform:translate(-50%, -50%); color:black; background-size: 100% 100%; padding:0; border-width:0px;
+  visibility: 'visible'; display:inherit; image-rendering: pixelated;
+  background-repeat:repeat;
+  white-space: pre;
+}
+.entity:focus {
+  outline: 0; -moz-outline-style: none;
+}
+
+#game {margin:auto; background-color: darkgreen; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); overflow: hidden; pointer-events: none;
+  width:100%; height:100%; outline: 0; box-shadow: 0; touch-action: none; user-select: none;
+  white-space: pre-wrap;
+}
+fullscreen_button {padding: 4px 4px; width: 64px; height: 64px; background-color: #555; border-radius: .2em; border-width: 0px;
+  text-decoration: none; color: white; font-size: 50.0px; z-index: 1; position: absolute; text-align: center; right: 0%;
+}
+body {
+  margin:0;
+  background-color:'#111';
+  font-family: CerebriSans-Regular,-apple-system,system-ui,Roboto,sans-serif;
+  overscroll-behavior-y: contain;
+}
+#loading_text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  color: white;
+  font-family:monospace;
+  transform: translate(-50%, -5%);
+  text-align: center;
+}
+input, textarea {
+  pointer-events: auto;
+  height: 100%;
+  width: 100%;
+  font-size: inherit;
+  font-family: monospace;
+  border-radius: inherit;
+  background-color: inherit;
+  border-width: inherit;
+  text-indent: .5em;
+  resize: none;
+  color: inherit;
+}
+`
+document.head.append(style)
+
+var _game_window = document.getElementById('game')
+if (!_game_window) {
+    var _game_window = document.createElement('game')
+    _game_window.id = 'game'
+    if (!document.body) {
+        document.body = document.createElement('body')
+    }
+    document.body.appendChild(_game_window)
+}
+scene = document.createElement('entity')
+scene.className = 'entity'
+scene.id = 'scene'
+scene._children = []
+_game_window.appendChild(scene)
+
+// print('browser aspect_ratio:', browser_aspect_ratio)
+format = null
+is_mobile = 'ontouchstart' in document.documentElement
+fullscreen = false
+camera = null
+
+function set_orientation(value) {
+    var width = window.innerWidth
+    var height = window.innerHeight
+    browser_aspect_ratio = width / height
+    // print('width:', width, 'height:', height, 'browser_aspect_ratio:', browser_aspect_ratio)
+
+    format = value
+    if (format == 'vertical') {
+        aspect_ratio = 16/9
+        // used for setting correct draggable limits
+        asp_x = 1
+        asp_y = 9/16
+
+        if (browser_aspect_ratio >= 9/16) { // if the screen is wider than the game, like a pc monitor.
+            // print('vertical view desktop')
+            _game_window.style.width = `${width*scale/browser_aspect_ratio/(16/9)}px`
+            _game_window.style.height =  `${height*scale}px`
+        }
+        else {                              // if the screen is taller than the game, like a phone screen.
+            // print('vertical view mobile')
+            _game_window.style.height = `${width*scale*(16/9)}px`
+            _game_window.style.width =  `${width*scale}px`
+        }
+        if (camera) {camera.ui.scale = [1, 1/aspect_ratio]}
+        top_left =      [-.5, .5*aspect_ratio]
+        top_right =     [.5, .5*aspect_ratio]
+        bottom_left =   [-.5, -.5*aspect_ratio]
+        bottom_right =  [.5, -.5*aspect_ratio]
+        top =           [0, .5*aspect_ratio]
+        bottom =        [0, -.5*aspect_ratio]
+        left =          [-.5, 0]
+        right =         [.5, 0]
+    }
+    else {
+        aspect_ratio = 16/9
+        asp_x = 16/9
+        asp_y = 1
+        scene.style.width = `${1/asp_x*100}%`
+        scene.style.height = `${1/asp_y*100}%`
+        if (browser_aspect_ratio > 16/9) { // if the screen is wider than 16/9, fit to height
+            _game_window.style.height = `${height*scale}px`
+            _game_window.style.width =  `${width*scale/browser_aspect_ratio*16/9}px`
+        }
+        else {                              // if the screen is taller than 16/9, fit to width
+            _game_window.style.height = `${height*scale*browser_aspect_ratio/(16/9)}px`
+            _game_window.style.width =  `${width*scale}px`
+        }
+        if (camera) {camera.ui.scale = [1/aspect_ratio, 1]}
+        top_left =      [-.5*aspect_ratio, .5]
+        top_right =     [.5*aspect_ratio, .5]
+        bottom_left =   [-.5*aspect_ratio, -.5]
+        bottom_right =  [.5*aspect_ratio, -.5]
+        top =           [0, .5]
+        bottom =        [0, -.5]
+        left =          [-.5*aspect_ratio, 0]
+        right =         [.5*aspect_ratio, 0]
+
+    }
+}
+set_orientation('vertical')
+
+
+function rgb(r, g, b) {return [parseInt(r*255), parseInt(g*255), parseInt(b*255)]}
+function rgb32(r, g, b) {return [r,g,b]}
+
+function hex_to_rgb(value) {
+    if (value.length === 4) {
+        value = `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`   // convert '#333' to '#333333'
+    }
+    try {
+        r = value.slice(1,3)
+        g = value.slice(3,5)
+        b = value.slice(5,7)
+        return [parseInt(r,16), parseInt(g,16), parseInt(b,16)]
+    }
+    catch (e) {
+        console.error('invalid hex code:', value);
+    }
+}
+// from: https://stackoverflow.com/questions/17242144/javascript-convert-hsb-hsv-color-to-rgb-accurately
+function hsv(h, s, v) {
+    h /= 360;
+    var r, g, b, i, f, p, q, t;
+    if (arguments.length === 1) {
+        s = h.s, v = h.v, h = h.h;
+    }
+    i = Math.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    return [parseInt(r*255), parseInt(g*255), parseInt(b*255)];
+}
+
+function rgb_to_hsv(_rgb_color) {
+    r = _rgb_color[0]
+    g = _rgb_color[1]
+    b = _rgb_color[2]
+    // It converts [0,255] format, to [0,1]
+    r = (r === 255) ? 1 : (r % 255 / parseFloat(255))
+    g = (g === 255) ? 1 : (g % 255 / parseFloat(255))
+    b = (b === 255) ? 1 : (b % 255 / parseFloat(255))
+    var max = Math.max(r, g, b)
+    var min = Math.min(r, g, b)
+    var h, s, v = max
+    var d = max - min
+    s = max === 0 ? 0 : d / max
+
+
+    switch (max) {
+        case min: h = 0; break;
+        case r: h = (g - b) + d * (g < b ? 6: 0); h /= 6 * d; break;
+        case g: h = (b - r) + d * 2; h /= 6 * d; break;
+        case b: h = (r - g) + d * 4; h /= 6 * d; break;
+    }
+    return [parseInt(h*360), s, v]
+}
+
+color = {
+  white:         hsv(0, 0, 1),
+  smoke:         hsv(0, 0, 0.96),
+  light_gray:    hsv(0, 0, 0.75),
+  gray:          hsv(0, 0, 0.5),
+  dark_gray:     hsv(0, 0, 0.25),
+  black:         hsv(0, 0, 0),
+  red:           hsv(0, 1, 1),
+  orange:        hsv(30, 1, 1),
+  yellow:        hsv(60, 1, 1),
+  lime:          hsv(90, 1, 1),
+  green:         hsv(120, 1, 1),
+  turquoise:     hsv(150, 1, 1),
+  cyan:          hsv(180, 1, 1),
+  azure:         hsv(210, 1, 1),
+  blue:          hsv(240, 1, 1),
+  violet:        hsv(270, 1, 1),
+  magenta:       hsv(300, 1, 1),
+  pink:          hsv(330, 1, 1),
+  clear:         [0, 0, 0, 0],
+}
+
+function set_window_color(value) {_game_window.style.backgroundColor = value}
+function set_background_color(value) {document.body.style.backgroundColor = value}
+function set_scale(value) {
+    scale = value
+    set_orientation(format)
+}
+
+function set_fullscreen(value) {
+    fullscreen = value
+    if (value) {
+        document.documentElement.requestFullscreen()
+    }
+    else {
+        document.exitFullscreen();
+    }
+}
+
+ASSETS_FOLDER = ''
+entities = []
+
+class Entity {
+    constructor(options=null) {
+        if (!('type' in options)) {
+            options['type'] = 'entity'
+        }
+        this.add_to_scene = true
+        if ('add_to_scene' in options) {
+            this.add_to_scene = options['add_to_scene']
+        }
+        if (!this.add_to_scene) {
+            this.el = document.createElement(options['type'])
+            entities.push(this)
+            for (const [key, value] of Object.entries(options)) {
+                this[key] = value
+            }
+            return
+        }
+
+        this.el = document.createElement(options['type'])
+        this.el.className = options['type']
+
+        // create another div for the model, for setting origin to work
+        this.el.style.backgroundColor = 'rgba(0,0,0,0)'
+        // this.el.style.pointerEvents = 'none'
+        this.model = document.createElement(options['type'])
+        this.model.entity_index = entities.length
+        this.model.id = 'model'
+        this.el.appendChild(this.model)
+
+        this.model.className = options['type']
+        this.model.style.opacity = 1
+        entities.push(this)
+
+        this.setTimeout_calls = {}
+        if (!('render' in options) || options['render']) {
+            scene.appendChild(this.el)
+        }
+
+        // if (!'parent' in options) {
+            // print('default to scene')
+        this.parent = scene
+        // }
+
+        this.children = []
+        this._enabled = true
+        this.on_enable = null
+        this.on_disable = null
+        this.color = '#ffffff'
+        this.x = 0
+        this.y = 0
+        this.z = 0
+        this.scale = [1,1]
+        this.draggable = false
+        this.dragging = false
+        this.lock_x = false
+        this.lock_y = false
+
+        this.min_x = -.5 * asp_x
+        this.max_x = .5 * asp_x
+        this.min_y = -.5 / asp_y
+        this.max_y = .5 / asp_y
+
+        this.snap_x = 0
+        this.snap_y = 0
+        this.text_size = 3
+        this._roundness = 0
+
+        for (const [key, value] of Object.entries(options)) {
+            this[key] = value
+        }
+    }
+    get name() {return this._name}
+    set name(value) {
+        this._name = value
+        this.el.id = value
+    }
+
+    get parent() {return this._parent}
+    set parent(value) {
+        if (value == null) {
+            value = scene
+        }
+        if (value === scene) {
+            value.appendChild(this.el)
+        }
+        else {
+            value.el.appendChild(this.el)
+        }
+        if (this._parent && this._parent._children) {
+            this._parent._children.remove(self)
+        }
+        this._parent = value
+        if (value._children && !value._children.includes(this)) {
+            value._children.push(this)
+        }
+    }
+    get children() {return this._children}
+    set children(value) {
+        this._children = value
+        for (const e of value) {
+            e.parent = this
+        }
+    }
+    get world_parent() {return this.parent}
+    set world_parent(value) {
+        wpos = this.world_position
+        wscale = this.world_scale
+        this.parent = value
+
+        this.world_position = wpos
+        this.world_scale = wscale
+    }
+    get world_x() {return (this.el.getBoundingClientRect().left - scene.getBoundingClientRect().left) / scene.clientWidth}
+    get world_y() {return -(this.el.getBoundingClientRect().top - scene.getBoundingClientRect().top) / scene.clientHeight}
+    get world_position() {return [this.world_x, this.world_y]}
+
+    get world_scale_x() {return this.el.clientWidth / scene.clientWidth}
+    get world_scale_y() {return this.el.clientHeight / scene.clientHeight}
+    get world_scale() {return [this.world_scale_x, this.world_scale_y]}
+
+    get descendants() {return this.el.getElementsByTagName('*')}
+
+    get enabled() {return this._enabled}
+    set enabled(value) {
+        if (value) {
+            this.el.style.visibility = 'visible'
+            for (var c of this.descendants) {
+                c.style.visibility = c.style.original_visibility
+            }
+        }
+        else {
+            this.el.style.visibility = 'hidden'
+            for (var c of this.descendants) {
+                c.style.original_visibility = c.style.visibility
+                c.style.visibility = 'inherit'
+            }
+        }
+        this._enabled = value
+
+        if (value && this.on_enable) {
+            this.on_enable()
+        }
+        else if (!value && this.on_disable) {
+            this.on_disable()
+        }
+    }
+
+    get visible_self() {return this._visible_self}
+    set visible_self(value) {
+        if (!value) {
+            this.color = [0,0,0,0]
+            this.model.color = 'rgba(0,0,0,0)'
+            this.text_color = 'rgba(0,0,0,0)'
+        }
+        else {
+            this.model.color = 'white'
+            this.text_color = 'white'
+        }
+        this._visible_self = value
+    }
+    get color() {return this._color}
+    set color(value) {
+        if (typeof value == "string" && value.startsWith('#')) {
+            value = hex_to_rgb(value)
+        }
+        else if (typeof value === 'number') {
+            value = hsv(0,0,value)
+        }
+        if (value.length == 3) {
+            value = [value[0], value[1], value[2], 255]
+        }
+        // print('set color:', value)
+        this._color = value
+        this.model.style.backgroundColor = `rgba(${value[0]},${value[1]},${value[2]},${value[3]})`
+    }
+    get scale_x() {return this._scale_x}
+    set scale_x(value) {
+        this.el.style.width = `${value*100}%`
+        this._scale_x = value
+    }
+    get scale_y() {return this._scale_y}
+    set scale_y(value) {
+        this.el.style.height = `${value*100}%`
+        this._scale_y = value
+    }
+    get scale() {return [this._scale_x, this._scale_y]}
+    set scale(value) {
+        if (typeof value == "number") {value = [value, value]}
+        this.scale_x = value[0]
+        this.scale_y = value[1]
+    }
+    get x() {return this._x}
+    set x(value) {
+        this.el.style.left = `${50+(value*100)}%`
+
+        this._x = value
+    }
+    get y() {return this._y}
+    set y(value) {
+        this.el.style.top = `${50+(-value*100)}%`
+        this._y = value
+    }
+    get z() {return this._z}
+    set z(value) {
+        this._z = value
+        this.el.style.zIndex = -value
+    }
+    get xy() {return [this._x, this._y]}
+    set xy(value) {
+        this.x = value[0]
+        this.y = value[1]
+    }
+    get xyz() {return [this._x, this._y, this._z]}
+    set xyz(value) {
+        this.x = value[0]
+        this.y = value[1]
+        this.z = value[2]
+    }
+    get position() {return this.xyz}
+    set position(value) {
+        if (value.length == 2) {return this.xy = value}
+        if (value.length == 3) {return this.xyz = value}
+    }
+    get origin() {return this._origin}
+    set origin(value) {
+        this.model.style.transform = `translate(${(-value[0]-.5)*100}%, ${(value[1]-.5)*100}%)`
+        this._origin = value
+    }
+    get rotation() {return this._rotation}
+    set rotation(value) {
+        this._rotation = value
+        this.el.style.transform = `translate(-50%, -50%) rotate(${value}deg)`
+    }
+
+    get texture() {return this._texture}
+    set texture(value) {
+        this._texture = value
+        if (!value) {
+            this.model.style.backgroundImage = 'none'
+            return
+        }
+
+        if (!value.endsWith('.gif') && !value.startsWith('data:')) {    // static image
+            this.model.style.backgroundImage = `url("${ASSETS_FOLDER}${value}")`
+            this.color = color.clear
+            return
+        }
+
+        if (value.endsWith('.gif')) {   // .gif (ensure animation replays on reuse)
+            this.model.style.backgroundImage = `url("${ASSETS_FOLDER}${value}?${random_int(0,999)}")`   // add random number so the gif restarts when setting .texture again
+            this.color = color.clear
+            return
+        }
+
+        if (value.startsWith('data:')) {
+            this.model.style.backgroundImage = `url("${value}")`
+            this.color = color.clear
+            return
+        }
+    }
+
+    get tileset_size() {return this._tileset_size}
+    set tileset_size(value) {
+        this._tileset_size = value
+        this.model.style.backgroundSize = `${value[0]*100}% ${value[1]*100}%`
+    }
+    get tile_coordinate() {return this._tile}
+    set tile_coordinate(value) {        // [0,0] is in lower left
+        this._tile = value
+        this.model.style.backgroundPosition = `${(this.tileset_size[0]-1)*value[0]*100}% ${(this.tileset_size[1]-1)*(this.tileset_size[1]-1-value[1])*100}%`
+    }
+
+    get roundness() {return this._roundness}
+    set roundness(value) {
+        this.model.style.borderRadius = `${value*Math.min(this.model.clientWidth, this.model.clientHeight)}px`
+        this._roundness = clamp(value, 0, .5)
+    }
+    get shadow() {return this._shadow}
+    set shadow(value) {
+        this._shadow = value
+        if (value === true) {
+            this.model.style.boxShadow = "5px 20px 40px black";
+        }
+        else if (value === false) {
+            this.model.style.boxShadow = 'none'
+        }
+        else {
+            this.model.style.boxShadow = value
+        }
+    }
+    get font() {return this.style.fontFamily}
+    set font(value) {
+        this.model.style.fontFamily = value
+    }
+
+    get text() {return this.model.textContent}
+    set text(value) {
+        this.model.innerHTML = value
+    }
+    get text_color() {return this.model.style.color}
+    set text_color(value) {
+        if (!(typeof value == "string")) {
+            // print('set color:', value)
+            var alpha = 255
+            if (value.length == 4) {
+                alpha = value[3]
+            }
+            value = `rgba(${value[0]},${value[1]},${value[2]},${alpha})`
+        }
+        this.model.style.color = value
+    }
+    get text_size() {return this._text_size}
+    set text_size(value) {
+        this._text_size = value
+        this.model.style.fontSize = `${value*scale}vh`
+    }
+
+    get text_origin() {return this._text_origin}
+    set text_origin(value) {
+        this._text_origin = value
+        this.model.style.display = 'flex'
+        this.model.style.textAlign = ['left', 'center', 'right'][(value[0]*2)+1]  // horizontally
+        this.model.style.justifyContent = ['left', 'center', 'right'][(value[0]*2)+1]  // horizontally
+        this.model.style.alignItems = ['flex-end', 'center', 'flex-start'][(value[1]*2)+1]  // vertically
+    }
+
+    get alpha() {return this.model.style.opacity}
+    set alpha(value) {
+        this._alpha = value
+        this.model.style.opacity = value
+    }
+    get padding() {return this._padding}
+    set padding(value) {
+        this._padding = value
+        this.model.style.padding = `${value}em`
+    }
+
+    get on_click() {return this._on_click}
+    set on_click(value) {
+        this._on_click = value
+        if (value && !this.ignore_collision) {
+            this.model.style.pointerEvents = 'auto'
+        }
+        else {this.model.style.pointerEvents = 'none'}
+    }
+    get on_double_click() {return this.ondblclick}
+    set on_double_click(value) {
+        this.ondblclick = value
+        if (value && !this.ignore_collision) {
+            this.model.style.pointerEvents = 'auto'
+        }
+        else {this.model.style.pointerEvents = 'none'}
+    }
+    get ignore_collision() {return this._ignore_collision}
+    set ignore_collision(value) {
+        this._ignore_collision = value
+        if (!value) {
+            this.model.style.pointerEvents = 'auto'
+        }
+        else {this.model.style.pointerEvents = 'none'}
+    }
+
+    get draggable() {return this._draggable}
+    set draggable(value) {
+        this._draggable = value
+        if (value) {
+            this.model.style.pointerEvents = 'auto'
+        }
+        else if (!this._on_click) {
+            this.model.style.pointerEvents = 'none'
+        }
+    }
+
+    animate(variable_name, target_value, duration=.1) {
+        // print('animate:', variable_name, target_value)
+        if (!this.enabled) {return false}
+        if (duration <= 1/60) {
+            this[variable_name] = target_value
+        }
+        let entity = this
+        // stop ongoing animation of this varibale
+        if (variable_name in entity.setTimeout_calls) {
+            for (const id of entity.setTimeout_calls[variable_name]) {
+                clearTimeout(id)
+                // print('clear:', id)
+            }
+        }
+        entity.setTimeout_calls[variable_name] = []
+        let start_value = entity[variable_name]
+
+        for (let i=0; i<=duration*60; i+=1) {
+            entity.setTimeout_calls[variable_name].push(
+                setTimeout(
+                    function anon() {
+                        if (!entity.enabled) {
+                            return false}
+                        var t = i / duration / 60
+                        entity[variable_name] = lerp(start_value, target_value, t)
+                    },
+                    1000*i/60
+                )
+            )
+        }
+        entity.setTimeout_calls[variable_name].push(
+            setTimeout(
+                function anon() {
+                    if (!entity.enabled) {
+                        return false}
+                        entity[variable_name] = target_value
+                    },
+                    1000*duration
+                )
+            )
+    }
+
+    fit_to_text() {
+        this.model.style.width = 'fit-content'
+        this.model.style.height = 'fit-content'
+    }
+
+    look_at(target_pos) {
+        this.rotation = -(Math.atan2(target_pos[1] - this.y, target_pos[0] - this.x)) * (180/Math.PI)
+    }
+
+    destroy_children() {
+        for (let _entity of this.children) {
+            _entity.el.remove()
+        }
+        this.children = []
+    }
+}
+
+function lerp(a, b, t) {
+    return ((1-t)*a) + (t*b)
+}
+function clamp(num, min, max) {
+  return num <= min ? min : num >= max ? max : num;
+}
+random_value = Math.random;
+
+function random_int(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function random_choice(list) {
+    return list[random_int(0, len(list)-1)]
+}
+function random_color() {
+    return rgb(Math.random(), Math.random(), Math.random())
+}
+
+function lists_are_equal(array_a, array_b) {
+    for (let i=0; i<array_a.length; i++) {
+        if (array_a[i] != array_b[i]) {
+            return false
+        }
+    }
+    return true
+}
+
+
+class Camera{
+  constructor(options=null) {
+      this.el = document.createElement('entity')
+      _game_window.appendChild(this.el)
+      this.el.className = 'entity'
+      // this.el.style.height = scene.style.height
+      // this.el.style.width = scene.style.width
+      this.el.id = 'camera'
+      this.children = []
+      this._x = 0
+      this._y = 0
+      this.fov = 1
+  }
+
+  get x() {return this._x}
+  set x(value) {
+      this._x = value
+      if (format == 'vertical') {
+          scene.style.left = `${50+(-value*100/this.fov)}%`
+      }
+      else {
+          scene.style.left = `${50+(-value*100/asp_x/this.fov)}%`
+      }
+  }
+  get y() {return this._y}
+  set y(value) {
+      this._y = value
+      if (format == 'vertical') {
+          scene.style.top = `${50+(value*100*asp_y/this.fov)}%`
+      }
+      else {
+          scene.style.top = `${50+(value*100/this.fov)}%`
+      }
+  }
+  get xy() {return [this._x, this._y]}
+  set xy(value) {
+      this.x = value[0]
+      this.y = value[1]
+  }
+  get xyz() {return [this._x, this._y, this._z]}
+  set xyz(value) {
+      this.x = value[0]
+      this.y = value[1]
+      // this.z = value[2]
+  }
+  get position() {return this.xyz}
+  set position(value) {
+      if (value.length == 2) {this.xy = value}
+      if (value.length == 3) {this.xy = [value[0], value[1]]}
+  }
+  get rotation() {return this._rotation}
+  set rotation(value) {
+      this._rotation = value
+      scene.style.transform = `rotate(${-value}deg)`
+  }
+  get fov() {return self._fov}
+  set fov(value) {
+      self._fov = value
+      scene.style.width = `${1/value*100/asp_x}%`
+
+      if (format == 'vertical') {
+          scene.style.height = `${1/value*100/asp_x*asp_y}%`
+      }
+      else {
+          scene.style.height = `${1/value*100/asp_y}%`
+      }
+
+  }
+}
+camera = new Camera({})
+camera.ui = new Entity({parent:camera, name:'ui', scale:[1,1], visible_self:false, z:-100, color:color.clear})
+
+class Button extends Entity{
+    constructor(options=false) {
+        let settings = {parent:camera.ui, scale:[.2,.2], roundness:.2, text_origin:[0,0], }
+        for (const [key, value] of Object.entries(options)) {
+            settings[key] = value
+        }
+        super(settings)
+    }
+}
+
+class Text extends Entity{
+    constructor(options=false) {
+        let settings = {parent:camera.ui, roundness:.05, padding:.75, z:-1, color:color.clear, scale_x:.8}
+
+        for (const [key, value] of Object.entries(options)) {
+            settings[key] = value
+        }
+        super(settings)
+    }
+}
+
+function Canvas(options) {
+    var e = new Entity(options)
+    var canvas = document.createElement('canvas');
+    e.el.appendChild(canvas)
+
+    return e
+}
+
+function Scene(name='', options=false) {
+    settings = {visible_self:false, on_enter:null}
+    for (const [key, value] of Object.entries(options)) {
+        settings[key] = value
+    }
+    settings['name'] = name
+    _entity = new Entity(settings)
+    _entity.bg = new Entity({parent:_entity, scale_y:aspect_ratio})
+    _entity.bg.texture = name + '.jpg'
+    state_handler.states[name] = _entity
+    return _entity
+}
+class StateHandler {
+    constructor (options) {
+        let settings = {states:{}, fade:false}
+        for (const [key, value] of Object.entries(options)) {
+            settings[key] = value
+        }
+
+        camera.overlay = new Entity({parent:camera, name:'overlay', color:color.black, alpha:0, z:-1, scale:[1.1,aspect_ratio*1.1]})
+        this.states = settings['states']
+        this.fade = settings['fade']
+        this.state = Object.keys(this.states)[0]
+    }
+
+    get state() {return this._state}
+    set state(value) {
+        if (this.fade && (value != this._state)) {
+            camera.overlay.animate('alpha', 1, .1)
+            setTimeout(() => {
+                camera.overlay.animate('alpha', 0, 1)
+                this.hard_state = value
+            }, 100)
+        }
+        else {
+            this.hard_state = value
+        }
+    }
+    set hard_state(value) {     // set the state without fading
+        // print('set state to:', value)
+        if (this._state === value) {
+            return
+        }
+        for (const [key, entity] of Object.entries(this.states)) {
+            print('----', key, value)
+            if (key == value || value == entity) {
+                entity.enabled = true
+                if (entity.on_enter) {
+                    entity.on_enter()
+                }
+            }
+            else {
+                entity.enabled = false}
+            }
+
+        this._state = value
+    }
+}
+
+state_handler = new StateHandler({}, true)
+
+function goto_scene(scene_name, fade=True) {
+    if (!fade) {
+        state_handler.hard_state = scene_name
+        return
+    }
+    state_handler.state = scene_name
+}
+
+class HealthBar extends Entity {
+    constructor(options=false) {
+        let settings = {min:0, max:100, color:'#222222', bar_color:'bb0505', scale:[.8,.05], roundness:.25}
+        for (const [key, value] of Object.entries(options)) {
+            settings[key] = value
+        }
+        super(settings)
+        this.bar = new Entity({parent:this, origin:[-.5,0], x:-.5, roundness:.25, scale_x:.25, color:settings['bar_color']})
+        this.text_entity = new Entity({parent:this, text:'hii', text_color:'#dddddd', color:color.clear, text_origin:[0,0], text_size:2})
+        this.value = settings['max']
+    }
+
+    get value() {return this._value}
+    set value(value) {
+        value = clamp(value, this.min, this.max)
+        // print('set value:', value)
+        this._value = value
+        this.bar.scale_x = value / this.max
+        this.text_entity.text = `${value} / ${this.max}`
+    }
+    get bar_color() {return this.bar.color}
+    set bar_color(value) {
+        if (this.bar) {
+            this.bar.color = value
+        }
+    }
+}
+class RainbowSlider extends Entity {
+    constructor(options=false) {
+        let settings = {min:1, max:5, c:1, color:'#222', text_color:'#ddd', scale:[.8,.05], roundness:.25, text_size:2, show_text:false, show_lines:false, gradient:['#CCCCFF', '#6495ED', '#40E0D0', '#9FE2BF', '#28ccaa'], }
+        for (const [key, value] of Object.entries(options)) {
+            settings[key] = value
+        }
+        super(settings)
+        this.bar = new Entity({parent:this, origin:[-.5,0], x:-.5, roundness:.25, scale_x:.25})
+        this.text_entity = new Entity({parent:this, text:'000', text_color:settings['text_color'], color:color.clear, text_origin:[0,0], text_size:settings['text_size'], enabled:settings['show_text']})
+        this.gradient = settings['gradient']
+        this.value = settings['default']
+        this.active = false
+        // this.color = settings['color']
+
+        if (settings['show_lines']) {
+            this.texture= 'tile.png'
+            this.tileset_size = [1/settings['max'],1]
+        }
+        this.on_click = function() {
+            this.value = int((mouse.point[0]+.5+(1/this.max)) * this.max)
+            this.active = true
+        }
+    }
+
+    update() {
+        if (this.active && mouse.left && mouse.hovered_entity === this) {
+            this.value = int((mouse.point[0]+.5+(1/this.max)) * this.max)
+        }
+    }
+
+    input(key) {
+        if (key === 'left mouse up') {
+          this.active = false
+        }
+    }
+
+    get value() {return this._value}
+    set value(value) {
+        value = clamp(value, this.min, this.max)
+        this._value = value
+        this.bar.scale_x = value / this.max
+        this.text_entity.text = `${value} / ${this.max}`
+        this.bar.color = this.gradient[clamp(int(value)-1, 0, len(this.gradient)-1)]
+        if (this.on_value_changed) {
+            this.on_value_changed()
+        }
+    }
+}
+
+class InputField extends Entity {
+    constructor(options=false) {
+        let settings = {roundness:.5, color:color.smoke, text_size:2, value:''}
+        for (const [key, value] of Object.entries(options)) {
+            settings[key] = value
+        }
+        super(settings)
+        this.input_field = document.createElement('input')
+        this.model.appendChild(this.input_field)
+        this.input_field.onkeyup = () => {
+            if (this.on_value_changed) {
+                this.on_value_changed()
+            }
+        }
+        this.value = settings['value']
+    }
+
+    get value() {return this.input_field.value}
+    set value(x) {
+        if (this.input_field) {
+            this.input_field.value = x
+        }
+    }
+}
+
+
+mouse = {x:0, y:0, position:[0,0], left:false, middle:false, pressure:0.0, hovered_entity:null,
+    set texture(name) {     // TODO: fix this
+        document.body.style.cursor = `url('${name}', auto)`
+        // print('spegijseofijseofijseiofddddddddddddddddddddddddddddddd', document.body.style)
+    }
+}
+
+function _mousedown(event) {
+    _input(event)
+    if (event.button > 0) {
+        return
+    }
+
+    // if (event.pointerType == 'mouse' || event.pointerType == 'touch') {
+    //     mouse.pressure = 1
+    // }
+    // else {
+    //     mouse.pressure = event.originalEvent.pressure
+    // }
+    _update_mouse_position(event)
+    _handle_mouse_click(event)
+}
+document.addEventListener('pointerdown', _mousedown)
+
+
+time_of_press = 0
+function _handle_mouse_click(e) {
+    mouse.left = true
+    element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
+    entity = entities[element_hit.entity_index]
+    // print(element_hit, entity.on_click)
+    if (!element_hit || entity === undefined || entity.on_click === undefined) {
+        mouse.swipe_start_position = mouse.position
+        time_of_press = time
+    }
+
+    // print(element_hit)
+    if (element_hit && entity) {
+        if (entity.on_click) {
+            entity.on_click()
+        }
+        if (entity.draggable) {
+            window_position = _game_window.getBoundingClientRect()
+            entity.start_offset = [
+                ((((e.clientX - window_position.left) / _game_window.clientWidth) - .5) * asp_x*camera.fov) - entity.x,
+                (-(((e.clientY - window_position.top) / _game_window.clientHeight ) - .5) / asp_y*camera.fov) - entity.y
+                ]
+            entity.dragging = true
+        }
+    }
+}
+
+function _mouseup(event) {
+    mouse.click_end_position = mouse.position
+    if (time - time_of_press < .15) {
+        diff_x = mouse.position[0] - mouse.swipe_start_position[0]
+        diff_y = mouse.position[1] - mouse.swipe_start_position[1]
+
+        if (diff_x < -.05 && abs(diff_y) < .15) {
+            _input('swipe left')
+        }
+        if (diff_x > .05 && abs(diff_y) < .15) {
+            _input('swipe right')
+        }
+        if (diff_y > .05 && abs(diff_x) < .15) {
+            _input('swipe up')
+        }
+        if (diff_y < -.05 && abs(diff_x) < .15) {
+            _input('swipe down')
+        }
+    }
+
+    _input(event)
+    mouse.left = false;
+    for (var e of entities) {
+        if (e.dragging) {
+            e.dragging = false
+            if (e.drop) {
+                e.drop()
+            }
+        }
+    }
+}
+document.addEventListener('pointerup', _mouseup)
+
+
+function _update_mouse_position(event) {
+    window_position = _game_window.getBoundingClientRect()
+    event_x = event.clientX
+    event_y = event.clientY
+    mouse.x = (((event_x - window_position.left) / _game_window.clientWidth) - .5) * asp_x
+    mouse.y = -(((event_y - window_position.top) / _game_window.clientHeight ) - .5) / asp_y
+    mouse.position = [mouse.x, mouse.y]
+    mouse.pressure = event.pressure * 2
+}
+
+function _onmousemove(event) {
+    // print('move')
+    _update_mouse_position(event)
+
+    if (!mouse.hovered_entity) {
+        mouse.point = null
+    }
+    else {
+        var rect = event.target.getBoundingClientRect();
+        var x = event.clientX - rect.left; //x position within the element.
+        var y = event.clientY - rect.top;  //y position within the element.
+        mouse.point = [(x/rect.width)-.5, .5-(y/rect.height)]
+    }
+    element_hit = document.elementFromPoint(event.pageX - window.pageXOffset, event.pageY - window.pageYOffset);
+    _entity = entities[element_hit.entity_index]
+    if (_entity) {
+        mouse.hovered_entity = _entity
+    }
+    else {
+        mouse.hovered_entity = null
+    }
+    for (var e of entities) {
+        if (e.dragging) {
+            if (!e.lock_x) {
+                // print(mouse.x, e.start_offset[0])
+                e.x = mouse.x*camera.fov - e.start_offset[0]
+                e.x = clamp(e.x, e.min_x, e.max_x)
+                if (e.snap_x) {
+                    hor_step = 1 / e.snap_x
+                    e.x = round(e.x * hor_step) / hor_step
+                }
+            }
+            if (!e.lock_y) {
+                e.y = mouse.y*camera.fov - e.start_offset[1]
+                e.y = clamp(e.y, e.min_y, e.max_y)
+                if (e.snap_y) {
+                    hor_step = 1 / e.snap_y
+                    e.y = round(e.y * hor_step) / hor_step
+                }
+            }
+            if (e.while_dragging) {
+                // print('d', mouse.position, mouse.point)
+                e.while_dragging()
+            }
+        }
+    }
+}
+
+document.addEventListener('pointermove', _onmousemove)
+
+// palette = [
+//     '#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8',
+//     '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA'
+//     ]
+// let filter_code = ''
+// for (i = 0; i < palette.length; i++) {
+//     let rgb = hex_to_rgb(palette[i])
+//     let r = rgb.r/255
+//     let g = rgb.g/255
+//     let b = rgb.b/255
+//     let redToBlue = `${r**2.4} 0 0 0 0  ${g**2.4} 0 0 0 0  ${b**2.4} 0 0 0 0  0 0 0 1 0`;
+//     filter_code += `
+//         <svg xmlns="http://www.w3.org/2000/svg">
+//             <filter id="tint_filter_${i}">
+//                 <feColorMatrix type="matrix" values="${redToBlue}" />
+//             </filter>
+//         </svg>
+//     `
+// }
+// filters = document.createElement('div')
+// _game_window.appendChild(filters)
+// filters.innerHTML = filter_code
+// class TintableTile extends Entity {
+//     get tint() {return this._tint}
+//     set tint(value) {
+//         this._tint = value
+//         if (value < 16) {
+//             this.el.model.style.filter = `url(#tint_filter_${value})`
+//         }
+//     }
+//
+// }
+timeout_id = 0
+function invoke(func, delay) {
+    timeout_id = setTimeout(func, delay*1000)
+}
+function after(delay, func) {
+    timeout_id = setTimeout(func, delay*1000)
+}
+function stop_all_invokes() {
+    for (let i = timeout_id; i >= 0; i--) {
+        window.clearInterval(i);
+    }
+}
+
+function distance(a, b) {
+    return sqrt((b[0] - a[0])**2 + (b[1] - a[1])**2)
+}
+
+function magnitude(vec) {
+    const x = vec[0], y = vec[1]
+    const magSq = x * x + y * y
+    return Math.sqrt(magSq)
+}
+
+function normalize(vec) {
+    vec_length = magnitude(vec)
+    if (vec_length == 0) {
+        return vec
+    }
+    return [vec[0] / vec_length, vec[1] / vec_length]
+}
+
+function dot_product(vector1, vector2) {
+  let result = 0;
+  for (let i = 0; i < vector1-length; i++) {
+    result += vector1[i] * vector2[i];
+  }
+  return result;
+}
+
+
+function sample(population, k){
+    if(!Array.isArray(population))
+        throw new TypeError("Population must be an array.");
+    var n = population.length;
+    if(k < 0 || k > n)
+        throw new RangeError("Sample larger than population or is negative");
+
+    var result = new Array(k);
+    var setsize = 21;   // size of a small set minus size of an empty list
+
+    if(k > 5)
+        setsize += Math.pow(4, Math.ceil(Math.log(k * 3) / Math.log(4)))
+
+    if(n <= setsize){
+        // An n-length list is smaller than a k-length set
+        var pool = population.slice();
+        for(var i = 0; i < k; i++){          // invariant:  non-selected at [0,n-i)
+            var j = Math.random() * (n - i) | 0;
+            result[i] = pool[j];
+            pool[j] = pool[n - i - 1];       // move non-selected item into vacancy
+        }
+    }else{
+        var selected = new Set();
+        for(var i = 0; i < k; i++){
+            var j = Math.random() * n | 0;
+            while(selected.has(j)){
+                j = Math.random() * n | 0;
+            }
+            selected.add(j);
+            result[i] = population[j];
+        }
+    }
+
+    return result;
+}
+
+// function grid_layout(options=false):
+//     let settings = dict(l=[], spacing=[1.1,1.1], offset=[0,0])
+//     for (const [key, value] of Object.entries(options)) {
+//         settings[key] = value
+//     }
+//     x = 0
+//     y = 0
+//     for i, e in l:
+//         e.xy = [(x * l[0].scale_x * spacing[0]) + offset[0],
+//                 (-y * l[1].scale_y * spacing[1]) + offset[1]]
+//
+//         x += 1
+//         if x >= max_x:
+//             y += 1
+//             x = 0
+
+function destroy(_entity) {
+    if (!_entity) {
+        return
+    }
+    if (_entity._parent && _entity._parent._children) {
+        _entity._parent._children.remove(_entity)
+    }
+    _entity.el.remove()
+    //delete _entity
+}
+
+function save_system_save(name, value) {localStorage.setItem(name, JSON.stringify(value))}
+function save_system_load(name, fallback=0) {
+    if (!localStorage.hasOwnProperty(name)) {
+        return fallback
+    }
+    return JSON.parse(localStorage.getItem(name))
+    }
+function save_system_clear() {localStorage.clear()}
+
+time = 0
+delta_time = 1/60
+let start, _prev_time;
+update = null
+function _step(_timestamp) {
+    if (start === undefined) {
+        start = _timestamp;
+    }
+    const elapsed = _timestamp - start;
+    if (update) {
+        update()
+    }
+
+    for (var e of entities) {
+        if (e.update && e.enabled) {
+            e.update()
+        }
+    }
+
+    time = _timestamp / 1000
+    delta_time = (_timestamp - _prev_time) / 1000
+    _prev_time = _timestamp
+    window.requestAnimationFrame(_step);
+}
+window.requestAnimationFrame(_step)
+
+
+held_keys = {}
+all_keys = `<zxcvbnm,.-asdfghjkløæ'qwertyuiopå¨1234567890+`
+for (var i = 0; i < all_keys.length; i++) {
+    held_keys[all_keys[i]] = 0
+}
+held_keys['mouse left'] = false
+held_keys['mouse middle'] = false
+_renamed_keys = {'arrowdown':'down arrow', 'arrowup':'up arrow', 'arrowleft':'left arrow', 'arrowright':'right arrow', ' ':'space'}
+
+input = null
+function _input(event) {
+    if (event instanceof Event) {
+        if (event.type == 'wheel') {
+            if (event.deltaY > 0) {key = 'scroll down'}
+            else {key = 'scroll up'}
+        }
+        else if (event.type == 'pointerdown') {
+            if (event.button == 0) {key = 'left mouse down'; mouse.left=true; held_keys['mouse left']=true}
+            else if (event.button == 1) {key = 'middle mouse down'; mouse.middle=true; held_keys['mouse middle']=true}
+            else if (event.button == 2) {key = 'right mouse down'; mouse.right=true; held_keys['mouse right']=true}
+        }
+        else if (event.type == 'pointerup') {
+            if (event.button == 0) {key = 'left mouse up'; mouse.left=false; held_keys['mouse left']=false}
+            else if (event.button == 1) {key = 'middle mouse up'; mouse.middle=false; held_keys['mouse middle']=false}
+            else if (event.button == 2) {key = 'right mouse up'; mouse.right=false; held_keys['mouse right']=false}
+        }
+
+        else {
+            key = event.key.toLowerCase()
+        }
+    }
+    else {  // is already a string, like swipe left, etc.
+        key = event
+    }
+
+    if (key in _renamed_keys) {
+        key = _renamed_keys[key]
+    }
+
+    if ((event instanceof Event) && event.type == "keyup") {
+        held_keys[key] = 0
+        key = key + ' up'
+    }
+    else if (!held_keys[key]){
+        held_keys[key] = 1
+    }
+    else if (event.type == "keydown") {  // prevent key repeat
+        return
+    }
+
+
+    for (var e of entities) {
+        if (e.input && e.enabled) {
+            e.input(key)
+        }
+    }
+    if (input) {
+        input(key)
+    }
+}
+document.addEventListener('keydown', _input)
+document.addEventListener('keyup', _input)
+document.addEventListener('wheel', _input); // modern desktop
+
+
+// triple click in the lower right to enter fullscreen
+_hidden_fullscreen_button = new Button({parent:camera.ui, xy:bottom_right, roundness:.5, color:color.red, last_pressed_timestamp:-1, sequential_taps:0, visible_self:false})
+_hidden_fullscreen_button.on_click = function() {
+    // print(time - _hidden_fullscreen_button.last_pressed_timestamp)
+    if (time - _hidden_fullscreen_button.last_pressed_timestamp < .25) {
+        _hidden_fullscreen_button.sequential_taps += 1
+        if (_hidden_fullscreen_button.sequential_taps >= 3) {
+            set_fullscreen(!fullscreen)
+            _hidden_fullscreen_button.sequential_taps = 0
+        }
+    }
+    else {  //reset
+        _hidden_fullscreen_button.sequential_taps = 1
+    }
+    _hidden_fullscreen_button.last_pressed_timestamp = time
+}
+
+function _fullscreenchange() {
+    set_scale(1)
+}
+document.addEventListener('fullscreenchange', _fullscreenchange)
+
+set_orientation('vertical')
+
+</script>
+
+<script type='text/sunsnake'>
+__textures_as_base_64 = {'frame.png': 'data:image/png;base64,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', 'sparkle_impact_2.gif': 'data:image/png;base64,R0lGODlhQABAAKIEAP/////MZv9m/2b//////wAAAAAAAAAAACH5BAkEAAQALAAAAABAAEAAAAOlSLrc/jDKSau9OOvNu/9gKI5kaZ5oqlYAsIpt+4KxO3/y7dV6x/ebHzAjHF6KRlYsSbQxLchnJCp9UKuL2vWp7TqrXi82HJaSydyzOKlGG9tlk6xLgMPrWnzTzu9/KX6BdxhzeYJidDklh0yBaX1mfGODk2dYDXGXDluanJeelX+amKKjWUumm6ipDKBgq6wKrpGKsbKlqbOPuKa1tr/AwcLDxKkJACH5BAkEAAQALAAAAABAAEAAAAPdSLrc/jDKSau9OOvNu/9gKI5kaZ6RgJ7qSrYX7DqCHM9NbWM7qn+91w9Y8w1Bx5EuuFkKk0hnFBpaMi1WIxWbXXV5X6+UO3ZZi4pz+nx9st9sHANOL8sJ9XzbpKffF31wf2tnAYaGgoN4hYeHb4qLS42TapCMk4hhf5eYlYqclJp3oI2eg2yYAXGfb6GicoGrm7GysLS1Zre4YrqvfL2mvImAfjPFEMMsjxTJbnsPzVV2HL4d09bX1Fse2RrbU88TaMLc4VPa5lHUlulpkGs878RY8t719/j5+vv8igkAIfkECQQABAAsAAAAAEAAQAAAA35Iutz+MMpJq7046827/2AojmRpnmiqruwYeMHbxrJG1yrN3av+8ScgTEgidm64kPEXK72Srah0Sq1ar9isdsvter/gcBgqJizHzXKDrG673/C4fE6v2+/4PDYdVJr5Tj5HOmxKhRRIh4aAF2dBgo2QPYwViiiWepmam5yddwkAIfkECQQABAAsAAAAAEAAQAAAA11Iutz+MMpJq704683tGF24gWJ5kWYqoWrbfG68wHJt33iu73zv/8CgcEgsGo/IpHLJbDqf0Kh0evpYWcGrVaGlUb/gsHhMLpvP6LR6zW673/C4fE6vl7BPfNPrSgAAIfkEBQcABAAsAAAAAEAAQAAAA0dIutz+MMpJq7046827/2AojmRpnmiqrmzrvnAsz3Rt33iu73zv/8CgcEgsGo/IpHLJbDqf0Kh0Sq1ar9isdsvter/gsJiQAAA7'}
+ 
+// ss code block one
+print('one')
+Entity(texture=__textures_as_base_64['frame.png'], scale=.5, x=-.25)
+
+// ss code block two
+Entity(texture=__textures_as_base_64['sparkle_impact_2.gif'], scale=.5, x=.25)
+print('two: yay!')
+set_window_color('#123')
+
+</script>
+
+<script type='text/javascript'>
+print = console.log
+_class_names = ['Entity', 'Button', 'Text', 'HealthBar', 'RainbowSlider', 'InputField', 'StateHandler']
+_language = 'sunsnake'
+
+Array.prototype.at = function(i) {
+    if (i < 0) {
+        i = this.length + i
+    }
+    return this[i]
+}
+
+try {''.replaceAll('', '')} // make sure replaceAll is supported, else implement it.
+catch {String.prototype.replaceAll = function replaceAll(search, replace) { return this.split(search).join(replace); }}
+
+
+function compile(script) {
+    try {t = performance.now()} catch {}
+    // start parsing
+    script = script.replaceAll(',\n', ',')
+    script = script.replaceAll('(\n', '(')
+    script = script.replaceAll('{\n', '{')
+    script = script.replaceAll('[\n', '[')
+    script = script.replaceAll('=\n', '=')
+    script = script.replaceAll('+\n', '+')
+    script = script.replaceAll(' == ', ' === ')
+    script = script.replaceAll('.index(', '.indexOf(')
+
+    var all_lines = script.split('\n');
+    var lines = []
+    lines.push('\n')
+
+    strings = []
+    string_index = 0
+    const regexp = '\'(.*?)\'';
+    const regexp_backtick = '\`(.*?)\`';
+
+    extra_replacements = []
+    is_in_multiline_string = false;
+
+    for (var i=0; i<all_lines.length; i++) {
+        if (!all_lines[i].trim()) {
+            // print('skip line')
+            continue
+        }
+        line = all_lines[i].trimStart()
+        if (line.startsWith('//')) {
+            continue
+        }
+        if (line.startsWith('#')) {
+            continue
+        }
+        if (all_lines[i].includes(': #')) {
+            all_lines[i] = all_lines[i].split(': #')[0] + ':'
+        }
+        if (line == `'language=python'`) {
+            _language = 'python'
+        }
+        else if (line == `'language=sunsnake'`) {
+            _language = 'sunsnake'
+        }
+        if (_language == 'python') {
+            continue
+        }
+        // if (is_in_multiline_string && !line.trimEnd().endsWith("'''")) {
+        //   lines.push(`"${all_lines[i]}" +`)
+        //   continue
+        // }
+        // if (line.trimEnd().endsWith("'''")) {
+        //     is_in_multiline_string = !is_in_multiline_string
+        //     if (is_in_multiline_string) {
+        //         all_lines[i] = line.slice(0,-3) + '"" +'
+        //     }
+        //     else {
+        //       all_lines[i] = line.slice(0,-3) + '""'
+        //     }
+        // }
+        // remove text so it doesn't get parsed as code.
+        quotes = [...all_lines[i].matchAll(regexp)];
+        quotes.push(...all_lines[i].matchAll(regexp_backtick))
+
+        for (var j=0; j<quotes.length; j++) {
+            if (quotes[j][1].length > 0) {
+                strings.push(quotes[j][1])
+                // print('TEXT_CONTENT_$', string_index, quotes[j][1])
+                all_lines[i] = all_lines[i].replace(`'${quotes[j][1]}'`, `[TEXT_CONTENT_${string_index}]`)
+                string_index += 1
+            }
+        }
+
+        // after keyword for easier invoke()
+        if (line.startsWith('after ') && all_lines[i].trimEnd().endsWith(':')) {
+            start_indent = get_indent(all_lines[i])
+            all_lines[i] = all_lines[i].replaceAll('after ', 'after(')
+            all_lines[i] = all_lines[i].slice(0,-1) + ', function()'
+            for (var j=i+1; j<all_lines.length; j++) {
+                if (get_indent(all_lines[j]) <= start_indent) {
+                    break
+                }
+            }
+        }
+
+        if (all_lines[i].startsWith('class ')) {
+          class_name = all_lines[i].slice(6).split(' ')[0]
+          print('found class:', class_name)
+            _class_names.push(class_name)
+        }
+
+        lines.push(all_lines[i])
+    }
+
+    for (var i=0; i<lines.length; i++) {
+        if (lines[i].endsWith('\\')) {
+            continue
+        }
+        if (lines[i].trimStart().startsWith('sunsnake.define(')) {
+            content = lines[i].slice(16, -1)
+            const [key, ...rest] = content.split(',')
+            const value = rest.join(',')
+            content = [key, value]
+            extra_replacements.push(content)
+            lines[i] = ''
+            continue
+        }
+        for (e of extra_replacements) {
+            lines[i] = lines[i].replaceAll(e[0], e[1])
+        }
+        lines[i] = lines[i].replaceAll(' and ', ' && ')
+        lines[i] = lines[i].replaceAll(' or ', ' || ')
+        lines[i] = lines[i].replaceAll(' not ', ' ! ')
+        lines[i] = lines[i].replaceAll('(not ', '(! ')
+        lines[i] = lines[i].replaceAll('def ', 'function ')
+        lines[i] = lines[i].replaceAll('def():', 'function()')
+        lines[i] = lines[i].replaceAll('.append(', '.push(')
+        lines[i] = lines[i].replaceAll('.add(', '.push(')
+        lines[i] = lines[i].replaceAll('.sum()', '.reduce((a, b) => a + b, 0)')
+        lines[i] = lines[i].replaceAll('[-1]', '.at(-1)')
+        lines[i] = lines[i].replaceAll(' # ', ' //')   // comments
+
+        // list comprehention
+        if (lines[i].includes('[') && lines[i].includes(']') && lines[i].includes(' for ') && lines[i].includes(' in ') && !lines[i].endsWith(':') && !lines[i].includes('[[')) {
+            // remove part before list comprehension
+            if (lines[i].includes(' = [')) {
+                code_before_list_comprehension = lines[i].split(' = [')[0] + ' = '
+                list_comprehension = lines[i].split(' = [')[1]
+            }
+            else {
+                code_before_list_comprehension = lines[i].split('[')[0]
+                list_comprehension = lines[i].split('[')[1]
+            }
+
+            code_after_list_comprehension = list_comprehension.substring(list_comprehension.lastIndexOf(']')+1)
+            list_comprehension = list_comprehension.substring(0, list_comprehension.lastIndexOf(']'))
+            // print('code_after_list_comprehension:', code_after_list_comprehension)
+            // print('list_comprehension:', list_comprehension)
+
+            first_var =  list_comprehension.split(' for ')[0]
+            element_name = list_comprehension.split(' for ')[1].split(' in ')[0]
+
+            target_list = list_comprehension.split(' in ')[1]
+            if (target_list.includes(' if ')) {
+                target_list = target_list.split(' if ')[0]
+            }
+
+            condition = ''
+            if (list_comprehension.includes(' if ')) {
+                condition = list_comprehension.split(target_list)[1].split(' if ')[1]    // get the part after the target list and remove the if and the last ]
+            }
+
+            map_code = ''
+            if (first_var != element_name) {
+                map_code = `.map(${element_name} => ${first_var})`
+            }
+
+            filter_code = ''
+            if (condition != '') {
+                filter_code = `.myCustomFilter(${element_name} => {if (${condition}) return ${element_name}})`
+            }
+
+            lines[i] = `${code_before_list_comprehension}${target_list}${map_code}${filter_code}${code_after_list_comprehension}`
+        }
+
+        if (lines[i].endsWith(':')) {
+            lines[i] = lines[i].slice(0,-1)
+        }
+
+        // ifs
+        if (lines[i].trimStart().startsWith('if ')) {
+            lines[i] = lines[i].replace('if ', 'if (')
+            lines[i] = lines[i] + ')'
+        }
+        // elifs
+        else if (lines[i].trimStart().startsWith('elif ')) {
+            lines[i] = lines[i].replace('elif ', 'else if (')
+            lines[i] = lines[i] + ')'
+        }
+
+        // dict iteration
+        // print('ITERATE DICT', lines[i].trimStart().startsWith('for key, value in '), lines[i].includes('.items()'))
+        else if (lines[i].trimStart().startsWith('for key, value in ') && lines[i].includes('.items()')) {
+            print('ITERATE DICT')
+            var dict_name = lines[i].split('for key, value in ')[1].split('.items()')[0]
+            lines[i] = lines[i].replace('for key, value in ', 'for (let [key, value] of ')
+            lines[i] = lines[i].replace(`${dict_name}.items()`, `Object.entries(${dict_name}))`)
+        }
+
+        // for loops
+        else if (lines[i].trimStart().startsWith('for ') && lines[i].includes(' in ')) {
+            start = lines[i].split('for ')[0]   // keep indentation
+            elements = lines[i].split('for ')[1].split(' in ')[0]
+            array = lines[i].split(' in ')[1]
+
+            // normal for loop
+            if (!elements.includes(', ')) {
+                lines[i] = lines[i].replace('for ', 'for (var ')
+                lines[i] = lines[i].replace(' in ', ' of ')
+                lines[i] = lines[i] + ')'
+            }
+            // auto enumerate, match 'for ?, ? in ?'
+            else {
+                elements = `[${elements}]`
+                if (!array.startsWith('enumerate(')) {
+                    array = `enumerate(${array})`
+                }
+                lines[i] = `${start}for (let ${elements} of ${array})`
+            }
+
+        }
+
+        // is in list
+        if (lines[i].includes(' in ') && !lines[i].includes('for ')) {
+            word_before_in = lines[i].split(' in ')[0].split(' ').pop()
+            if (word_before_in.startsWith('(')) {
+                word_before_in = word_before_in.slice(1) // remove first and last
+            }
+            // print('word before:', word_before_in)
+            word_after_in =  lines[i].split(' in ')[1].split(' ')[0]
+            if (word_after_in.endsWith(')') && !word_after_in.endsWith('()')) {
+                word_after_in = word_after_in.slice(0,-1)
+            }
+            // print('word after:', word_after_in)
+            lines[i] = lines[i].replace(`${word_before_in} in ${word_after_in}`, `${word_after_in}.includes(${word_before_in})`)
+        }
+
+        // multiline string wrappend in triple backticks```
+        if (!is_in_multiline_string && lines[i].trimEnd().endsWith('```') && lines[i].trim() != '```') {    // start
+            is_in_multiline_string = true
+            lines[i] = lines[i].replace('```', '(')
+        }
+        else if (is_in_multiline_string && !lines[i].includes('```')) {
+            lines[i] = '    '.repeat(get_indent(lines[i])) + '`' + lines[i].trimStart() + '\n` +'
+        }
+        else if (is_in_multiline_string && lines[i].includes('```')) {   // end
+            is_in_multiline_string = false
+            lines[i] = lines[i].replace('```', '``)')
+        }
+
+
+        for (var class_name of ['dict', ]) {
+            if (lines[i].includes(`${class_name}({`)) {
+                continue
+            }
+            if (lines[i].startsWith(`${class_name}(`) || lines[i].includes(` ${class_name}(`)) {
+                lines[i] = convert_arguments(lines[i], class_name)
+            }
+        }
+
+        for (var class_name of _class_names) {
+            is_first_word = lines[i].startsWith(`${class_name}(`) ? '' : ' '        // don't add space if line starts with 'Entity(', do add otherwise, to ensure we match the whole name
+            if (lines[i].includes(`${is_first_word}${class_name}(`)) {
+                lines[i] = lines[i].replace(`${is_first_word}${class_name}(`, `${is_first_word}new ${class_name}(`)
+                lines[i] = convert_arguments(lines[i], class_name)
+            }
+            if (lines[i].startsWith(` new `)) {
+                lines[i] = lines[i].trimStart()
+            }
+        }
+
+        for (var n=0; n<10; n++) {
+            lines[i] = lines[i].replaceAll(`${n}ms`, `${n}*.001`)
+            lines[i] = lines[i].replaceAll(`${n}s`, `${n}`)
+            lines[i] = lines[i].replaceAll(`${n}m`, `${n}*60`)
+            lines[i] = lines[i].replaceAll(`${n}h`, `${n}*60*60`)
+            lines[i] = lines[i].replaceAll(` in ${n}:`, ` in range(${n}):`)
+            lines[i] = lines[i].replaceAll(`${n}%`, `${n}*.01`)
+        }
+    }
+    // add brackets based on indentation
+    current_indent = 0
+    after_statement_indents = []
+
+    for (var i=1; i<lines.length; i++) {
+        if (lines[i-1].endsWith('=') || lines[i-1].endsWith('+') || lines[i-1].endsWith('(')) {
+            continue
+        }
+        prev_line_indent = get_indent(lines[i-1])
+        current_line_indent = get_indent(lines[i])
+
+        if (current_line_indent > prev_line_indent) {
+            lines[i-1] += ' {'
+            current_indent = current_line_indent
+        }
+        if (current_line_indent < prev_line_indent) {
+            for (var j of range(current_indent - current_line_indent)) {
+                lines[i-1] += '\n' + '    '.repeat(current_indent-j-1) + '}'
+
+                if (after_statement_indents.at(-1) === current_indent-j-1) {
+                    lines[i-1] += ')'
+                    after_statement_indents.pop()
+                }
+            }
+            current_indent = current_line_indent
+        }
+        if (lines[i].trimStart().startsWith('after(')) {
+            after_statement_indents.push(current_indent)
+        }
+    }
+
+    new_line = ''
+    for (var j of range(current_indent)) {
+        new_line += '' + '    '.repeat(current_indent-1) + '}'
+    }
+    lines.push(new_line)
+    var compiled_code = lines.join('\n')
+    // compiled_code = compiled_code.replaceAll('+\n', '+')
+    // compiled_code = compiled_code.replaceAll('(\n', '(')
+
+    // add text back in
+    for (var i=0; i<strings.length; i++) {
+        compiled_code = compiled_code.replace(`[TEXT_CONTENT_${i}]`, `'${strings[i]}'`)
+    }
+
+    print('COMPILED CODE:', compiled_code)
+    try {print('compiled in', performance.now() - t, 'ms')} catch {}
+    return compiled_code
+}
+
+function get_indent(str) {
+    if (!str || !str.trim()) {
+        return 0
+    }
+    return (str.length - str.trimStart().length) / 4
+}
+
+function get_inside_brackets(str, open_bracket, closing_bracket) {
+    text_inside_bracket = ''
+    counter = 1
+    for (const char of str) {
+        if (char == open_bracket)
+            counter += 1
+
+        if (char == closing_bracket)
+            counter -= 1
+            if (counter == 0)
+                return text_inside_bracket
+
+        text_inside_bracket += char
+    }
+}
+function convert_arguments(line, class_name) {
+    part_after = line.split(class_name+'(')[1]
+    arguments = get_inside_brackets(part_after, '(', ')')
+    new_arguments = arguments
+    has_inline_function = false
+
+    if (arguments.includes(`function()`)) {
+        has_inline_function = true
+        func_content = arguments.split('function()')[1]
+        lastIndex = arguments.lastIndexOf(')')
+        func_content = func_content.substr(0, lastIndex) + func_content.substr(lastIndex)
+        function_definition = 'function()' + func_content
+        new_arguments = arguments.replace(function_definition, `[INLINE_FUNC_PLACEHOLDER]`)
+    }
+
+    keys = new_arguments.split(',').map(e => e.split('=')[0])
+    if (!keys.includes('name')) {
+        if (line.includes(`= new ${class_name}`)) {
+            variable_name = line.split(`= new ${class_name}`)[0].trimStart()
+            if (variable_name.startsWith('let ')) {
+                variable_name = variable_name.slice(4)
+            }
+            new_arguments = `name='${variable_name}', ${new_arguments}`
+        }
+    }
+    js_style_arguments = '{' + new_arguments.replaceAll('=', ':') + '}'
+
+    if (has_inline_function) {
+        js_style_arguments = js_style_arguments.replace('[INLINE_FUNC_PLACEHOLDER]', 'function(){' + func_content + '}')
+    }
+
+    return line.replace(arguments, js_style_arguments)
+}
+
+function len(arr) {
+    return arr.length
+}
+
+function sum(arr) {
+    return arr.reduce((a, b) => a + b, 0)
+}
+
+String.prototype.count=function(c) {
+    var result = 0, i = 0;
+    for(i;i<this.length;i++)if(this[i]==c)result++;
+    return result;
+}
+print = console.log
+False = false
+True = true
+None = null
+float = parseFloat
+min = Math.min
+max = Math.max
+abs = Math.abs
+floor = Math.floor
+ceil = Math.ceil
+math = Math
+sqrt = Math.sqrt
+function round(value, digits=0) {
+    return Number(Math.round(value+'e'+digits)+'e-'+digits);
+}
+
+function enumerate(list) {
+    if (typeof list.prop2 === 'function') {
+        return list.entries()
+    }
+    else if (typeof list === 'object') {
+        return Object.entries(list)
+    }
+}
+
+function str(value) {
+    return value.map(function(i){return String.fromCharCode(i)}).join("")
+}
+
+function int(value) {
+    if (value === true) {return 1}
+    if (value === false) {return 0}
+    return parseInt(value)
+}
+
+function Array_2d(w, h, default_value=0) {
+    var tiles = new Array(w)
+    for (var i = 0; i < tiles.length; i++) {
+        tiles[i] = new Array(h);
+        tiles[i].fill(default_value)
+    }
+    return tiles
+}
+function Array_3d(w, h, d) {
+    var arr = new Array(w);
+
+    for (var i = 0; i < w; i++) {
+        arr[i] = new Array(h);
+
+        for (var j = 0; j < h; j++) {
+            arr[i][j] = new Array(d).fill(0);
+        }
+    }
+    return arr;
+}
+// function range(n) {return Array(n).keys()}
+function range(start, stop, step) {
+    if (typeof stop == 'undefined') {
+        // one param defined
+        stop = start;
+        start = 0;
+    }
+    if (typeof step == 'undefined') {
+        step = 1;
+    }
+    if ((step > 0 && start >= stop) || (step < 0 && start <= stop)) {
+        return [];
+    }
+    var result = [];
+    for (var i = start; step > 0 ? i < stop : i > stop; i += step) {
+        result.push(i);
+    }
+    return result;
+};
+Array.prototype.myCustomFilter = function (fn) {
+    const filtered = []
+    for (let i=0; i<this.length; i++) {
+        if (fn(this[i]) != undefined) {
+            filtered.push(this[i]);
+        }
+    }
+    return filtered;
+}
+
+Array.prototype.remove = function (element) {
+    var index = this.indexOf(element)
+    if (index >= 0) {
+        this.splice(index, 1)
+    }
+}
+Array.prototype.remove_at = function (index) {
+    this.splice(index, 1)
+}
+
+Array.prototype.skip = function (n) {
+    return this.splice(n)
+}
+Array.prototype.take = function (n) {
+    return this.splice(0, n)
+}
+Array.prototype.take_last = function (n) {
+    return this.splice(-n)
+}
+
+function dict(values={}) {
+    return values
+}
+__name__ = null // for python compability
+__autocompile__ = true
+
+var scripts = document.getElementsByTagName("script")
+for (var script of scripts) {
+    if (script.type == 'text/sunsnake') {
+        print('compile:', script)
+        if (script.textContent) {
+            compiled_code = compile(script.textContent)
+            eval(compiled_code)
+        }
+    }
+}
+
+</script>
+</html>

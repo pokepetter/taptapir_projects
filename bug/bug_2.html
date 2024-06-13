@@ -1,23 +1,10 @@
 <html><title>bug_2</title><body>
 <script src="../taptapir/taptapir.js"></script>
 <script type='text/sunsnake'>
-set_orientation('landscape')
-player = Entity(color=color.green,scale=0.1)
-block = Entity(color=color.red,scale=0.1,position=[0.3,0.5])
-block_2 = Entity(color=color.red,scale=0.1,position=[0.3,2])
-// class Block(Entity):
-//     def __init__(self,position):
-//         super().__init__(color=color.red,scale=0.1,position=position)
-// Block([4,5])
-def update():
-    camera.position = player.position
-    if held_keys['w']:
-        player.y += 0.01
-    elif held_keys['s']:
-        player.y -= 0.01
-    if held_keys['d']:
-        player.x += 0.01
-    elif held_keys['a']:
-        player.x -= 0.01
+set_orientation('horizontal')
+set_background_color('rgb(40,40,40)')
+set_window_color('rgb(24,24,24)')
+
+Button(color=[211,211,211])
 </script>
 <script src="../taptapir/sunsnake_compiler.js"></script>

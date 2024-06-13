@@ -1,6 +1,4 @@
 <html><title>code_editor_2.js</title><body>
-# <script src="//cdn.jsdelivr.net/npm/eruda"></script>
-# <script>eruda.init();</script>
 
 <script src="../taptapir/taptapir.js"></script>
 <script type='text/javascript'>
@@ -47,7 +45,7 @@ ingame_console.model.style.whiteSpace = 'pre-wrap'
 
 w = 512
 h = w * 2
-text_renderer = Entity(scale=[.9,.9*2], origin=[0,.5], y=(.5*aspect_ratio)-.05, color=color.black, draggable=True, max_x=0)
+text_renderer = Entity(scale=[.9,.9*2], origin=[0,.5], y=(.5*aspect_ratio)-.05, color=color.black, draggable=True, max_x=0, visible_self=False)
 text_renderer.min_y = text_renderer.y
 text_renderer.max_y = text_renderer.y + (text_renderer.scale_y/2)
 canvas = document.createElement('canvas')

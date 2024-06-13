@@ -31,15 +31,15 @@ keyboard_background = Entity(origin=[0,-.5], scale_y=.52, y=-.5*aspect_ratio, co
 #     text += ' '
 #     text_entity.text = text
 
-y = 1
-for line in ['qwertyuiop', 'asdfghjkl\'', '⇧zxcvbnm,⌫'].reverse():
-    x = 0
-    for e in line:
-        let _e = e
-        b = Button(text=e, scale=.1, origin=[-.5,-.5], x=-.5+(.1*x), y=(-.5*aspect_ratio)+.1+(.105*y), color=button_color, on_click=function(){write(_e)})
-        # print(i, e)
-        x += 1
-    y += 1
+# y = 1
+# for line in ['qwertyuiop', 'asdfghjkl\'', '⇧zxcvbnm,⌫'].reverse():
+#     x = 0
+#     for e in line:
+#         let _e = e
+#         b = Button(text=e, scale=.1, origin=[-.5,-.5], x=-.5+(.1*x), y=(-.5*aspect_ratio)+.1+(.105*y), color=button_color, on_click=function(){write(_e)})
+#         # print(i, e)
+#         x += 1
+#     y += 1
 
 x = 0
 y = 0
@@ -132,7 +132,7 @@ for i, e in enumerate(blocks):
     b.update = def():
         if not self.dragging:
             return
-        b.position = mouse.position 
+        b.position = mouse.position
 
 </script><script src="../taptapir/sunsnake_compiler.js"></script>
 <script type='text/sunsnake'>

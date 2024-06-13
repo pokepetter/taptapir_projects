@@ -1,0 +1,2556 @@
+
+<html>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>
+<title>Cmyk Swap</title><link rel="icon" href="icon.png">
+</head><body></body>
+<script type='text/javascript'>
+// aspect_ratio = 16/9
+scale = 1
+print = console.log
+
+Array.prototype.remove = function (element) {
+    var index = this.indexOf(element)
+    if (index >= 0) {
+        this.splice(index, 1)
+    }
+}
+
+var _loading_text = document.getElementById('loading_text')
+if (_loading_text) {
+    _loading_text.remove()
+}
+const style = document.createElement('style')
+style.textContent = `
+.entity {
+  touch-action: none;
+  width:100%; height:100%; position:absolute; top:50%; left:50%; will-change: transform;
+  transform:translate(-50%, -50%); color:black; background-size: 100% 100%; padding:0; border-width:0px;
+  visibility: 'visible'; display:inherit; image-rendering: pixelated;
+  background-repeat:repeat;
+  white-space: pre;
+}
+.entity:focus {
+  outline: 0; -moz-outline-style: none;
+}
+
+#game {margin:auto; background-color: darkgreen; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); overflow: hidden; pointer-events: none;
+  width:100%; height:100%; outline: 0; box-shadow: 0; touch-action: none; user-select: none;
+  white-space: pre-wrap;
+}
+fullscreen_button {padding: 4px 4px; width: 64px; height: 64px; background-color: #555; border-radius: .2em; border-width: 0px;
+  text-decoration: none; color: white; font-size: 50.0px; z-index: 1; position: absolute; text-align: center; right: 0%;
+}
+body {
+  margin:0;
+  background-color:'#111';
+  font-family: CerebriSans-Regular,-apple-system,system-ui,Roboto,sans-serif;
+  overscroll-behavior-y: contain;
+}
+#loading_text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  color: white;
+  font-family:monospace;
+  transform: translate(-50%, -5%);
+  text-align: center;
+}
+input, textarea {
+  pointer-events: auto;
+  height: 100%;
+  width: 100%;
+  font-size: inherit;
+  font-family: monospace;
+  border-radius: inherit;
+  background-color: inherit;
+  border-width: inherit;
+  text-indent: .5em;
+  resize: none;
+  color: inherit;
+}
+`
+document.head.append(style)
+
+var _game_window = document.getElementById('game')
+if (!_game_window) {
+    var _game_window = document.createElement('game')
+    _game_window.id = 'game'
+    if (!document.body) {
+        document.body = document.createElement('body')
+    }
+    document.body.appendChild(_game_window)
+}
+scene = document.createElement('entity')
+scene.className = 'entity'
+scene.id = 'scene'
+scene._children = []
+_game_window.appendChild(scene)
+
+// print('browser aspect_ratio:', browser_aspect_ratio)
+format = null
+is_mobile = 'ontouchstart' in document.documentElement
+fullscreen = false
+camera = null
+
+function set_orientation(value) {
+    var width = window.innerWidth
+    var height = window.innerHeight
+    browser_aspect_ratio = width / height
+    // print('width:', width, 'height:', height, 'browser_aspect_ratio:', browser_aspect_ratio)
+
+    format = value
+    if (format == 'vertical') {
+        aspect_ratio = 16/9
+        // used for setting correct draggable limits
+        asp_x = 1
+        asp_y = 9/16
+
+        if (browser_aspect_ratio >= 9/16) { // if the screen is wider than the game, like a pc monitor.
+            // print('vertical view desktop')
+            _game_window.style.width = `${width*scale/browser_aspect_ratio/(16/9)}px`
+            _game_window.style.height =  `${height*scale}px`
+        }
+        else {                              // if the screen is taller than the game, like a phone screen.
+            // print('vertical view mobile')
+            _game_window.style.height = `${width*scale*(16/9)}px`
+            _game_window.style.width =  `${width*scale}px`
+        }
+        if (camera) {camera.ui.scale = [1, 1/aspect_ratio]}
+        top_left =      [-.5, .5*aspect_ratio]
+        top_right =     [.5, .5*aspect_ratio]
+        bottom_left =   [-.5, -.5*aspect_ratio]
+        bottom_right =  [.5, -.5*aspect_ratio]
+        top =           [0, .5*aspect_ratio]
+        bottom =        [0, -.5*aspect_ratio]
+        left =          [-.5, 0]
+        right =         [.5, 0]
+    }
+    else {
+        aspect_ratio = 16/9
+        asp_x = 16/9
+        asp_y = 1
+        scene.style.width = `${1/asp_x*100}%`
+        scene.style.height = `${1/asp_y*100}%`
+        if (browser_aspect_ratio > 16/9) { // if the screen is wider than 16/9, fit to height
+            _game_window.style.height = `${height*scale}px`
+            _game_window.style.width =  `${width*scale/browser_aspect_ratio*16/9}px`
+        }
+        else {                              // if the screen is taller than 16/9, fit to width
+            _game_window.style.height = `${height*scale*browser_aspect_ratio/(16/9)}px`
+            _game_window.style.width =  `${width*scale}px`
+        }
+        if (camera) {camera.ui.scale = [1/aspect_ratio, 1]}
+        top_left =      [-.5*aspect_ratio, .5]
+        top_right =     [.5*aspect_ratio, .5]
+        bottom_left =   [-.5*aspect_ratio, -.5]
+        bottom_right =  [.5*aspect_ratio, -.5]
+        top =           [0, .5]
+        bottom =        [0, -.5]
+        left =          [-.5*aspect_ratio, 0]
+        right =         [.5*aspect_ratio, 0]
+
+    }
+}
+set_orientation('vertical')
+
+
+function rgb(r, g, b) {return [parseInt(r*255), parseInt(g*255), parseInt(b*255)]}
+function rgb32(r, g, b) {return [r,g,b]}
+
+function hex_to_rgb(value) {
+    if (value.length === 4) {
+        value = `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`   // convert '#333' to '#333333'
+    }
+    try {
+        r = value.slice(1,3)
+        g = value.slice(3,5)
+        b = value.slice(5,7)
+        return [parseInt(r,16), parseInt(g,16), parseInt(b,16)]
+    }
+    catch (e) {
+        console.error('invalid hex code:', value);
+    }
+}
+// from: https://stackoverflow.com/questions/17242144/javascript-convert-hsb-hsv-color-to-rgb-accurately
+function hsv(h, s, v) {
+    h /= 360;
+    var r, g, b, i, f, p, q, t;
+    if (arguments.length === 1) {
+        s = h.s, v = h.v, h = h.h;
+    }
+    i = Math.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    return [parseInt(r*255), parseInt(g*255), parseInt(b*255)];
+}
+
+function rgb_to_hsv(_rgb_color) {
+    r = _rgb_color[0]
+    g = _rgb_color[1]
+    b = _rgb_color[2]
+    // It converts [0,255] format, to [0,1]
+    r = (r === 255) ? 1 : (r % 255 / parseFloat(255))
+    g = (g === 255) ? 1 : (g % 255 / parseFloat(255))
+    b = (b === 255) ? 1 : (b % 255 / parseFloat(255))
+    var max = Math.max(r, g, b)
+    var min = Math.min(r, g, b)
+    var h, s, v = max
+    var d = max - min
+    s = max === 0 ? 0 : d / max
+
+
+    switch (max) {
+        case min: h = 0; break;
+        case r: h = (g - b) + d * (g < b ? 6: 0); h /= 6 * d; break;
+        case g: h = (b - r) + d * 2; h /= 6 * d; break;
+        case b: h = (r - g) + d * 4; h /= 6 * d; break;
+    }
+    return [parseInt(h*360), s, v]
+}
+
+color = {
+  white:         hsv(0, 0, 1),
+  smoke:         hsv(0, 0, 0.96),
+  light_gray:    hsv(0, 0, 0.75),
+  gray:          hsv(0, 0, 0.5),
+  dark_gray:     hsv(0, 0, 0.25),
+  black:         hsv(0, 0, 0),
+  red:           hsv(0, 1, 1),
+  orange:        hsv(30, 1, 1),
+  yellow:        hsv(60, 1, 1),
+  lime:          hsv(90, 1, 1),
+  green:         hsv(120, 1, 1),
+  turquoise:     hsv(150, 1, 1),
+  cyan:          hsv(180, 1, 1),
+  azure:         hsv(210, 1, 1),
+  blue:          hsv(240, 1, 1),
+  violet:        hsv(270, 1, 1),
+  magenta:       hsv(300, 1, 1),
+  pink:          hsv(330, 1, 1),
+  clear:         [0, 0, 0, 0],
+}
+
+function set_window_color(value) {_game_window.style.backgroundColor = value}
+function set_background_color(value) {document.body.style.backgroundColor = value}
+function set_scale(value) {
+    scale = value
+    set_orientation(format)
+}
+
+function set_fullscreen(value) {
+    fullscreen = value
+    if (value) {
+        document.documentElement.requestFullscreen()
+    }
+    else {
+        document.exitFullscreen();
+    }
+}
+
+ASSETS_FOLDER = ''
+TAPTAPIR_TEXTURES = {}
+entities = []
+
+class Entity {
+    constructor(options=null) {
+        if (!('type' in options)) {
+            options['type'] = 'entity'
+        }
+        this.add_to_scene = true
+        if ('add_to_scene' in options) {
+            this.add_to_scene = options['add_to_scene']
+        }
+        if (!this.add_to_scene) {
+            this.el = document.createElement(options['type'])
+            entities.push(this)
+            for (const [key, value] of Object.entries(options)) {
+                this[key] = value
+            }
+            return
+        }
+
+        this.el = document.createElement(options['type'])
+        this.el.className = options['type']
+
+        // create another div for the model, for setting origin to work
+        this.el.style.backgroundColor = 'rgba(0,0,0,0)'
+        // this.el.style.pointerEvents = 'none'
+        this.model = document.createElement(options['type'])
+        this.model.entity_index = entities.length
+        this.model.id = 'model'
+        this.el.appendChild(this.model)
+
+        this.model.className = options['type']
+        this.model.style.opacity = 1
+        entities.push(this)
+
+        this.setTimeout_calls = {}
+        if (!('render' in options) || options['render']) {
+            scene.appendChild(this.el)
+        }
+
+        // if (!'parent' in options) {
+            // print('default to scene')
+        this.parent = scene
+        // }
+
+        this.children = []
+        this._enabled = true
+        this.on_enable = null
+        this.on_disable = null
+        this.color = '#ffffff'
+        this.x = 0
+        this.y = 0
+        this.z = 0
+        this.scale = [1,1]
+        this.draggable = false
+        this.dragging = false
+        this.lock_x = false
+        this.lock_y = false
+
+        this.min_x = -.5 * asp_x
+        this.max_x = .5 * asp_x
+        this.min_y = -.5 / asp_y
+        this.max_y = .5 / asp_y
+
+        this.snap_x = 0
+        this.snap_y = 0
+        this.text_size = 3
+        this._roundness = 0
+
+        for (const [key, value] of Object.entries(options)) {
+            this[key] = value
+        }
+    }
+    get name() {return this._name}
+    set name(value) {
+        this._name = value
+        this.el.id = value
+    }
+
+    get parent() {return this._parent}
+    set parent(value) {
+        if (value == null) {
+            value = scene
+        }
+        if (value === scene) {
+            value.appendChild(this.el)
+        }
+        else {
+            value.el.appendChild(this.el)
+        }
+        if (this._parent && this._parent._children) {
+            this._parent._children.remove(self)
+        }
+        this._parent = value
+        if (value._children && !value._children.includes(this)) {
+            value._children.push(this)
+        }
+    }
+    get children() {return this._children}
+    set children(value) {
+        this._children = value
+        for (const e of value) {
+            e.parent = this
+        }
+    }
+    get world_parent() {return this.parent}
+    set world_parent(value) {
+        wpos = this.world_position
+        wscale = this.world_scale
+        this.parent = value
+
+        this.world_position = wpos
+        this.world_scale = wscale
+    }
+    get world_x() {return (this.el.getBoundingClientRect().left - scene.getBoundingClientRect().left) / scene.clientWidth}
+    get world_y() {return -(this.el.getBoundingClientRect().top - scene.getBoundingClientRect().top) / scene.clientHeight}
+    get world_position() {return [this.world_x, this.world_y]}
+
+    get world_scale_x() {return this.el.clientWidth / scene.clientWidth}
+    get world_scale_y() {return this.el.clientHeight / scene.clientHeight}
+    get world_scale() {return [this.world_scale_x, this.world_scale_y]}
+
+    get descendants() {return this.el.getElementsByTagName('*')}
+
+    get enabled() {return this._enabled}
+    set enabled(value) {
+        if (value) {
+            this.el.style.visibility = 'visible'
+            for (var c of this.descendants) {
+                c.style.visibility = c.style.original_visibility
+            }
+        }
+        else {
+            this.el.style.visibility = 'hidden'
+            for (var c of this.descendants) {
+                c.style.original_visibility = c.style.visibility
+                c.style.visibility = 'inherit'
+            }
+        }
+        this._enabled = value
+
+        if (value && this.on_enable) {
+            this.on_enable()
+        }
+        else if (!value && this.on_disable) {
+            this.on_disable()
+        }
+    }
+
+    get visible_self() {return this._visible_self}
+    set visible_self(value) {
+        if (!value) {
+            this.color = [0,0,0,0]
+            this.model.color = 'rgba(0,0,0,0)'
+            this.text_color = 'rgba(0,0,0,0)'
+        }
+        else {
+            this.model.color = 'white'
+            this.text_color = 'white'
+        }
+        this._visible_self = value
+    }
+    get color() {return this._color}
+    set color(value) {
+        if (typeof value == "string" && value.startsWith('#')) {
+            value = hex_to_rgb(value)
+        }
+        else if (typeof value === 'number') {
+            value = hsv(0,0,value)
+        }
+        if (value.length == 3) {
+            value = [value[0], value[1], value[2], 255]
+        }
+        // print('set color:', value)
+        this._color = value
+        this.model.style.backgroundColor = `rgba(${value[0]},${value[1]},${value[2]},${value[3]})`
+    }
+    get scale_x() {return this._scale_x}
+    set scale_x(value) {
+        this.el.style.width = `${value*100}%`
+        this._scale_x = value
+    }
+    get scale_y() {return this._scale_y}
+    set scale_y(value) {
+        this.el.style.height = `${value*100}%`
+        this._scale_y = value
+    }
+    get scale() {return [this._scale_x, this._scale_y]}
+    set scale(value) {
+        if (typeof value == "number") {value = [value, value]}
+        this.scale_x = value[0]
+        this.scale_y = value[1]
+    }
+    get x() {return this._x}
+    set x(value) {
+        this.el.style.left = `${50+(value*100)}%`
+
+        this._x = value
+    }
+    get y() {return this._y}
+    set y(value) {
+        this.el.style.top = `${50+(-value*100)}%`
+        this._y = value
+    }
+    get z() {return this._z}
+    set z(value) {
+        this._z = value
+        this.el.style.zIndex = -value
+    }
+    get xy() {return [this._x, this._y]}
+    set xy(value) {
+        this.x = value[0]
+        this.y = value[1]
+    }
+    get xyz() {return [this._x, this._y, this._z]}
+    set xyz(value) {
+        this.x = value[0]
+        this.y = value[1]
+        this.z = value[2]
+    }
+    get position() {return this.xyz}
+    set position(value) {
+        if (value.length == 2) {return this.xy = value}
+        if (value.length == 3) {return this.xyz = value}
+    }
+    get origin() {return this._origin}
+    set origin(value) {
+        this.model.style.transform = `translate(${(-value[0]-.5)*100}%, ${(value[1]-.5)*100}%)`
+        this._origin = value
+    }
+    get rotation() {return this._rotation}
+    set rotation(value) {
+        this._rotation = value
+        this.el.style.transform = `translate(-50%, -50%) rotate(${value}deg)`
+    }
+
+    get texture() {return this._texture}
+    set texture(name) {
+        this._texture = name
+        if (!name) {
+            this.model.style.backgroundImage = 'none'
+            return
+        }
+        if (name in TAPTAPIR_TEXTURES) {   // base64 strings stored in TAPTAPIR_TEXTURES dict. used when including textures directly in builds.
+            if (!TAPTAPIR_TEXTURES[name].startsWith('data:image/gif')) {   // static image
+                this.model.style.backgroundImage = `url("${TAPTAPIR_TEXTURES[name]}")`
+            }
+            else {
+                this.model.style.backgroundImage = `url("${TAPTAPIR_TEXTURES[name]}?${random_int(0,999)}")`   // add random number so the gif restarts when setting .texture again
+                print(this.model.style.backgroundImage)
+            }
+            this.color = color.clear
+            return
+        }
+
+        else if (!name.endsWith('.gif')) {    // static image
+            this.model.style.backgroundImage = `url("${ASSETS_FOLDER}${name}")`
+            this.color = color.clear
+            return
+        }
+
+        else if (name.endsWith('.gif')) {   // .gif (ensure animation replays on reuse)
+            this.model.style.backgroundImage = `url("${ASSETS_FOLDER}${name}?${random_int(0,999)}")`   // add random number so the gif restarts when setting .texture again
+            this.color = color.clear
+            return
+        }
+        else if (name.startsWith('data:')) {
+            this.model.style.backgroundImage = `url("${name}")`
+            this.color = color.clear
+            return
+        }
+    }
+
+    get tileset_size() {return this._tileset_size}
+    set tileset_size(value) {
+        this._tileset_size = value
+        this.model.style.backgroundSize = `${value[0]*100}% ${value[1]*100}%`
+    }
+    get tile_coordinate() {return this._tile}
+    set tile_coordinate(value) {        // [0,0] is in lower left
+        this._tile = value
+        this.model.style.backgroundPosition = `${(this.tileset_size[0]-1)*value[0]*100}% ${(this.tileset_size[1]-1)*(this.tileset_size[1]-1-value[1])*100}%`
+    }
+
+    get roundness() {return this._roundness}
+    set roundness(value) {
+        this.model.style.borderRadius = `${value*Math.min(this.model.clientWidth, this.model.clientHeight)}px`
+        this._roundness = clamp(value, 0, .5)
+    }
+    get shadow() {return this._shadow}
+    set shadow(value) {
+        this._shadow = value
+        if (value === true) {
+            this.model.style.boxShadow = "5px 20px 40px black";
+        }
+        else if (value === false) {
+            this.model.style.boxShadow = 'none'
+        }
+        else {
+            this.model.style.boxShadow = value
+        }
+    }
+    get font() {return this.style.fontFamily}
+    set font(value) {
+        this.model.style.fontFamily = value
+    }
+
+    get text() {return this.model.textContent}
+    set text(value) {
+        this.model.innerHTML = value
+    }
+    get text_color() {return this.model.style.color}
+    set text_color(value) {
+        if (!(typeof value == "string")) {
+            // print('set color:', value)
+            var alpha = 255
+            if (value.length == 4) {
+                alpha = value[3]
+            }
+            value = `rgba(${value[0]},${value[1]},${value[2]},${alpha})`
+        }
+        this.model.style.color = value
+    }
+    get text_size() {return this._text_size}
+    set text_size(value) {
+        this._text_size = value
+        this.model.style.fontSize = `${value*scale}vh`
+    }
+
+    get text_origin() {return this._text_origin}
+    set text_origin(value) {
+        this._text_origin = value
+        this.model.style.display = 'flex'
+        this.model.style.textAlign = ['left', 'center', 'right'][(value[0]*2)+1]  // horizontally
+        this.model.style.justifyContent = ['left', 'center', 'right'][(value[0]*2)+1]  // horizontally
+        this.model.style.alignItems = ['flex-end', 'center', 'flex-start'][(value[1]*2)+1]  // vertically
+    }
+
+    get alpha() {return this.model.style.opacity}
+    set alpha(value) {
+        this._alpha = value
+        this.model.style.opacity = value
+    }
+    get padding() {return this._padding}
+    set padding(value) {
+        this._padding = value
+        this.model.style.padding = `${value}em`
+    }
+
+    get on_click() {return this._on_click}
+    set on_click(value) {
+        this._on_click = value
+        if (value && !this.ignore_collision) {
+            this.model.style.pointerEvents = 'auto'
+        }
+        else {this.model.style.pointerEvents = 'none'}
+    }
+    get on_double_click() {return this.ondblclick}
+    set on_double_click(value) {
+        this.ondblclick = value
+        if (value && !this.ignore_collision) {
+            this.model.style.pointerEvents = 'auto'
+        }
+        else {this.model.style.pointerEvents = 'none'}
+    }
+    get ignore_collision() {return this._ignore_collision}
+    set ignore_collision(value) {
+        this._ignore_collision = value
+        if (!value) {
+            this.model.style.pointerEvents = 'auto'
+        }
+        else {this.model.style.pointerEvents = 'none'}
+    }
+
+    get draggable() {return this._draggable}
+    set draggable(value) {
+        this._draggable = value
+        if (value) {
+            this.model.style.pointerEvents = 'auto'
+        }
+        else if (!this._on_click) {
+            this.model.style.pointerEvents = 'none'
+        }
+    }
+
+    animate(variable_name, target_value, duration=.1) {
+        // print('animate:', variable_name, target_value)
+        if (!this.enabled) {return false}
+        if (duration <= 1/60) {
+            this[variable_name] = target_value
+        }
+        let entity = this
+        // stop ongoing animation of this varibale
+        if (variable_name in entity.setTimeout_calls) {
+            for (const id of entity.setTimeout_calls[variable_name]) {
+                clearTimeout(id)
+                // print('clear:', id)
+            }
+        }
+        entity.setTimeout_calls[variable_name] = []
+        let start_value = entity[variable_name]
+
+        for (let i=0; i<=duration*60; i+=1) {
+            entity.setTimeout_calls[variable_name].push(
+                setTimeout(
+                    function anon() {
+                        if (!entity.enabled) {
+                            return false}
+                        var t = i / duration / 60
+                        entity[variable_name] = lerp(start_value, target_value, t)
+                    },
+                    1000*i/60
+                )
+            )
+        }
+        entity.setTimeout_calls[variable_name].push(
+            setTimeout(
+                function anon() {
+                    if (!entity.enabled) {
+                        return false}
+                        entity[variable_name] = target_value
+                    },
+                    1000*duration
+                )
+            )
+    }
+
+    fit_to_text() {
+        this.model.style.width = 'fit-content'
+        this.model.style.height = 'fit-content'
+    }
+
+    look_at(target_pos) {
+        this.rotation = -(Math.atan2(target_pos[1] - this.y, target_pos[0] - this.x)) * (180/Math.PI)
+    }
+
+    destroy_children() {
+        for (let _entity of this.children) {
+            _entity.el.remove()
+        }
+        this.children = []
+    }
+}
+
+function lerp(a, b, t) {
+    return ((1-t)*a) + (t*b)
+}
+function clamp(num, min, max) {
+  return num <= min ? min : num >= max ? max : num;
+}
+random_value = Math.random;
+
+function random_int(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function random_choice(list) {
+    return list[random_int(0, len(list)-1)]
+}
+function random_color() {
+    return rgb(Math.random(), Math.random(), Math.random())
+}
+
+function lists_are_equal(array_a, array_b) {
+    for (let i=0; i<array_a.length; i++) {
+        if (array_a[i] != array_b[i]) {
+            return false
+        }
+    }
+    return true
+}
+
+
+class Camera{
+  constructor(options=null) {
+      this.el = document.createElement('entity')
+      _game_window.appendChild(this.el)
+      this.el.className = 'entity'
+      // this.el.style.height = scene.style.height
+      // this.el.style.width = scene.style.width
+      this.el.id = 'camera'
+      this.children = []
+      this._x = 0
+      this._y = 0
+      this.fov = 1
+  }
+
+  get x() {return this._x}
+  set x(value) {
+      this._x = value
+      if (format == 'vertical') {
+          scene.style.left = `${50+(-value*100/this.fov)}%`
+      }
+      else {
+          scene.style.left = `${50+(-value*100/asp_x/this.fov)}%`
+      }
+  }
+  get y() {return this._y}
+  set y(value) {
+      this._y = value
+      if (format == 'vertical') {
+          scene.style.top = `${50+(value*100*asp_y/this.fov)}%`
+      }
+      else {
+          scene.style.top = `${50+(value*100/this.fov)}%`
+      }
+  }
+  get xy() {return [this._x, this._y]}
+  set xy(value) {
+      this.x = value[0]
+      this.y = value[1]
+  }
+  get xyz() {return [this._x, this._y, this._z]}
+  set xyz(value) {
+      this.x = value[0]
+      this.y = value[1]
+      // this.z = value[2]
+  }
+  get position() {return this.xyz}
+  set position(value) {
+      if (value.length == 2) {this.xy = value}
+      if (value.length == 3) {this.xy = [value[0], value[1]]}
+  }
+  get rotation() {return this._rotation}
+  set rotation(value) {
+      this._rotation = value
+      scene.style.transform = `rotate(${-value}deg)`
+  }
+  get fov() {return self._fov}
+  set fov(value) {
+      self._fov = value
+      scene.style.width = `${1/value*100/asp_x}%`
+
+      if (format == 'vertical') {
+          scene.style.height = `${1/value*100/asp_x*asp_y}%`
+      }
+      else {
+          scene.style.height = `${1/value*100/asp_y}%`
+      }
+
+  }
+}
+camera = new Camera({})
+camera.ui = new Entity({parent:camera, name:'ui', scale:[1,1], visible_self:false, z:-100, color:color.clear})
+
+class Button extends Entity{
+    constructor(options=false) {
+        let settings = {parent:camera.ui, scale:[.2,.2], roundness:.2, text_origin:[0,0], }
+        for (const [key, value] of Object.entries(options)) {
+            settings[key] = value
+        }
+        super(settings)
+    }
+}
+
+class Text extends Entity{
+    constructor(options=false) {
+        let settings = {parent:camera.ui, roundness:.05, padding:.75, z:-1, color:color.clear, scale_x:.8}
+
+        for (const [key, value] of Object.entries(options)) {
+            settings[key] = value
+        }
+        super(settings)
+    }
+}
+
+function Canvas(options) {
+    var e = new Entity(options)
+    var canvas = document.createElement('canvas');
+    e.el.appendChild(canvas)
+
+    return e
+}
+
+function Scene(name='', options=false) {
+    settings = {visible_self:false, on_enter:null}
+    for (const [key, value] of Object.entries(options)) {
+        settings[key] = value
+    }
+    settings['name'] = name
+    _entity = new Entity(settings)
+    _entity.bg = new Entity({parent:_entity, scale_y:aspect_ratio})
+    _entity.bg.texture = name + '.jpg'
+    state_handler.states[name] = _entity
+    return _entity
+}
+class StateHandler {
+    constructor (options) {
+        let settings = {states:{}, fade:false}
+        for (const [key, value] of Object.entries(options)) {
+            settings[key] = value
+        }
+
+        camera.overlay = new Entity({parent:camera, name:'overlay', color:color.black, alpha:0, z:-1, scale:[1.1,aspect_ratio*1.1]})
+        this.states = settings['states']
+        this.fade = settings['fade']
+        this.state = Object.keys(this.states)[0]
+    }
+
+    get state() {return this._state}
+    set state(value) {
+        if (this.fade && (value != this._state)) {
+            camera.overlay.animate('alpha', 1, .1)
+            setTimeout(() => {
+                camera.overlay.animate('alpha', 0, 1)
+                this.hard_state = value
+            }, 100)
+        }
+        else {
+            this.hard_state = value
+        }
+    }
+    set hard_state(value) {     // set the state without fading
+        // print('set state to:', value)
+        if (this._state === value) {
+            return
+        }
+        for (const [key, entity] of Object.entries(this.states)) {
+            print('----', key, value)
+            if (key == value || value == entity) {
+                entity.enabled = true
+                if (entity.on_enter) {
+                    entity.on_enter()
+                }
+            }
+            else {
+                entity.enabled = false}
+            }
+
+        this._state = value
+    }
+}
+
+state_handler = new StateHandler({}, true)
+
+function goto_scene(scene_name, fade=True) {
+    if (!fade) {
+        state_handler.hard_state = scene_name
+        return
+    }
+    state_handler.state = scene_name
+}
+
+class HealthBar extends Entity {
+    constructor(options=false) {
+        let settings = {min:0, max:100, color:'#222222', bar_color:'bb0505', scale:[.8,.05], roundness:.25}
+        for (const [key, value] of Object.entries(options)) {
+            settings[key] = value
+        }
+        super(settings)
+        this.bar = new Entity({parent:this, origin:[-.5,0], x:-.5, roundness:.25, scale_x:.25, color:settings['bar_color']})
+        this.text_entity = new Entity({parent:this, text:'hii', text_color:'#dddddd', color:color.clear, text_origin:[0,0], text_size:2})
+        this.value = settings['max']
+    }
+
+    get value() {return this._value}
+    set value(value) {
+        value = clamp(value, this.min, this.max)
+        // print('set value:', value)
+        this._value = value
+        this.bar.scale_x = value / this.max
+        this.text_entity.text = `${value} / ${this.max}`
+    }
+    get bar_color() {return this.bar.color}
+    set bar_color(value) {
+        if (this.bar) {
+            this.bar.color = value
+        }
+    }
+}
+class RainbowSlider extends Entity {
+    constructor(options=false) {
+        let settings = {min:1, max:5, c:1, color:'#222', text_color:'#ddd', scale:[.8,.05], roundness:.25, text_size:2, show_text:false, show_lines:false, gradient:['#CCCCFF', '#6495ED', '#40E0D0', '#9FE2BF', '#28ccaa'], }
+        for (const [key, value] of Object.entries(options)) {
+            settings[key] = value
+        }
+        super(settings)
+        this.bar = new Entity({parent:this, origin:[-.5,0], x:-.5, roundness:.25, scale_x:.25})
+        this.text_entity = new Entity({parent:this, text:'000', text_color:settings['text_color'], color:color.clear, text_origin:[0,0], text_size:settings['text_size'], enabled:settings['show_text']})
+        this.gradient = settings['gradient']
+        this.value = settings['default']
+        this.active = false
+        // this.color = settings['color']
+
+        if (settings['show_lines']) {
+            this.texture= 'tile.png'
+            this.tileset_size = [1/settings['max'],1]
+        }
+        this.on_click = function() {
+            this.value = int((mouse.point[0]+.5+(1/this.max)) * this.max)
+            this.active = true
+        }
+    }
+
+    update() {
+        if (this.active && mouse.left && mouse.hovered_entity === this) {
+            this.value = int((mouse.point[0]+.5+(1/this.max)) * this.max)
+        }
+    }
+
+    input(key) {
+        if (key === 'left mouse up') {
+          this.active = false
+        }
+    }
+
+    get value() {return this._value}
+    set value(value) {
+        value = clamp(value, this.min, this.max)
+        this._value = value
+        this.bar.scale_x = value / this.max
+        this.text_entity.text = `${value} / ${this.max}`
+        this.bar.color = this.gradient[clamp(int(value)-1, 0, len(this.gradient)-1)]
+        if (this.on_value_changed) {
+            this.on_value_changed()
+        }
+    }
+}
+
+class InputField extends Entity {
+    constructor(options=false) {
+        let settings = {roundness:.5, color:color.smoke, text_size:2, value:''}
+        for (const [key, value] of Object.entries(options)) {
+            settings[key] = value
+        }
+        super(settings)
+        this.input_field = document.createElement('input')
+        this.model.appendChild(this.input_field)
+        this.input_field.onkeyup = () => {
+            if (this.on_value_changed) {
+                this.on_value_changed()
+            }
+        }
+        this.value = settings['value']
+    }
+
+    get value() {return this.input_field.value}
+    set value(x) {
+        if (this.input_field) {
+            this.input_field.value = x
+        }
+    }
+}
+
+
+mouse = {x:0, y:0, position:[0,0], left:false, middle:false, pressure:0.0, hovered_entity:null,
+    set texture(name) {     // TODO: fix this
+        document.body.style.cursor = `url('${name}', auto)`
+        // print('spegijseofijseofijseiofddddddddddddddddddddddddddddddd', document.body.style)
+    }
+}
+
+function _mousedown(event) {
+    _input(event)
+    if (event.button > 0) {
+        return
+    }
+
+    // if (event.pointerType == 'mouse' || event.pointerType == 'touch') {
+    //     mouse.pressure = 1
+    // }
+    // else {
+    //     mouse.pressure = event.originalEvent.pressure
+    // }
+    _update_mouse_position(event)
+    _handle_mouse_click(event)
+}
+document.addEventListener('pointerdown', _mousedown)
+
+
+time_of_press = 0
+function _handle_mouse_click(e) {
+    mouse.left = true
+    element_hit = document.elementFromPoint(e.pageX - window.pageXOffset, e.pageY - window.pageYOffset);
+    entity = entities[element_hit.entity_index]
+    // print(element_hit, entity.on_click)
+    if (!element_hit || entity === undefined || entity.on_click === undefined) {
+        mouse.swipe_start_position = mouse.position
+        time_of_press = time
+    }
+
+    // print(element_hit)
+    if (element_hit && entity) {
+        if (entity.on_click) {
+            entity.on_click()
+        }
+        if (entity.draggable) {
+            window_position = _game_window.getBoundingClientRect()
+            entity.start_offset = [
+                ((((e.clientX - window_position.left) / _game_window.clientWidth) - .5) * asp_x*camera.fov) - entity.x,
+                (-(((e.clientY - window_position.top) / _game_window.clientHeight ) - .5) / asp_y*camera.fov) - entity.y
+                ]
+            entity.dragging = true
+        }
+    }
+}
+
+function _mouseup(event) {
+    mouse.click_end_position = mouse.position
+    if (time - time_of_press < .15) {
+        diff_x = mouse.position[0] - mouse.swipe_start_position[0]
+        diff_y = mouse.position[1] - mouse.swipe_start_position[1]
+
+        if (diff_x < -.05 && abs(diff_y) < .15) {
+            _input('swipe left')
+        }
+        if (diff_x > .05 && abs(diff_y) < .15) {
+            _input('swipe right')
+        }
+        if (diff_y > .05 && abs(diff_x) < .15) {
+            _input('swipe up')
+        }
+        if (diff_y < -.05 && abs(diff_x) < .15) {
+            _input('swipe down')
+        }
+    }
+
+    _input(event)
+    mouse.left = false;
+    for (var e of entities) {
+        if (e.dragging) {
+            e.dragging = false
+            if (e.drop) {
+                e.drop()
+            }
+        }
+    }
+}
+document.addEventListener('pointerup', _mouseup)
+
+
+function _update_mouse_position(event) {
+    window_position = _game_window.getBoundingClientRect()
+    event_x = event.clientX
+    event_y = event.clientY
+    mouse.x = (((event_x - window_position.left) / _game_window.clientWidth) - .5) * asp_x
+    mouse.y = -(((event_y - window_position.top) / _game_window.clientHeight ) - .5) / asp_y
+    mouse.position = [mouse.x, mouse.y]
+    mouse.pressure = event.pressure * 2
+}
+
+function _onmousemove(event) {
+    // print('move')
+    _update_mouse_position(event)
+
+    if (!mouse.hovered_entity) {
+        mouse.point = null
+    }
+    else {
+        var rect = event.target.getBoundingClientRect();
+        var x = event.clientX - rect.left; //x position within the element.
+        var y = event.clientY - rect.top;  //y position within the element.
+        mouse.point = [(x/rect.width)-.5, .5-(y/rect.height)]
+    }
+    element_hit = document.elementFromPoint(event.pageX - window.pageXOffset, event.pageY - window.pageYOffset);
+    _entity = entities[element_hit.entity_index]
+    if (_entity) {
+        mouse.hovered_entity = _entity
+    }
+    else {
+        mouse.hovered_entity = null
+    }
+    for (var e of entities) {
+        if (e.dragging) {
+            if (!e.lock_x) {
+                // print(mouse.x, e.start_offset[0])
+                e.x = mouse.x*camera.fov - e.start_offset[0]
+                e.x = clamp(e.x, e.min_x, e.max_x)
+                if (e.snap_x) {
+                    hor_step = 1 / e.snap_x
+                    e.x = round(e.x * hor_step) / hor_step
+                }
+            }
+            if (!e.lock_y) {
+                e.y = mouse.y*camera.fov - e.start_offset[1]
+                e.y = clamp(e.y, e.min_y, e.max_y)
+                if (e.snap_y) {
+                    hor_step = 1 / e.snap_y
+                    e.y = round(e.y * hor_step) / hor_step
+                }
+            }
+            if (e.while_dragging) {
+                // print('d', mouse.position, mouse.point)
+                e.while_dragging()
+            }
+        }
+    }
+}
+
+document.addEventListener('pointermove', _onmousemove)
+
+// palette = [
+//     '#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8',
+//     '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA'
+//     ]
+// let filter_code = ''
+// for (i = 0; i < palette.length; i++) {
+//     let rgb = hex_to_rgb(palette[i])
+//     let r = rgb.r/255
+//     let g = rgb.g/255
+//     let b = rgb.b/255
+//     let redToBlue = `${r**2.4} 0 0 0 0  ${g**2.4} 0 0 0 0  ${b**2.4} 0 0 0 0  0 0 0 1 0`;
+//     filter_code += `
+//         <svg xmlns="http://www.w3.org/2000/svg">
+//             <filter id="tint_filter_${i}">
+//                 <feColorMatrix type="matrix" values="${redToBlue}" />
+//             </filter>
+//         </svg>
+//     `
+// }
+// filters = document.createElement('div')
+// _game_window.appendChild(filters)
+// filters.innerHTML = filter_code
+// class TintableTile extends Entity {
+//     get tint() {return this._tint}
+//     set tint(value) {
+//         this._tint = value
+//         if (value < 16) {
+//             this.el.model.style.filter = `url(#tint_filter_${value})`
+//         }
+//     }
+//
+// }
+timeout_id = 0
+function invoke(func, delay) {
+    timeout_id = setTimeout(func, delay*1000)
+}
+function after(delay, func) {
+    timeout_id = setTimeout(func, delay*1000)
+}
+function stop_all_invokes() {
+    for (let i = timeout_id; i >= 0; i--) {
+        window.clearInterval(i);
+    }
+}
+
+function distance(a, b) {
+    return sqrt((b[0] - a[0])**2 + (b[1] - a[1])**2)
+}
+
+function magnitude(vec) {
+    const x = vec[0], y = vec[1]
+    const magSq = x * x + y * y
+    return Math.sqrt(magSq)
+}
+
+function normalize(vec) {
+    vec_length = magnitude(vec)
+    if (vec_length == 0) {
+        return vec
+    }
+    return [vec[0] / vec_length, vec[1] / vec_length]
+}
+
+function dot_product(vector1, vector2) {
+  let result = 0;
+  for (let i = 0; i < vector1-length; i++) {
+    result += vector1[i] * vector2[i];
+  }
+  return result;
+}
+
+
+function sample(population, k){
+    if(!Array.isArray(population))
+        throw new TypeError("Population must be an array.");
+    var n = population.length;
+    if(k < 0 || k > n)
+        throw new RangeError("Sample larger than population or is negative");
+
+    var result = new Array(k);
+    var setsize = 21;   // size of a small set minus size of an empty list
+
+    if(k > 5)
+        setsize += Math.pow(4, Math.ceil(Math.log(k * 3) / Math.log(4)))
+
+    if(n <= setsize){
+        // An n-length list is smaller than a k-length set
+        var pool = population.slice();
+        for(var i = 0; i < k; i++){          // invariant:  non-selected at [0,n-i)
+            var j = Math.random() * (n - i) | 0;
+            result[i] = pool[j];
+            pool[j] = pool[n - i - 1];       // move non-selected item into vacancy
+        }
+    }else{
+        var selected = new Set();
+        for(var i = 0; i < k; i++){
+            var j = Math.random() * n | 0;
+            while(selected.has(j)){
+                j = Math.random() * n | 0;
+            }
+            selected.add(j);
+            result[i] = population[j];
+        }
+    }
+
+    return result;
+}
+
+// function grid_layout(options=false):
+//     let settings = dict(l=[], spacing=[1.1,1.1], offset=[0,0])
+//     for (const [key, value] of Object.entries(options)) {
+//         settings[key] = value
+//     }
+//     x = 0
+//     y = 0
+//     for i, e in l:
+//         e.xy = [(x * l[0].scale_x * spacing[0]) + offset[0],
+//                 (-y * l[1].scale_y * spacing[1]) + offset[1]]
+//
+//         x += 1
+//         if x >= max_x:
+//             y += 1
+//             x = 0
+
+function destroy(_entity) {
+    if (!_entity) {
+        return
+    }
+    if (_entity._parent && _entity._parent._children) {
+        _entity._parent._children.remove(_entity)
+    }
+    _entity.el.remove()
+    //delete _entity
+}
+
+function save_system_save(name, value) {localStorage.setItem(name, JSON.stringify(value))}
+function save_system_load(name, fallback=0) {
+    if (!localStorage.hasOwnProperty(name)) {
+        return fallback
+    }
+    return JSON.parse(localStorage.getItem(name))
+    }
+function save_system_clear() {localStorage.clear()}
+
+time = 0
+delta_time = 1/60
+let start, _prev_time;
+update = null
+function _step(_timestamp) {
+    if (start === undefined) {
+        start = _timestamp;
+    }
+    const elapsed = _timestamp - start;
+    if (update) {
+        update()
+    }
+
+    for (var e of entities) {
+        if (e.update && e.enabled) {
+            e.update()
+        }
+    }
+
+    time = _timestamp / 1000
+    delta_time = (_timestamp - _prev_time) / 1000
+    _prev_time = _timestamp
+    window.requestAnimationFrame(_step);
+}
+window.requestAnimationFrame(_step)
+
+
+held_keys = {}
+all_keys = `<zxcvbnm,.-asdfghjkløæ'qwertyuiopå¨1234567890+`
+for (var i = 0; i < all_keys.length; i++) {
+    held_keys[all_keys[i]] = 0
+}
+held_keys['mouse left'] = false
+held_keys['mouse middle'] = false
+_renamed_keys = {'arrowdown':'down arrow', 'arrowup':'up arrow', 'arrowleft':'left arrow', 'arrowright':'right arrow', ' ':'space'}
+
+input = null
+function _input(event) {
+    if (event instanceof Event) {
+        if (event.type == 'wheel') {
+            if (event.deltaY > 0) {key = 'scroll down'}
+            else {key = 'scroll up'}
+        }
+        else if (event.type == 'pointerdown') {
+            if (event.button == 0) {key = 'left mouse down'; mouse.left=true; held_keys['mouse left']=true}
+            else if (event.button == 1) {key = 'middle mouse down'; mouse.middle=true; held_keys['mouse middle']=true}
+            else if (event.button == 2) {key = 'right mouse down'; mouse.right=true; held_keys['mouse right']=true}
+        }
+        else if (event.type == 'pointerup') {
+            if (event.button == 0) {key = 'left mouse up'; mouse.left=false; held_keys['mouse left']=false}
+            else if (event.button == 1) {key = 'middle mouse up'; mouse.middle=false; held_keys['mouse middle']=false}
+            else if (event.button == 2) {key = 'right mouse up'; mouse.right=false; held_keys['mouse right']=false}
+        }
+
+        else {
+            key = event.key.toLowerCase()
+        }
+    }
+    else {  // is already a string, like swipe left, etc.
+        key = event
+    }
+
+    if (key in _renamed_keys) {
+        key = _renamed_keys[key]
+    }
+
+    if ((event instanceof Event) && event.type == "keyup") {
+        held_keys[key] = 0
+        key = key + ' up'
+    }
+    else if (!held_keys[key]){
+        held_keys[key] = 1
+    }
+    else if (event.type == "keydown") {  // prevent key repeat
+        return
+    }
+
+
+    for (var e of entities) {
+        if (e.input && e.enabled) {
+            e.input(key)
+        }
+    }
+    if (input) {
+        input(key)
+    }
+}
+document.addEventListener('keydown', _input)
+document.addEventListener('keyup', _input)
+document.addEventListener('wheel', _input); // modern desktop
+
+
+// triple click in the lower right to enter fullscreen
+_hidden_fullscreen_button = new Button({parent:camera.ui, xy:bottom_right, roundness:.5, color:color.red, last_pressed_timestamp:-1, sequential_taps:0, visible_self:false})
+_hidden_fullscreen_button.on_click = function() {
+    // print(time - _hidden_fullscreen_button.last_pressed_timestamp)
+    if (time - _hidden_fullscreen_button.last_pressed_timestamp < .25) {
+        _hidden_fullscreen_button.sequential_taps += 1
+        if (_hidden_fullscreen_button.sequential_taps >= 3) {
+            set_fullscreen(!fullscreen)
+            _hidden_fullscreen_button.sequential_taps = 0
+        }
+    }
+    else {  //reset
+        _hidden_fullscreen_button.sequential_taps = 1
+    }
+    _hidden_fullscreen_button.last_pressed_timestamp = time
+}
+
+function _fullscreenchange() {
+    set_scale(1)
+}
+document.addEventListener('fullscreenchange', _fullscreenchange)
+
+set_orientation('vertical')
+
+</script>
+
+<script type='text/sunsnake'>
+
+
+set_background_color("#111111")
+set_window_color("#222")
+
+SCORE = save_system_load('score')
+BLACK_COINS = save_system_load('black_coins')
+GREEN_COINS = save_system_load('green_coins')
+
+slots = []
+draggables = []
+coordinates = []
+
+for x in range(5):
+    for y in range(5):
+        coordinate = [x,y]
+        coordinates.append(coordinate)
+
+colors = [color.cyan, color.magenta, color.yellow]
+color_names = ['cyan', 'magenta', 'yellow']
+block_size = 1/5*.9
+
+extra_ink_button = Entity(color='gold', text='🪙', scale=.05, roundness=.4, color=color.yellow, text_color=color.white, enabled=False, z=-3)
+extra_ink_effect = Entity(scale=.1, z=-2, texture='impact_effect.gif', enabled=False)
+
+extra_ink_button.on_click = def():
+    extra_ink_effect.xy = extra_ink_button.xy
+    extra_ink_effect.enabled = True
+    extra_ink_effect.texture = 'impact_effect.gif'
+    extra_ink_button.text = '🪙 +20'
+    set_score(SCORE+20)
+    after .25s:
+        extra_ink_button.enabled = False
+        extra_ink_button.text = '🪙'
+
+
+for i in range(3):
+    slot = Entity(color=colors[i], scale=.1, roundness=.0, color=color.clear)
+
+    slot.model.style.outline = `4px dashed ${color_names[i]}`
+    slots.append(slot)
+
+    let e = Entity(color=colors[i], scale=.16, draggable=True, roundness=.2, shadow=True, target_slot=slot, velocity=[0,0], min_x=-.5+.08, max_x=.5-.08, min_y=(-.5*aspect_ratio)+.08, max_y=(.5*aspect_ratio)-.08, duration_dragged=0, z=-1)
+    e.effect = Entity(parent=e, scale=2, z=-2, texture='impact_effect.gif', enabled=False)
+
+    draggables.append(e)
+    e.on_click = def():
+        e.start_pos = e.xy
+
+    e.drop = def():
+        e.scale_x -= .02
+        e.scale_y -= .02
+        after .05s:
+            e.scale_x += .02
+            e.scale_y += .02
+
+        e.snap_to_slot()
+
+        e.velocity = [e.x-e.start_pos[0], e.y-e.start_pos[1]]
+        e.duration_dragged = 0
+
+    e.snap_to_slot = def():
+        limit = .075
+
+        if distance(e.position, e.target_slot.position) < limit:
+            e.xy = e.target_slot.xy
+            e.draggable = False
+            r = [e.draggable for e in draggables].sum()
+            if r == 0:
+                win()
+
+
+    e.update = def():
+        if e.draggable and not e.dragging:
+            # print('a', e.velocity)
+
+            if e.x+e.scale_x > .5:
+                e.velocity[0] *= -1
+            if e.x-e.scale_x < -.5:
+                e.velocity[0] *= -1
+
+            if e.y+e.scale_y > .75:
+                e.velocity[1] *= -1
+            if e.y-e.scale_y < -.75:
+                e.velocity[1] *= -1
+
+            e.velocity = [
+                lerp(e.velocity[0], 0, .025),
+                lerp(e.velocity[1], 0, .025),
+                ]
+            e.x += e.velocity[0] * .075
+            e.y += e.velocity[1] * .075
+            e.x = clamp(e.x, -.5, .5)
+            e.y = clamp(e.y, -.75, .75)
+            e.snap_to_slot()
+
+def goto_next_level():
+    random_positions = sample(coordinates, 7)
+
+    for i in range(3)
+        e = slots[i]
+        e.x = (-2 + random_positions[(i*2)][0]) * block_size
+        e.y = (-2 + random_positions[(i*2)][1]) * block_size
+
+        e = draggables[i]
+        e.x = (-2 + random_positions[(i*2)+1][0]) * block_size
+        e.y = (-2 + random_positions[(i*2)+1][1]) * block_size
+        e.draggable = True
+        e.velocity = [0,0]
+
+    if random_int(0, 100) < save_system_load('extra_ink_chance'):
+    # if random_int(0, 100) < 50:
+        extra_ink_button.enabled = True
+        extra_ink_button.x = (-2 + random_positions[6][0]) * block_size
+        extra_ink_button.y = (-2 + random_positions[6][1]) * block_size
+
+goto_next_level()
+
+
+score_counter = Button(y=(.5*aspect_ratio)-.1, text=`🪙 ${SCORE}`, origin=[0,0], text_color=color.white, color=color.clear, z=-10)
+score_counter.fit_to_text()
+
+
+win_text = Entity(text='Yay! :D', enabled=False, text_origin=[0,0], scale=[.25,.125], color=color.white, shadow=True, margin=10, roundness=.4, z=-3)
+def set_score(value):
+    value = max(value, 0)
+    SCORE = value
+    score_counter.text= `🪙 ${SCORE}`
+    save_system_save('score', SCORE)
+
+def set_black_coins(value):
+    value = max(value, 0)
+    BLACK_COINS = value
+    black_coin_counter.text = `⚫ ${BLACK_COINS}`
+    save_system_save('black_coins', BLACK_COINS)
+
+def set_green_coins(value):
+    value = max(value, 0)
+    GREEN_COINS = value
+    green_coin_counter.text = `🟢 ${GREEN_COINS}`
+    save_system_save('green_coins', GREEN_COINS)
+
+
+
+def win():
+    win_text.enabled = True
+    set_score(SCORE + 1)
+
+    for i, e in enumerate(draggables):
+        let _e = e
+        after i*.1s:
+            _e.effect.enabled = True
+            _e.effect.texture = 'impact_effect.gif'
+
+    after 1s:
+        win_text.enabled = False
+        goto_next_level()
+
+
+mouse.prev_pos = mouse.position
+def update():
+    mouse.velocity = [mouse.position[0]-mouse.prev_pos[0], mouse.position[1]-mouse.prev_pos[1]]
+
+
+sunsnake.define(*button_style, color=hsv(0,0,.12), text_color=hsv(0,.0,.9), shadow=True)
+
+# share_icon = Button(text='🧾', position=[.5-.05,(.5*aspect_ratio)-.1, -1], origin=[.5,-.0], scale=[.1,.075], roundness=.5, text_size=2, color=hsv(0,0,.2), on_click=def():share_menu.enabled=True)
+# share_menu = Entity(parent=camera.ui, visible_self=False, enabled=False, position=[share_icon.x, share_icon.y-.05, -10])
+# share_menu_text = Button(parent=share_menu, font='monospace', text_size=2, origin=[.5,.5], z=-1, scale=[.6,.9], color=color.black, shadow=True, text_origin=[-.5,.5], padding=1, roundness=.1, text_color=hsv(0,0,.9))
+# share_menu.on_enable = def():
+#     share_menu_text.text = ```
+#         CMYK Swap
+#         —————————————————
+#         score
+#         8 1 7
+#         —————————————————
+#         Ink Dispenser lvl.
+#         ▢ ▢ ▣ ▢ ▢ ▢
+#         —————————————————
+#         G Cartridge lvl.
+#         ▣ ▢ ▢ ▢ ▢
+#         —————————————————
+#         Tile Skins
+#         ▣ ▢ ▢ ▣ ▣ ▢ ▣
+#         —————————————————
+#         Backgrounds
+#         ▣ ▢ ▢ ▣ ▣ ▢ ▣
+#         —————————————————
+#         ```
+# # share_menu_text.model.style.lineHeight = '.75em'
+# # share_menu_text.model.style.fontFamily = 'monospace'
+# share_menu.bg = Entity(parent=share_menu, scale=10, color=hsv(0,0,.05), alpha=.99, ignore_collision=False, on_click=def():share_menu.enabled=False)
+# share_menu.copy_button = Button(*button_style, parent=share_menu_text, z=-2, text='Copy', scale=[1,.125], roundness=.2, x=-.6, y=-1., enabled=1)
+# share_menu.copy_button.on_click = copy_to_clipboard = def():
+#     navigator.clipboard.writeText(share_menu_text.text)
+#
+# share_menu.enabled = 1
+# # print('-------', share_menu.copy_button.enabled)
+
+shop_icon = Button(text='  💼  ', position=[-.5+.05,(.5*aspect_ratio)-.1], origin=[-.5,-.0], scale=[.1,.075], roundness=.5, text_size=2, color=hsv(0,0,.2), on_click=def():menu.enabled=True)
+
+def grid_layout(l=[], max_x=5, spacing=[1.1,1.1], offset=[0,0]):
+    print('-----', l)
+    x = 0
+    y = 0
+    for i, e in l:
+        e.xy = [(x * l[0].scale_x * spacing[0]) + offset[0],
+                (-y * l[0].scale_y * spacing[1]) + offset[1]]
+
+        x += 1
+        if x >= max_x:
+            y += 1
+            x = 0
+
+
+menu = Entity(parent=camera.ui, z=-1, visible_self=False, enabled=False)
+menu.bg = Entity(parent=menu, scale=2, color=hsv(0,0,.05), alpha=.99, ignore_collision=False)
+menu.back_button = Button(parent=menu, xy=top_left, origin=[-1,1], scale=.1, color=color.gray, z=-1, text='↩', color=color.clear, text_color=color.gray, text_size=5, on_click=def(): menu.enabled=False;menu_handler.state=None)
+
+menu.on_enable = def():
+    menu.bg.alpha = 0
+    menu.bg.animate('alpha', .99)
+    menu_handler.state = 'shop'
+
+
+shop_menu = Entity(visible_self=False, parent=menu, xy=[-.27,.5])
+
+black_coin_counter = Button(parent=menu, y=(.5*aspect_ratio)-.2, text=`⚫ ${BLACK_COINS}`, origin=[.5,0], text_color=color.white, color=color.clear, z=-10, x=-.1)
+black_coin_counter.fit_to_text()
+green_coin_counter = Button(parent=menu, y=(.5*aspect_ratio)-.2, text=`🟢 ${GREEN_COINS}`, origin=[-.5,0], text_color=color.white, color=color.clear, z=-10, x=.1)
+green_coin_counter.fit_to_text()
+
+Entity.prototype['appear'] = function(anim_type, duration=.2):
+    entity = this
+    if anim_type == 'scale_x':
+        org_value = entity.scale_x
+        entity.scale_x = .1
+        entity.animate('scale_x', org_value, duration=duration)
+        return
+
+    if anim_type == 'scale':
+        org_scale_x = entity.scale_x
+        org_scale_y = entity.scale_y
+        entity.scale = .1
+        entity.animate('scale_x', org_scale_x, duration=duration)
+        after duration:
+            entity.animate('scale_y', org_scale_y, duration=.2)
+        return
+
+
+opening_parent = Entity(parent=camera.ui, z=-2, visible_self=False, enabled=False)
+opening_bg = Entity(parent=opening_parent, color=hsv(300,.5,.1), target_alpha=.9, scale=2, ignore_collision=False, on_click=def():print('a'))
+opening_frame = Entity(parent=opening_parent, z=-1, color=hsv(0,0,.2), alpha=.5, scale=.9, shadow=True, roundness=.02, y=.15)
+
+opening_parent.on_enable = def():
+    opening_bg.alpha = 1
+    opening_bg.animate('alpha', opening_bg.target_alpha, duration=.1)
+    opening_parent.continue_button.enabled = False
+    opening_frame.appear('scale', duration=.1)
+
+
+
+opening_parent.continue_button = Button(parent=opening_parent, z=-1, *button_style, text='Continue', scale=[.5,.15], roundness=.2, y=-.45, enabled=False)
+opening_parent.continue_button.on_enable = def():
+    opening_parent.continue_button.appear('scale', duration=.05)
+opening_parent.continue_button.on_click = def():
+    opening_bg.animate('alpha', 0, duration=.1)
+    after .1:
+        opening_parent.enabled = False
+        refresh_shop()
+
+
+
+bag_parent = Entity(parent=opening_parent, z=-2, visible_self=False)
+card_reveal_effect_normal = Entity(parent=opening_parent, scale=.2, z=-2, texture='impact_effect.gif', enabled=False)
+card_reveal_effect_rare =   Entity(parent=opening_parent, scale=.75, z=-2, texture='sparkle_impact.gif', enabled=False)
+
+# make textures get included in build
+Entity(enabled=False, texture='frame.png')
+Entity(enabled=False, texture='frame_2.png')
+Entity(enabled=False, texture='frame_gold.png')
+
+for i in range(6):
+    let card = Button(parent=bag_parent, color=hsv(300, .0, .05), z=-1, scale=[.2,.25], enabled=False, shadow=True, roundness=.15, text_color=color.smoke)
+    # card.model.style.outline = `8px solid #333`
+    card.original_color = card.color
+    card.active_color = color.white
+    card.org_scale_x = card.scale_x
+    card.on_click = def():
+        bag_parent.items_left -= 1
+        if bag_parent.items_left <= 0:
+            after .4:
+                opening_parent.continue_button.enabled = True
+
+        card.animate('scale_x', 0, duration=.1)
+        after .2:
+            card.animate('scale_x', card.org_scale_x, duration=.1)
+            card.texture = card.front_texture
+            card.color = card.active_color
+            if card.value > 0 and card.value < 100:
+                card_reveal_effect_normal.xy = card.xy
+                card_reveal_effect_normal.enabled=True
+                card_reveal_effect_normal.texture = card_reveal_effect_normal.texture
+            elif card.value != 0:
+                card_reveal_effect_rare.xy = card.xy
+                card_reveal_effect_rare.enabled = True
+                card_reveal_effect_rare.texture = card_reveal_effect_rare.texture
+
+
+
+        after .4:
+            card.text = `${card.value}`
+            if len(card.value) > 5:
+                card.text_size = 2
+                print('lower size')
+            else:
+                card.text_size = 3
+
+            if Number.isInteger(card.value):
+                set_score(SCORE+card.value)
+
+            else:
+                if card.value == 'Black\nCoin':
+                    set_black_coins(BLACK_COINS+1)
+                elif card.value.endswith('🟢'):
+                    set_green_coins(GREEN_COINS+1)
+
+                print('GOT ITEM:', card.value)
+
+        card.ignore_collision = True
+
+grid_layout(bag_parent.children, max_x=3, spacing=[1.1,1.1], offset=[-.225,.2])
+for e in bag_parent.children:
+    e.target_y = e.y
+
+
+sunsnake.define(*ShopButton(, Button(parent=shop_menu, scale=[.36,.2], origin=[-.5,.5], color=color.black, text_color=color.light_gray, text_size=2, )
+lucky_bag_items = [
+    [20, 20%, 'frame.png'],
+    [15, 20%, 'frame.png'],
+    [5, 20%, 'frame.png'],
+    [25, 20%, 'frame.png'],
+    [50, 5%, 'frame_gold.png']
+]
+black_box_items = [
+    [100, 20%, 'frame.png'],
+    [150, 20%, 'frame.png'],
+    [50, 20%, 'frame.png'],
+    [25, 20%, 'frame.png'],
+    ['Black\nCoin', 5%, 'frame_2.png'],
+    [0, 100%, 'frame.png']
+]
+green_box_items = [
+    [50, 20%, 'frame.png'],
+    [100, 20%, 'frame.png'],
+    [200, 20%, 'frame.png'],
+    [250, 10%, 'frame.png'],
+    ['1 🟢', 5%, 'frame_2.png'],
+    [0, 100%, 'frame.png']
+]
+
+lucky_bag_cost = ['gold', 50]
+bag_button = *ShopButton(text='Lucky Bag\n\n🪙 50', cost=lucky_bag_cost)
+bag_button.on_click = def():
+    open_loot_box(cost=lucky_bag_cost[1], num=3, items=lucky_bag_items)
+
+# cost = ['gold', 0]
+# watch_ad_button = *ShopButton(text='+🪙 20\n\nWatch AD', cost=cost)
+# watch_ad_button.on_click = def():
+#     # Android.startRewardVideoAndroidFunction(paramFromJS)
+#     set_score(SCORE+20)
+#     refresh_shop()
+
+black_box_cost = ['gold', 500]
+black_box = *ShopButton(text=`Black Box\n\n🪙  ${black_box_cost[1]}`, cost=black_box_cost)
+black_box.on_click = def():
+    open_loot_box(cost=black_box_cost[1], num=3, items=black_box_items)
+
+green_box_cost = ['gold', 600]
+green_box = *ShopButton(text=`Green Box\n\n🪙  ${green_box_cost[1]}`, cost=green_box_cost)
+green_box.on_click = def():
+    open_loot_box(cost=green_box_cost[1], num=3, items=green_box_items)
+
+sell_green_coin_cost = ['green_coin', 1]
+sell_green_coin_button = *ShopButton(text='Gain +🪙 100\n\n🟢 1', cost=sell_green_coin_cost)
+sell_green_coin_button.on_click = def():
+    if GREEN_COINS <= 0:
+        return
+    set_green_coins(GREEN_COINS - sell_green_coin_cost[1])
+    set_score(SCORE + 100)
+    refresh_shop()
+
+# b = *ShopButton(text='Skin Chest\n\n🪙 2000', cost=2000)
+# b = *ShopButton(text='Background Chest\n\n🪙 2000', cost=2000)
+
+
+def open_loot_box(cost, num, items):
+    print('bought for', cost)
+    print(SCORE,)
+    set_score(SCORE-cost)
+    # play bag animation
+    opening_parent.enabled = True
+    bag_parent.items_left = num
+
+    # reset cards
+    for card in bag_parent.children:
+        card.enabled = False
+        card.y = card.target_y + .1
+        card.texture = 'card_back.png'
+        card.text = ''
+        card.ignore_collision = False
+
+    after .4:
+        for i in range(bag_parent.items_left):
+            let card = bag_parent.children[i]
+            let r = random_value()
+            cumulative = 0
+            card.value = 0
+            card.active_color = color.gray
+            card.front_texture = 'frame.png'
+            for e in items:
+                print('-----', e)
+                item = e[0]
+                chance = e[1]
+                tex = e[2]
+                cumulative += chance
+
+                if r <= cumulative:
+                    card.value = item
+                    card.front_texture = tex
+                    break
+
+            after i*.2:
+                card.enabled = True
+                card.animate('y', card.target_y)
+
+
+    refresh_shop()
+    # refresh_shop()
+# bag_button.on_click()
+
+# b = *ShopButton(text='Daily Reward\n\n🪙 0', cost=0)
+#
+
+# b = *ShopButton(text='Green Cartridge\n\n🪙 10000', cost=10_000, amount=1)
+# b = *ShopButton(text='Random Skin\n\n🪙 10000', cost=10_000, amount=4)
+# b = *ShopButton(text='Random\nBackground\n\n🪙 10000', cost=10_000, amount=4)
+
+grid_layout(l=shop_menu.children, max_x=2, spacing=[1.05,1.1])
+shop_menu.on_enable = def():
+
+    for i, e in shop_menu.children:
+        e.original_x = e.x
+        e.x += .2 + (i*.05)
+        e.animate('x', e.original_x, duration=.005+(.05*i))
+
+    refresh_shop()
+
+def refresh_shop():
+    print('update shop')
+    for e in shop_menu.children:
+        # e.ignore_collision = SCORE < e.cost or e.cost <= 0
+        e.model.style.outline = `medium ${color_names[i]}`
+        currency = e.cost[0]
+        amount = e.cost[1]
+        print('------------updates shop', currency, amount, GREEN_COINS)
+        if (currency == 'gold' and amount > SCORE) or (currency == 'green_coin' and amount > GREEN_COINS):
+            e.text_color = hsv(0,0,.3)
+            e.color = hsv(0,0,.03)
+            e.ignore_collision = True
+            e.shadow = False
+        else:
+            e.color = hsv(0,0,.12)
+            e.text_color = hsv(40,.0,.9)
+            e.ignore_collision = False
+            e.shadow = True
+
+
+unlocks_menu = Entity(parent=menu, visible_self=False, xy=[-.145,.5])
+# upgrade_panel_data = [
+#     {'title':'Ink Dispenser', 'description':'% chance og spawning extra gold', 'varname':'extra_ink_chance', 'slider':None, 'button':None},
+#     {'title':'G Cartridge', 'description':'% chance of spawning green slot', 'varname':'green_slot_chance', 'slider':None, 'button':None},
+#     {'title':'B Cartridge', 'description':'% chance of spawning black slot', 'varname':'black_slot_chance', 'slider':None, 'button':None},
+# ]
+upgrade_panel_data = [
+    {'title':'Ink Dispenser', 'description':'% chance og spawning extra gold', 'varname':'extra_ink_chance', 'slider':None, 'button':None},
+]
+gradient = [hsv(150+(i*40), .8, .7) for i in range(5)]
+upgrade_costs = [0, 500, 1000, 2000, 5000]
+
+for y, data in upgrade_panel_data:
+    y_pos = (-y*.2*1.1) -.05
+
+    title        = Button(parent=unlocks_menu, scale=[.8,.1], origin=[-.5,.5], color=color.clear, text_color=hsv(0,0,.9), text_size=2, x=-.125, y=y_pos+.08, text=`${data['title']}`, roundness=.25, text_origin=[-.5,-.5], on_click=def():refresh_upgrade_menu())
+    description  = Button(parent=unlocks_menu, scale=[.8,.1], origin=[-.5,.5], color=color.clear, text_color=hsv(0,0,.6), text_size=1.5, x=-.125, y=y_pos+.05, text=`${data['description']}`, roundness=.25, text_origin=[-.5,-.5])
+    let bar = RainbowSlider(parent=unlocks_menu, min=0, max=5, xy=[.14,y_pos-.075], scale=[.525,.03], show_text=True, text_size=1.5, color=hsv(0,0,.03), gradient=gradient, default=save_system_load(data['varname'], 1))
+    upgrade_panel_data[y]['slider'] = bar
+
+    let upgrade_button = Button(parent=unlocks_menu, scale=[.2,.125], origin=[.5,-.5], color=hsv(0,0,.12), text_color=color.light_gray, text_size=2, x=.5+.115, y=y_pos-.1, text=`Upgrade\n🪙 ???`, roundness=.25, shadow=True)
+    upgrade_panel_data[y]['button'] = upgrade_button
+    upgrade_button.on_click = def upgrade(varname=data['varname']):
+        current_level = save_system_load([data['varname']])
+        cost = upgrade_costs[current_level]
+        print(current_level, cost, bar.value)
+
+        if SCORE < cost or bar.value >= 5:
+            return
+
+        set_score(SCORE - cost)
+        save_system_save(varname, current_level+1)
+        bar.value += 1
+        refresh_upgrade_menu()
+
+
+def refresh_upgrade_menu():
+    for data in upgrade_panel_data:
+        current_level = save_system_load([data['varname']])
+        upgrade_cost = upgrade_costs[current_level]
+        data['slider'].value = current_level
+        data['button'].text = `Upgrade\n🪙 ${upgrade_cost}`
+        print('---refresh_upgrade_menu-', current_level, data['slider'].value, SCORE, SCORE < upgrade_costs[current_level])
+
+        if current_level >= 5 or SCORE < upgrade_cost:
+            data['button'].text_color = hsv(0,0,.3)
+            data['button'].color = hsv(0,0,.03)
+            data['button'].ignore_collision = True
+            data['button'].shadow = False
+        else:
+            data['button'].color = hsv(0,0,.12)
+            data['button'].text_color = hsv(40,.0,.9)
+            data['button'].ignore_collision = False
+            data['button'].shadow = True
+
+refresh_upgrade_menu()
+
+
+skins_menu = Entity(parent=menu, visible_self=False)
+tab_parent = Entity(parent=menu, visible_self=False, xy=[-.4,.4])
+sunsnake.define(TabButton(, )
+# for key, value in enumerate({'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu, 'backgrounds':skins_menu}):
+for key, value in enumerate({'shop':shop_menu, 'unlocks':unlocks_menu}):
+# for key, value in enumerate({'shop':shop_menu, }):
+    let button = Button(parent=tab_parent, scale=.1, color=.12, text_color=hsv(0,0,.9), text_size=1.5, rotation=45, text=key)
+    button.on_click = def():
+        menu_handler.state = value
+
+        for e in tab_parent.children:
+            if e == button:
+                e.color = color.magenta
+                e.text_color = hsv(0,0,.1)
+            else:
+                e.color = .12
+                e.text_color = hsv(0,0,.9)
+
+grid_layout(tab_parent.children, max_x=1, spacing=[1,2.2], offset=[0,0])
+
+
+states = {'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu}
+# states = {'shop':shop_menu}
+menu_handler = StateHandler(states=states, fade=False)
+menu_handler.state = None
+
+# line = Entity(parent=menu, scale=[.0025,1], x=-.3, z=-1, color=hsv(0,0,.1))
+# line = Entity(parent=menu, scale=[.0025,1], x=-.27, z=-1, color=hsv(0,0,.1))
+# line = Entity(parent=menu, scale=[.0025,1], x=-.33, z=-1, color=hsv(0,0,.1))
+# line = Entity(parent=menu, scale=[.0025,1], x=.5-.03, z=-1, color=hsv(0,0,.1))
+# line = Entity(parent=menu, scale=[.0025,1], x=.5-.06, z=-1, color=hsv(0,0,.1))
+
+# menu.enabled = True
+# for e in ['']:
+# 🔑
+
+# -100p buy chest for chance of item
+# unlock green chance (3p)
+# unlock luck (change to spawn extra point play field)
+# unlock black chance (skin as black hole?) (10p)
+# unlock skins, maybe even animated blocks?
+# all: dragon, chameleon
+# C: whale, dolphin, peacock
+# M: flamingo, butterfly, bird, starfish,
+# Y: snake, lion, yellow fish
+# unlock backgrounds
+# wall chance? (avoid or you get no point)
+
+# achievements
+# share score
+
+def input(key):
+    if key == 'u':
+        set_score(SCORE + 100)
+        refresh_shop()
+        refresh_upgrade_menu()
+    if key == 'r':
+        set_score(0)
+        save_system_save('extra_ink_chance', 1)
+        save_system_save('green_slot_chance', 1)
+        save_system_save('black_slot_chance', 1)
+        refresh_shop()
+        refresh_upgrade_menu()
+    if key == 'g':
+        set_green_coins(GREEN_COINS + 1)
+        refresh_shop()
+        refresh_upgrade_menu()
+
+
+
+</script>
+
+<script type='text/javascript'>
+print = console.log
+_class_names = ['Entity', 'Button', 'Text', 'HealthBar', 'RainbowSlider', 'InputField', 'StateHandler']
+_language = 'sunsnake'
+
+Array.prototype.at = function(i) {
+    if (i < 0) {
+        i = this.length + i
+    }
+    return this[i]
+}
+
+try {''.replaceAll('', '')} // make sure replaceAll is supported, else implement it.
+catch {String.prototype.replaceAll = function replaceAll(search, replace) { return this.split(search).join(replace); }}
+
+
+function compile(script) {
+    try {t = performance.now()} catch {}
+    // start parsing
+    script = script.replaceAll(',\n', ',')
+    script = script.replaceAll('(\n', '(')
+    script = script.replaceAll('{\n', '{')
+    script = script.replaceAll('[\n', '[')
+    script = script.replaceAll('=\n', '=')
+    script = script.replaceAll('+\n', '+')
+    script = script.replaceAll(' == ', ' === ')
+    script = script.replaceAll('.index(', '.indexOf(')
+
+    var all_lines = script.split('\n');
+    var lines = []
+    lines.push('\n')
+
+    strings = []
+    string_index = 0
+    const regexp = '\'(.*?)\'';
+    const regexp_backtick = '\`(.*?)\`';
+
+    extra_replacements = []
+    is_in_multiline_string = false;
+
+    for (var i=0; i<all_lines.length; i++) {
+        if (!all_lines[i].trim()) {
+            // print('skip line')
+            continue
+        }
+        line = all_lines[i].trimStart()
+        if (line.startsWith('//')) {
+            continue
+        }
+        if (line.startsWith('#')) {
+            continue
+        }
+        if (all_lines[i].includes(': #')) {
+            all_lines[i] = all_lines[i].split(': #')[0] + ':'
+        }
+        if (line == `'language=python'`) {
+            _language = 'python'
+        }
+        else if (line == `'language=sunsnake'`) {
+            _language = 'sunsnake'
+        }
+        if (_language == 'python') {
+            continue
+        }
+        // if (is_in_multiline_string && !line.trimEnd().endsWith("'''")) {
+        //   lines.push(`"${all_lines[i]}" +`)
+        //   continue
+        // }
+        // if (line.trimEnd().endsWith("'''")) {
+        //     is_in_multiline_string = !is_in_multiline_string
+        //     if (is_in_multiline_string) {
+        //         all_lines[i] = line.slice(0,-3) + '"" +'
+        //     }
+        //     else {
+        //       all_lines[i] = line.slice(0,-3) + '""'
+        //     }
+        // }
+        // remove text so it doesn't get parsed as code.
+        quotes = [...all_lines[i].matchAll(regexp)];
+        quotes.push(...all_lines[i].matchAll(regexp_backtick))
+
+        for (var j=0; j<quotes.length; j++) {
+            if (quotes[j][1].length > 0) {
+                strings.push(quotes[j][1])
+                // print('TEXT_CONTENT_$', string_index, quotes[j][1])
+                all_lines[i] = all_lines[i].replace(`'${quotes[j][1]}'`, `[TEXT_CONTENT_${string_index}]`)
+                string_index += 1
+            }
+        }
+
+        // after keyword for easier invoke()
+        if (line.startsWith('after ') && all_lines[i].trimEnd().endsWith(':')) {
+            start_indent = get_indent(all_lines[i])
+            all_lines[i] = all_lines[i].replaceAll('after ', 'after(')
+            all_lines[i] = all_lines[i].slice(0,-1) + ', function()'
+            for (var j=i+1; j<all_lines.length; j++) {
+                if (get_indent(all_lines[j]) <= start_indent) {
+                    break
+                }
+            }
+        }
+
+        if (all_lines[i].startsWith('class ')) {
+          class_name = all_lines[i].slice(6).split(' ')[0]
+          print('found class:', class_name)
+            _class_names.push(class_name)
+        }
+
+        lines.push(all_lines[i])
+    }
+
+    for (var i=0; i<lines.length; i++) {
+        if (lines[i].endsWith('\\')) {
+            continue
+        }
+        if (lines[i].trimStart().startsWith('sunsnake.define(')) {
+            content = lines[i].slice(16, -1)
+            const [key, ...rest] = content.split(',')
+            const value = rest.join(',')
+            content = [key, value]
+            extra_replacements.push(content)
+            lines[i] = ''
+            continue
+        }
+        for (e of extra_replacements) {
+            lines[i] = lines[i].replaceAll(e[0], e[1])
+        }
+        lines[i] = lines[i].replaceAll(' and ', ' && ')
+        lines[i] = lines[i].replaceAll(' or ', ' || ')
+        lines[i] = lines[i].replaceAll(' not ', ' ! ')
+        lines[i] = lines[i].replaceAll('(not ', '(! ')
+        lines[i] = lines[i].replaceAll('def ', 'function ')
+        lines[i] = lines[i].replaceAll('def():', 'function()')
+        lines[i] = lines[i].replaceAll('.append(', '.push(')
+        lines[i] = lines[i].replaceAll('.add(', '.push(')
+        lines[i] = lines[i].replaceAll('.sum()', '.reduce((a, b) => a + b, 0)')
+        lines[i] = lines[i].replaceAll('.endswith(', '.endsWith(')
+        lines[i] = lines[i].replaceAll('[-1]', '.at(-1)')
+        lines[i] = lines[i].replaceAll(' # ', ' //')   // comments
+
+        // list comprehention
+        if (lines[i].includes('[') && lines[i].includes(']') && lines[i].includes(' for ') && lines[i].includes(' in ') && !lines[i].endsWith(':') && !lines[i].includes('[[')) {
+            // remove part before list comprehension
+            if (lines[i].includes(' = [')) {
+                code_before_list_comprehension = lines[i].split(' = [')[0] + ' = '
+                list_comprehension = lines[i].split(' = [')[1]
+            }
+            else {
+                code_before_list_comprehension = lines[i].split('[')[0]
+                list_comprehension = lines[i].split('[')[1]
+            }
+
+            code_after_list_comprehension = list_comprehension.substring(list_comprehension.lastIndexOf(']')+1)
+            list_comprehension = list_comprehension.substring(0, list_comprehension.lastIndexOf(']'))
+            // print('code_after_list_comprehension:', code_after_list_comprehension)
+            // print('list_comprehension:', list_comprehension)
+
+            first_var =  list_comprehension.split(' for ')[0]
+            element_name = list_comprehension.split(' for ')[1].split(' in ')[0]
+
+            target_list = list_comprehension.split(' in ')[1]
+            if (target_list.includes(' if ')) {
+                target_list = target_list.split(' if ')[0]
+            }
+
+            condition = ''
+            if (list_comprehension.includes(' if ')) {
+                condition = list_comprehension.split(target_list)[1].split(' if ')[1]    // get the part after the target list and remove the if and the last ]
+            }
+
+            map_code = ''
+            if (first_var != element_name) {
+                map_code = `.map(${element_name} => ${first_var})`
+            }
+
+            filter_code = ''
+            if (condition != '') {
+                filter_code = `.myCustomFilter(${element_name} => {if (${condition}) return ${element_name}})`
+            }
+
+            lines[i] = `${code_before_list_comprehension}${target_list}${map_code}${filter_code}${code_after_list_comprehension}`
+        }
+
+        if (lines[i].endsWith(':')) {
+            lines[i] = lines[i].slice(0,-1)
+        }
+
+        // ifs
+        if (lines[i].trimStart().startsWith('if ')) {
+            lines[i] = lines[i].replace('if ', 'if (')
+            lines[i] = lines[i] + ')'
+        }
+        // elifs
+        else if (lines[i].trimStart().startsWith('elif ')) {
+            lines[i] = lines[i].replace('elif ', 'else if (')
+            lines[i] = lines[i] + ')'
+        }
+
+        // dict iteration
+        // print('ITERATE DICT', lines[i].trimStart().startsWith('for key, value in '), lines[i].includes('.items()'))
+        else if (lines[i].trimStart().startsWith('for key, value in ') && lines[i].includes('.items()')) {
+            print('ITERATE DICT')
+            var dict_name = lines[i].split('for key, value in ')[1].split('.items()')[0]
+            lines[i] = lines[i].replace('for key, value in ', 'for (let [key, value] of ')
+            lines[i] = lines[i].replace(`${dict_name}.items()`, `Object.entries(${dict_name}))`)
+        }
+
+        // for loops
+        else if (lines[i].trimStart().startsWith('for ') && lines[i].includes(' in ')) {
+            start = lines[i].split('for ')[0]   // keep indentation
+            elements = lines[i].split('for ')[1].split(' in ')[0]
+            array = lines[i].split(' in ')[1]
+
+            // normal for loop
+            if (!elements.includes(', ')) {
+                lines[i] = lines[i].replace('for ', 'for (var ')
+                lines[i] = lines[i].replace(' in ', ' of ')
+                lines[i] = lines[i] + ')'
+            }
+            // auto enumerate, match 'for ?, ? in ?'
+            else {
+                elements = `[${elements}]`
+                if (!array.startsWith('enumerate(')) {
+                    array = `enumerate(${array})`
+                }
+                lines[i] = `${start}for (let ${elements} of ${array})`
+            }
+
+        }
+
+        // is in list
+        if (lines[i].includes(' in ') && !lines[i].includes('for ')) {
+            word_before_in = lines[i].split(' in ')[0].split(' ').pop()
+            if (word_before_in.startsWith('(')) {
+                word_before_in = word_before_in.slice(1) // remove first and last
+            }
+            // print('word before:', word_before_in)
+            word_after_in =  lines[i].split(' in ')[1].split(' ')[0]
+            if (word_after_in.endsWith(')') && !word_after_in.endsWith('()')) {
+                word_after_in = word_after_in.slice(0,-1)
+            }
+            // print('word after:', word_after_in)
+            lines[i] = lines[i].replace(`${word_before_in} in ${word_after_in}`, `${word_after_in}.includes(${word_before_in})`)
+        }
+
+        // multiline string wrappend in triple backticks```
+        if (!is_in_multiline_string && lines[i].trimEnd().endsWith('```') && lines[i].trim() != '```') {    // start
+            is_in_multiline_string = true
+            lines[i] = lines[i].replace('```', '(')
+        }
+        else if (is_in_multiline_string && !lines[i].includes('```')) {
+            lines[i] = '    '.repeat(get_indent(lines[i])) + '`' + lines[i].trimStart() + '\n` +'
+        }
+        else if (is_in_multiline_string && lines[i].includes('```')) {   // end
+            is_in_multiline_string = false
+            lines[i] = lines[i].replace('```', '``)')
+        }
+
+
+        for (var class_name of ['dict', ]) {
+            if (lines[i].includes(`${class_name}({`)) {
+                continue
+            }
+            if (lines[i].startsWith(`${class_name}(`) || lines[i].includes(` ${class_name}(`)) {
+                lines[i] = convert_arguments(lines[i], class_name)
+            }
+        }
+
+        for (var class_name of _class_names) {
+            is_first_word = lines[i].startsWith(`${class_name}(`) ? '' : ' '        // don't add space if line starts with 'Entity(', do add otherwise, to ensure we match the whole name
+            if (lines[i].includes(`${is_first_word}${class_name}(`)) {
+                lines[i] = lines[i].replace(`${is_first_word}${class_name}(`, `${is_first_word}new ${class_name}(`)
+                lines[i] = convert_arguments(lines[i], class_name)
+            }
+            if (lines[i].startsWith(` new `)) {
+                lines[i] = lines[i].trimStart()
+            }
+        }
+
+        for (var n=0; n<10; n++) {
+            lines[i] = lines[i].replaceAll(`${n}ms`, `${n}*.001`)
+            lines[i] = lines[i].replaceAll(`${n}s`, `${n}`)
+            lines[i] = lines[i].replaceAll(`${n}m`, `${n}*60`)
+            lines[i] = lines[i].replaceAll(`${n}h`, `${n}*60*60`)
+            lines[i] = lines[i].replaceAll(` in ${n}:`, ` in range(${n}):`)
+            lines[i] = lines[i].replaceAll(`${n}%`, `${n}*.01`)
+        }
+    }
+    // add brackets based on indentation
+    current_indent = 0
+    after_statement_indents = []
+
+    for (var i=1; i<lines.length; i++) {
+        if (lines[i-1].endsWith('=') || lines[i-1].endsWith('+') || lines[i-1].endsWith('(')) {
+            continue
+        }
+        prev_line_indent = get_indent(lines[i-1])
+        current_line_indent = get_indent(lines[i])
+
+        if (current_line_indent > prev_line_indent) {
+            lines[i-1] += ' {'
+            current_indent = current_line_indent
+        }
+        if (current_line_indent < prev_line_indent) {
+            for (var j of range(current_indent - current_line_indent)) {
+                lines[i-1] += '\n' + '    '.repeat(current_indent-j-1) + '}'
+
+                if (after_statement_indents.at(-1) === current_indent-j-1) {
+                    lines[i-1] += ')'
+                    after_statement_indents.pop()
+                }
+            }
+            current_indent = current_line_indent
+        }
+        if (lines[i].trimStart().startsWith('after(')) {
+            after_statement_indents.push(current_indent)
+        }
+    }
+
+    new_line = ''
+    for (var j of range(current_indent)) {
+        new_line += '' + '    '.repeat(current_indent-1) + '}'
+    }
+    lines.push(new_line)
+    var compiled_code = lines.join('\n')
+    // compiled_code = compiled_code.replaceAll('+\n', '+')
+    // compiled_code = compiled_code.replaceAll('(\n', '(')
+
+    // add text back in
+    for (var i=0; i<strings.length; i++) {
+        compiled_code = compiled_code.replace(`[TEXT_CONTENT_${i}]`, `'${strings[i]}'`)
+    }
+
+    print('COMPILED CODE:', compiled_code)
+    try {print('compiled in', performance.now() - t, 'ms')} catch {}
+    return compiled_code
+}
+
+function get_indent(str) {
+    if (!str || !str.trim()) {
+        return 0
+    }
+    return (str.length - str.trimStart().length) / 4
+}
+
+function get_inside_brackets(str, open_bracket, closing_bracket) {
+    text_inside_bracket = ''
+    counter = 1
+    for (const char of str) {
+        if (char == open_bracket)
+            counter += 1
+
+        if (char == closing_bracket)
+            counter -= 1
+            if (counter == 0)
+                return text_inside_bracket
+
+        text_inside_bracket += char
+    }
+}
+function convert_arguments(line, class_name) {
+    part_after = line.split(class_name+'(')[1]
+    arguments = get_inside_brackets(part_after, '(', ')')
+    new_arguments = arguments
+    has_inline_function = false
+
+    if (arguments.includes(`function()`)) {
+        has_inline_function = true
+        func_content = arguments.split('function()')[1]
+        lastIndex = arguments.lastIndexOf(')')
+        func_content = func_content.substr(0, lastIndex) + func_content.substr(lastIndex)
+        function_definition = 'function()' + func_content
+        new_arguments = arguments.replace(function_definition, `[INLINE_FUNC_PLACEHOLDER]`)
+    }
+
+    keys = new_arguments.split(',').map(e => e.split('=')[0])
+    if (!keys.includes('name')) {
+        if (line.includes(`= new ${class_name}`)) {
+            variable_name = line.split(`= new ${class_name}`)[0].trimStart()
+            if (variable_name.startsWith('let ')) {
+                variable_name = variable_name.slice(4)
+            }
+            new_arguments = `name='${variable_name}', ${new_arguments}`
+        }
+    }
+    js_style_arguments = '{' + new_arguments.replaceAll('=', ':') + '}'
+
+    if (has_inline_function) {
+        js_style_arguments = js_style_arguments.replace('[INLINE_FUNC_PLACEHOLDER]', 'function(){' + func_content + '}')
+    }
+
+    return line.replace(arguments, js_style_arguments)
+}
+
+function len(arr) {
+    return arr.length
+}
+
+function sum(arr) {
+    return arr.reduce((a, b) => a + b, 0)
+}
+
+String.prototype.count=function(c) {
+    var result = 0, i = 0;
+    for(i;i<this.length;i++)if(this[i]==c)result++;
+    return result;
+}
+print = console.log
+False = false
+True = true
+None = null
+float = parseFloat
+min = Math.min
+max = Math.max
+abs = Math.abs
+floor = Math.floor
+ceil = Math.ceil
+math = Math
+sqrt = Math.sqrt
+function round(value, digits=0) {
+    return Number(Math.round(value+'e'+digits)+'e-'+digits);
+}
+
+function enumerate(list) {
+    if (typeof list.prop2 === 'function') {
+        return list.entries()
+    }
+    else if (typeof list === 'object') {
+        return Object.entries(list)
+    }
+}
+
+function str(value) {
+    return value.map(function(i){return String.fromCharCode(i)}).join("")
+}
+
+function int(value) {
+    if (value === true) {return 1}
+    if (value === false) {return 0}
+    return parseInt(value)
+}
+
+function Array_2d(w, h, default_value=0) {
+    var tiles = new Array(w)
+    for (var i = 0; i < tiles.length; i++) {
+        tiles[i] = new Array(h);
+        tiles[i].fill(default_value)
+    }
+    return tiles
+}
+function Array_3d(w, h, d) {
+    var arr = new Array(w);
+
+    for (var i = 0; i < w; i++) {
+        arr[i] = new Array(h);
+
+        for (var j = 0; j < h; j++) {
+            arr[i][j] = new Array(d).fill(0);
+        }
+    }
+    return arr;
+}
+// function range(n) {return Array(n).keys()}
+function range(start, stop, step) {
+    if (typeof stop == 'undefined') {
+        // one param defined
+        stop = start;
+        start = 0;
+    }
+    if (typeof step == 'undefined') {
+        step = 1;
+    }
+    if ((step > 0 && start >= stop) || (step < 0 && start <= stop)) {
+        return [];
+    }
+    var result = [];
+    for (var i = start; step > 0 ? i < stop : i > stop; i += step) {
+        result.push(i);
+    }
+    return result;
+};
+Array.prototype.myCustomFilter = function (fn) {
+    const filtered = []
+    for (let i=0; i<this.length; i++) {
+        if (fn(this[i]) != undefined) {
+            filtered.push(this[i]);
+        }
+    }
+    return filtered;
+}
+
+Array.prototype.remove = function (element) {
+    var index = this.indexOf(element)
+    if (index >= 0) {
+        this.splice(index, 1)
+    }
+}
+Array.prototype.remove_at = function (index) {
+    this.splice(index, 1)
+}
+
+Array.prototype.skip = function (n) {
+    return this.splice(n)
+}
+Array.prototype.take = function (n) {
+    return this.splice(0, n)
+}
+Array.prototype.take_last = function (n) {
+    return this.splice(-n)
+}
+
+function dict(values={}) {
+    return values
+}
+__name__ = null // for python compability
+__autocompile__ = true
+
+var scripts = document.getElementsByTagName("script")
+for (var script of scripts) {
+    if (script.type == 'text/sunsnake') {
+        print('compile:', script)
+        if (script.textContent) {
+            compiled_code = compile(script.textContent)
+            eval(compiled_code)
+        }
+    }
+}
+
+</script>
+</html>
