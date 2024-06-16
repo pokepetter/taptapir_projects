@@ -157,9 +157,8 @@ options_button = *Button(parent=camera.ui, xy=[-.475, (-.5*aspect_ratio)+.025], 
 options_button.on_click = def():
     options_menu.enabled = True
 
-options_menu = Entity(parent=camera.ui, z=-10, color=color.white, scale=.85, roundness=.025, padding=1, shadow=True, enabled=False, ignore_collision=False)
-options_menu.bg = Entity(parent=options_menu, scale=3, color=color.black, alpha=.5, z=1, on_click=def():options_menu.enabled=False)
-options_menu.close_button = *Button(parent=options_menu, position=[.525,.575], color=color.red, text='✖', text_color=color.white, shadow=False, scale=.1, on_click=def():options_menu.enabled=False)
+options_menu = Entity(parent=camera.ui, z=-10, color=color.white, scale=.85, roundness=.025, padding=1, shadow=True, enabled=False, ignore_collision=False, popup=True)
+options_menu.close_button = *Button(parent=options_menu, position=[.525,.575], color=color.red, text='✕', text_color=color.white, shadow=False, scale=.1, on_click=def():options_menu.enabled=False)
 options_menu.on_disable = def():
     save_system_save('page_names', page_names)
 
@@ -173,8 +172,7 @@ for i, tab in tabs:
         tab.text = name_change_field.value
 
 clear_data_button = *Button(text='clear data', parent=options_menu, scale=[.25,.1], text_size=2, position=[.5,-.5], origin=[.5,-.5], text_color=color.gray, color=color.smoke)
-are_you_sure_prompt = *Button(parent=camera.ui, scale=[.7,.4], z=-120, text='\nClear all data?', text_color=color.dark_gray, text_origin=[0,.5], roundness=.1, shadow=True, enabled=False)
-are_you_sure_prompt.bg = Entity(parent=are_you_sure_prompt, scale=10, color=color.black, alpha=.5, z=1, on_click=def():are_you_sure_prompt.enabled=False)
+are_you_sure_prompt = *Button(parent=camera.ui, scale=[.7,.4], z=-120, text='\nClear all data?', text_color=color.dark_gray, text_origin=[0,.5], roundness=.1, shadow=True, popup=True, enabled=False)
 are_you_sure_prompt.cancel_button = *Button(parent=are_you_sure_prompt, scale=[.5,.25], z=-1, text='Cancel', text_size=2.5, color=color.smoke, text_color=color.dark_gray, origin=[-.5,-.5], position=[-.45,-.4], on_click=def():are_you_sure_prompt.enabled=False)
 are_you_sure_prompt.confirm_button = *Button(parent=are_you_sure_prompt, scale=[.35,.25], z=-1, text='Confirm', text_size=2.5, color=color.azure, text_color=color.smoke, origin=[.5,-.5], position=[.45,-.4], on_click=def():are_you_sure_prompt.enabled=False; save_system_clear())
 
