@@ -89,7 +89,7 @@ add_button.drop = def():
     if mouse.hovered_entity != editor_canvas:
         return
     print(mouse.point)
-    let instance = Button(parent=editor_canvas.entity_parent, scale=.1, position=[mouse.point[0], mouse.point[1]*(editor_canvas.scale_y/editor_canvas.scale_x)], draggable=True, snap_x=.01, snap_y=.01)
+    let instance = Button(parent=editor_canvas.entity_parent, scale=.2, position=[mouse.point[0], mouse.point[1]*(editor_canvas.scale_y/editor_canvas.scale_x)], draggable=True, snap_x=.02, snap_y=.02)
     # instance.on_click = def select(e=instance):
     #     if SELECTED:
     #         SELECTED.color = SELECTED.original_color
@@ -98,6 +98,7 @@ add_button.drop = def():
     #     e.color = color.magenta
 
     instance.on_double_click = def edit(e=instance):
+        print('edit')
         editor.enabled = True
 
     # print('a')
@@ -106,14 +107,17 @@ add_button.drop = def():
     #     e.color = e.original_color
 
 
-editor = Entity(parent=camera.ui, color=color.light_gray, z=-2, scale=[.5,.2], roundness=.1, shadow=True)
-i = 0
-for key, value in [color.black, color.gray, color.white, color.red]:
-    let b = Button(parent=editor, scale=[.2,.4], color=value, x=i*.2)
+editor = Entity(parent=camera.ui, color=color.light_gray, z=-2, scale=[.5,.5], roundness=.1, shadow=True, popup=True)
+for roundness_value in [0,.1,.25,.5]:
+    let b = Button(parent=editor, scale=[.2,.2], roundness=roundness_value, color=color.azure)
+
+for key, value in color:
+    let b = Button(parent=editor, scale=[.2,.2], color=value)
+
     # print('-----', value)
     # i += 1
 # print('ccccccccccccc', editor.children)
-grid_layout(editor.children, {'offset':[-.385,-.25]})
+grid_layout(editor.children, {'offset':[-.385,-.25], 'max_x':5})
     # scene.entities.append(Button(scale=.1))
 
 # require: 1g 10d
