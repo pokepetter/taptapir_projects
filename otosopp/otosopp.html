@@ -275,11 +275,13 @@ draw_on_click = False
 rotate_brush = True
 using_painterly_brush = True
 prev_brush_tip = -1
-set_brush(poke_brush)
+set_brush(painterly_brush)
 # set_brush(round_brush)
 # set_brush_size([64,64])
 IMG = new Image()
-current_color = [32, 32, 32, 255]
+current_color = [32, 128, 128, 255]
+# print('----------------', random_int(0,360)/60)
+current_color = hsv(random_int(0,360), 1, 1, 1)
 drawing = False
 smoothing = False
 prev_pos = None
@@ -513,6 +515,7 @@ def paint():
             sampled_color[i] = lerp(canvas_entity.color[i], sampled_color[i], sampled_color[3]/255)
 
         sampled_color[3] = 255
+
         set_color(sampled_color)
         return
 
@@ -529,6 +532,11 @@ def paint():
                 combined_sample[i] = lerp(combined_sample[i], sampled_color[i], sampled_color[3]/255)
 
         combined_sample[3] = 255
+
+        if current_brush == painterly_brush: # make the color a bit brighter when using painterly_brush since it paints a bit darker than the selected color
+            combined_sample[0] += 20
+            combined_sample[1] += 20
+            combined_sample[2] += 20
         # alphas = [e[3] for e in sampled_colors]
         # alpha = min(sum(alphas), 255)
         # combined_color = [lerp(canvas_entity.color[i], combined_color[i], alpha/255) for i in range(3)]
@@ -732,6 +740,13 @@ def input(key):
         for layer in layers:
             const img_data = flip_image_data_vertically(layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height))
             layer.ctx.putImageData(img_data, 0, 0)
+
+    if held_keys['shift'] and key == 'r':
+        current_color_as_hsv = rgb_to_hsv(current_color)
+        # random_color = [random_int(0,360), current_color[1], current_color[2], current_color[3]]  # this was a mistake, but creates only a small variation and could be useful to have
+        random_color = hsv(random_int(0,360), current_color_as_hsv[1], current_color_as_hsv[2], current_color_as_hsv[3])
+        set_color(random_color)
+
 
 
 def flip_image_data_horizontally(img_data):
