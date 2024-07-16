@@ -220,11 +220,11 @@ painterly_brush = {'name':'painterly_brush', 'textures':["RGBA anim 01.png", "RG
 brushes = [round_brush, square_brush, round_bitmap_brush, poke_brush, poke_brush_small, painterly_brush, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter]
 current_brush = None
 brush_canvases = []
-increase_brush_size_button = *Button(x=right_button_x, y=.36, text='+')
+increase_brush_size_button = *Button(x=right_button_x, y=.33, text='+', scale=[.05,.035])
 increase_brush_size_button.on_click = def():
     new_brush_size = [e*1.5 for e in brush_size]
     set_brush_size(new_brush_size)
-decrease_brush_size_button = *Button(y=.36, x=left_button_x, text='-')
+decrease_brush_size_button = *Button(y=.33, x=left_button_x, text='-', scale=[.05,.035])
 decrease_brush_size_button.on_click = def():
     new_brush_size = [e*1/1.5 for e in brush_size]
     set_brush_size(new_brush_size)
@@ -291,6 +291,7 @@ tool = 'brush'
 ERASING = False
 SMUDGE = False
 SMUDGE_STRENGTH = 1
+REPLACE = False
 # cursor = Entity(scale=.02, color=color.red, alpha=.1, parent=canvas_entity, enabled=False)
 
 brush_tool = Entity(name='brush_tool', visible_self=False)
@@ -492,16 +493,57 @@ def draw_brush_image(brush_canvas, x, y):
 
 
     if not ERASING:
+        # if not REPLACE:
+        # if REPLACE:
+        #     current_layer.ctx.globalCompositeOperation="source-in";
+
+
         temp_canvas.width = brush_data.width
         temp_canvas.height = brush_data.height
         temp_ctx.putImageData(brush_data, 0, 0)
         current_layer.ctx.drawImage(temp_canvas, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+        # print('draw')
+        # if REPLACE:
+        #     current_layer.ctx.globalCompositeOperation="destination-atop";
+        # if a replace color is set, only fill area with a similar color
+        # else:
+        #     print('replace')
+        #     brush_half_w = brush_size[0] / 2
+        #     brush_half_h = brush_size[1] / 2
+        #     current_layer.ctx.fillStyle = 'cyan'
+            
+            # for _y in range(clamp(y-brush_half_h, 0, h-1), int(clamp(y+brush_half_h, 0, h-1))):
+            #     for _x in range(clamp(x-brush_half_w, 0, w-1), int(clamp(x+brush_half_w, 0, w-1))):
+            #         current_pixel_color = current_layer.ctx.getImageData(_x, _y, 1, 1).data
+            #         # continue
+            #         print(current_pixel_color, current_color)
+            #         if current_pixel_color[3] > 0:
+            #         # if current_pixel_color[0] == current_color[0] and current_pixel_color[1] == current_color[1] and current_pixel_color[2] == current_color[2]:
+            #             current_layer.ctx.fillRect(int(_x), int(_y), 1, 1);
 
-    else:
-        for (i=3; i<len(img_data.data); i+=4):
-            img_data.data[i] -= brush_data.data[i] / 2.2
+    # else:   
+    #     for (i=3; i<len(img_data.data); i+=4):
+    #         img_data.data[i] -= brush_data.data[i] / 2.2
 
-        current_layer.ctx.putImageData(img_data, x-(brush_size[0]/2), y-(brush_size[1]/2))
+    #     current_layer.ctx.putImageData(img_data, x-(brush_size[0]/2), y-(brush_size[1]/2))
+    
+
+def sample_color():
+    combined_sample = canvas_entity.color
+    for layer in layers:
+        pos = get_canvas_position(layer)
+        sampled_color = layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
+        for i in range(3):
+            combined_sample[i] = lerp(combined_sample[i], sampled_color[i], sampled_color[3]/255)
+
+    combined_sample[3] = 255
+
+    if current_brush == painterly_brush: # make the color a bit brighter when using painterly_brush since it paints a bit darker than the selected color
+        combined_sample[0] += 16
+        combined_sample[1] += 16
+        combined_sample[2] += 16
+    
+    return combined_sample
 
 
 def paint():
@@ -521,27 +563,8 @@ def paint():
 
     # sample combined
     if (held_keys['alt'] and not held_keys['control']) or held_keys['h']:
-        # sampled_colors = []
-        # canv_col = canvas_entity.color
-        combined_sample = canvas_entity.color
-        for layer in layers:
-            pos = get_canvas_position(layer)
-            sampled_color = layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
-            # sampled_colors.append(sampled_color)
-            for i in range(3):
-                combined_sample[i] = lerp(combined_sample[i], sampled_color[i], sampled_color[3]/255)
-
-        combined_sample[3] = 255
-
-        if current_brush == painterly_brush: # make the color a bit brighter when using painterly_brush since it paints a bit darker than the selected color
-            combined_sample[0] += 20
-            combined_sample[1] += 20
-            combined_sample[2] += 20
-        # alphas = [e[3] for e in sampled_colors]
-        # alpha = min(sum(alphas), 255)
-        # combined_color = [lerp(canvas_entity.color[i], combined_color[i], alpha/255) for i in range(3)]
-        set_color(combined_sample)
-
+        sampled_color = sample_color()
+        set_color(sampled_color)
         return
 
     if mouse.hovered_entity != bg:
@@ -549,8 +572,6 @@ def paint():
 
     if held_keys['space']:
         return
-
-
 
     [x, y] = get_canvas_position()
     if current_brush['min_pressure'] < 1:
@@ -622,22 +643,24 @@ def paint():
 
         elif rotate_brush == True:
             if brush_tips:
-                IMG.src = brush_canvases[prev_brush_tip].toDataURL()
+                # IMG.src = brush_canvases[prev_brush_tip].toDataURL()
             invoke(def anon():
                 current_layer.ctx.translate(_x, _y)
                 current_layer.ctx.rotate(radians)
-                current_layer.ctx.drawImage(IMG, -brush_size[0]/2, -brush_size[1]/2)
+                draw_brush_image(brush_canvases[prev_brush_tip], 0, 0)
                 current_layer.ctx.rotate(-radians)
                 current_layer.ctx.translate(-_x, -_y)
             , delay=0)
         elif rotate_brush == 'random':
             if brush_tips:
-                IMG.src = brush_canvases[prev_brush_tip].toDataURL()
+                # IMG.src = brush_canvases[prev_brush_tip].toDataURL()
             invoke(def anon():
                 random_radian = random_int(0, 360) * Math.PI / 180
                 current_layer.ctx.translate(_x, _y)
                 current_layer.ctx.rotate(random_radian)
-                current_layer.ctx.drawImage(IMG, -brush_size[0]/2, -brush_size[1]/2)
+                # current_layer.ctx.drawImage(IMG, -brush_size[0]/2, -brush_size[1]/2)
+                draw_brush_image(brush_canvases[prev_brush_tip], 0, 0)
+
                 current_layer.ctx.rotate(-random_radian)
                 current_layer.ctx.translate(-_x, -_y)
             , delay=0)
@@ -741,7 +764,7 @@ def input(key):
             const img_data = flip_image_data_vertically(layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height))
             layer.ctx.putImageData(img_data, 0, 0)
 
-    if held_keys['shift'] and key == 'r':
+    if held_keys['shift'] and key == '+':
         current_color_as_hsv = rgb_to_hsv(current_color)
         # random_color = [random_int(0,360), current_color[1], current_color[2], current_color[3]]  # this was a mistake, but creates only a small variation and could be useful to have
         random_color = hsv(random_int(0,360), current_color_as_hsv[1], current_color_as_hsv[2], current_color_as_hsv[3])
@@ -872,7 +895,6 @@ def set_color(value, move_sliders=True):
         hue_slider.indicator.x = -.5 + color_as_hsv[0]/360
         sat_slider.indicator.x = -.5 + color_as_hsv[1]
         val_slider.indicator.x = -.5 + color_as_hsv[2]
-
 
 
 for i, e in enumerate(brushes):
@@ -1600,6 +1622,49 @@ def apply_absolute_hsv_adjustment(hue, sat, val):
     current_layer.ctx.putImageData(new_image_data, 0, 0)
 
 set_color(current_color)
+
+color_history = Entity(parent=menu_parent, position=right, y=.37, scale=.02, color=color.magenta, visible_self=False, i=0)
+for i in range(5):
+    let b = Entity(parent=color_history, scale=.9, x=-.75-i, roundness=.2, color=color.clear)
+    b.on_click = def():
+        set_color(b.color)
+color_history.input = def input(key):
+    if key == 'left mouse up' and not held_keys['alt'] and mouse.hovered_entity == bg:
+        color_history.i += 1
+        color_history.i = color_history.i = color_history.i % len(color_history.children)
+
+        color_history.children[color_history.i].color = current_color
+
+color_replacer = Entity(parent=camera.ui, scale=.05, roundness=.25, color=color.lime, origin=[-.5,0], position=window.left, text='replace:', text_size=1, text_origin=[0,.5])
+color_replacer.gizmo = Entity(scale=[.05,.05], text='replace\ncolor', text_size=1, color=color.lime, text_color=color.white, origin=[-.5,-.5], roundness=.25, text_origin=[0,0], enabled=False)
+
+# color_replacer_handler = Entity(visible_self=False)
+# color_replacer_handler.input = def(key):
+#     if held_keys['shift'] and key == 'r':
+#         color_replacer.enabled = not color_replacer.enabled
+
+color_replacer.update = def update():
+    if held_keys['r']:
+        color_replacer.gizmo.enabled = True
+        color_replacer.gizmo.text = 'replace\ncolor'
+        color_replacer.gizmo.position = mouse.position
+        # print(get_canvas_position())
+        pos = get_canvas_position()
+        if pos[0] >= 0 and pos[1] >= 0 and pos[0] < w and pos[1] <  h:
+            REPLACE = sample_color()
+            color_replacer.gizmo.color = REPLACE
+            color_replacer.color = REPLACE
+            current_layer.ctx.globalCompositeOperation="source-in";
+        else:
+            color_replacer.gizmo.text = 'exit\nreplace\ncolor'
+            REPLACE = False
+            color_replacer.color = color.clear
+            current_layer.ctx.globalCompositeOperation="destination-atop";
+
+    else:
+        color_replacer.gizmo.enabled = False
+    
+
 # set_color(color.red)
 
 # add_layer()
