@@ -302,13 +302,18 @@ brush_tool.on_enable = def():
     brush_cursor.enabled = True
     mouse.visible = False
 
-# temp_layer_entity = Entity(parent=canvas_entity, color=color.clear, z=-100, enabled=True)
-temp_canvas = document.createElement('canvas')
-temp_canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
-temp_canvas.width = w
-temp_canvas.height = h
-# temp_layer_entity.model.appendChild(temp_canvas)
-temp_ctx = temp_canvas.getContext('2d', {willReadFrequently: true})
+brush_scaling_canvas = document.createElement('canvas')
+brush_scaling_canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
+brush_scaling_canvas.width = w
+brush_scaling_canvas.height = h
+brush_scaling_ctx = brush_scaling_canvas.getContext('2d', {willReadFrequently: true})
+
+mask_canvas = document.createElement('canvas')
+mask_canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
+mask_canvas.width = w
+mask_canvas.height = h
+mask_ctx = brush_scaling_canvas.getContext('2d', {willReadFrequently: true})
+
 
 def update_brush_tip():
     if not using_painterly_brush: # tint the temporary brush tip
@@ -489,19 +494,26 @@ def lerp(a, b, t):
 def draw_brush_image(brush_canvas, x, y):
     img_data = current_layer.ctx.getImageData(x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
     brush_data = brush_canvas.getContext("2d", {willReadFrequently: true}).getImageData(0, 0, brush_size[0], brush_size[1])
-    print('fesoifjsoeifjseoifjwoeifj', x, y)
-
 
     if not ERASING:
-        # if not REPLACE:
-        # if REPLACE:
-        #     current_layer.ctx.globalCompositeOperation="source-in";
-
-
-        temp_canvas.width = brush_data.width
-        temp_canvas.height = brush_data.height
-        temp_ctx.putImageData(brush_data, 0, 0)
-        current_layer.ctx.drawImage(temp_canvas, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+        # draw under
+        if held_keys['u']:
+            current_layer.ctx.globalCompositeOperation = "destination-over"
+        # draw inside
+        elif held_keys['i']:
+            current_layer.ctx.globalCompositeOperation = "source-atop"
+        # draw normally
+        else:
+            current_layer.ctx.globalCompositeOperation = "source-over"
+    # erase
+    else:
+        current_layer.ctx.globalCompositeOperation = "destination-out"
+        
+    brush_scaling_canvas.width = brush_data.width
+    brush_scaling_canvas.height = brush_data.height
+    brush_scaling_ctx.putImageData(brush_data, 0, 0)
+    current_layer.ctx.drawImage(brush_scaling_canvas, x-(brush_size[0]/2), y-(brush_size[1]/2), brush_size[0], brush_size[1])
+    return
         # print('draw')
         # if REPLACE:
         #     current_layer.ctx.globalCompositeOperation="destination-atop";
@@ -520,24 +532,20 @@ def draw_brush_image(brush_canvas, x, y):
             #         if current_pixel_color[3] > 0:
             #         # if current_pixel_color[0] == current_color[0] and current_pixel_color[1] == current_color[1] and current_pixel_color[2] == current_color[2]:
             #             current_layer.ctx.fillRect(int(_x), int(_y), 1, 1);
-
-    # else:   
-    #     for (i=3; i<len(img_data.data); i+=4):
-    #         img_data.data[i] -= brush_data.data[i] / 2.2
-
-    #     current_layer.ctx.putImageData(img_data, x-(brush_size[0]/2), y-(brush_size[1]/2))
     
 
 def sample_color():
-    combined_sample = canvas_entity.color
+    # combined_sample = canvas_entity.color
+    combined_sample = [0,0,0,0]
     for layer in layers:
         pos = get_canvas_position(layer)
         sampled_color = layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
-        for i in range(3):
+        for i in range(4):
             combined_sample[i] = lerp(combined_sample[i], sampled_color[i], sampled_color[3]/255)
 
+    ERASING = combined_sample[3] == 0
     combined_sample[3] = 255
-
+    
     if current_brush == painterly_brush: # make the color a bit brighter when using painterly_brush since it paints a bit darker than the selected color
         combined_sample[0] += 16
         combined_sample[1] += 16
@@ -720,11 +728,11 @@ def input(key):
 
 
 
-    if key in ['i','s','gamepad y']:
+    if key in ['s','gamepad y']:
         new_size = [clamp(int(e*2), 1, 2048) for e in brush_size]
         set_brush_size(new_size)
 
-    if key in ['j','x','gamepad x']:
+    if key in ['x','gamepad x']:
         new_size = [clamp(int(e/2), 1, 2048) for e in brush_size]
         set_brush_size(new_size)
 
@@ -1539,54 +1547,54 @@ Entity(visible_self=False).input = def input(key):
         radial_menu.input(radial_menu.shortcut + ' up')
 
 
-hsv_menu_handler = Entity(visible_self=False)
-hsv_menu_handler.input = def input(key):
-    if key == 'u':
-        hsv_menu.enabled = not hsv_menu.enabled
+# hsv_menu_handler = Entity(visible_self=False)
+# hsv_menu_handler.input = def input(key):
+#     if key == 'u':
+#         hsv_menu.enabled = not hsv_menu.enabled
 
-hsv_menu = Entity(scale=[.25*2,.125*2], enabled=False, roundness=.05, shadow=True, parent=camera.ui, color=color.black, alpha=.8, text_origin=[0,.5], text='HSV', text_color=color.light_gray, text_size=2, ignore_collision=False)
-hsv_menu.on_enable = def():
-    hsv_menu.original_data = current_layer.ctx.getImageData(0, 0, w, h).data
-    print('get fresh')
+# hsv_menu = Entity(scale=[.25*2,.125*2], enabled=False, roundness=.05, shadow=True, parent=camera.ui, color=color.black, alpha=.8, text_origin=[0,.5], text='HSV', text_color=color.light_gray, text_size=2, ignore_collision=False)
+# hsv_menu.on_enable = def():
+#     hsv_menu.original_data = current_layer.ctx.getImageData(0, 0, w, h).data
+#     print('get fresh')
 
-hsv_menu.close = def():
-    hsv_menu.enabled = False
-    hsv_menu.hue_slider.value = 180
-    hsv_menu.sat_slider.value = 50
-    hsv_menu.val_slider.value = 50
+# hsv_menu.close = def():
+#     hsv_menu.enabled = False
+#     hsv_menu.hue_slider.value = 180
+#     hsv_menu.sat_slider.value = 50
+#     hsv_menu.val_slider.value = 50
 
-    if hsv_menu.original_data:
-        current_layer.ctx.putImageData(new ImageData(hsv_menu.original_data, w, h), 0, 0)
-        print('reset')
+#     if hsv_menu.original_data:
+#         current_layer.ctx.putImageData(new ImageData(hsv_menu.original_data, w, h), 0, 0)
+#         print('reset')
 
-hsv_menu.apply_button = Button(parent=hsv_menu, text='Apply', color=color.pink, text_color=color.white, scale=[.4,.15], x=.025, y=-.35, text_size=2, roundness=.5, origin=[-.5,0])
-hsv_menu.apply_button.on_click = def():
-    hsv_menu.enabled = False
-    record_undo()
+# hsv_menu.apply_button = Button(parent=hsv_menu, text='Apply', color=color.pink, text_color=color.white, scale=[.4,.15], x=.025, y=-.35, text_size=2, roundness=.5, origin=[-.5,0])
+# hsv_menu.apply_button.on_click = def():
+#     hsv_menu.enabled = False
+#     record_undo()
 
-hsv_menu.discard_button = Button(parent=hsv_menu, text='Discard', color=color.gray, text_color=color.white, scale=[.4,.15], x=-.025, y=-.35, text_size=2, roundness=.5, origin=[.5,0], on_click=hsv_menu.close)
-hsv_menu.close_button = Entity(parent=hsv_menu, text='x', scale=[.05,.1], color=color.red, text_color=color.white, text_origin=[0,0], text_size=2, roundness=.5, xy=[.5,.5], origin=[.5,0], on_click=hsv_menu.close)
-hsv_menu.bg = Entity(parent=hsv_menu, visible_self=False, scale=10, on_click=hsv_menu.close, z=1)
-hsv_menu.hue_slider = RainbowSlider(parent=hsv_menu, min=0, max=360, default=180, prev_value=180, y=.3)
-hsv_menu.sat_slider = RainbowSlider(parent=hsv_menu, min=0, max=100, default=50, prev_value=50, y=.15)
-hsv_menu.val_slider = RainbowSlider(parent=hsv_menu, min=0, max=100, default=50, prev_value=50, y=0)
-hsv_menu.colorize_toggle_parent = Button(parent=hsv_menu, scale=[.1,.1], roundness=.1, text_origin=[-.5,0], text=' Colorize:', value=False, xy=[-.325,-.15], origin=[0,0], text_size=1, text_color=color.white, color=color.clear)
-hsv_menu.colorize_toggle = Button(parent=hsv_menu.colorize_toggle_parent, scale=[.5,1], roundness=.1, text_origin=[0,0], text=' ', value=False, xy=[.5,0], origin=[-.5,0], text_size=2, color=color.dark_gray, text_color=color.white)
-hsv_menu.colorize_toggle.on_click = def():
-    hsv_menu.colorize_toggle.value = not hsv_menu.colorize_toggle.value
-    hsv_menu.colorize_toggle.text = [' ', '✓'][int(hsv_menu.colorize_toggle.value)]
-    apply_hsv_filter()
+# hsv_menu.discard_button = Button(parent=hsv_menu, text='Discard', color=color.gray, text_color=color.white, scale=[.4,.15], x=-.025, y=-.35, text_size=2, roundness=.5, origin=[.5,0], on_click=hsv_menu.close)
+# hsv_menu.close_button = Entity(parent=hsv_menu, text='x', scale=[.05,.1], color=color.red, text_color=color.white, text_origin=[0,0], text_size=2, roundness=.5, xy=[.5,.5], origin=[.5,0], on_click=hsv_menu.close)
+# hsv_menu.bg = Entity(parent=hsv_menu, visible_self=False, scale=10, on_click=hsv_menu.close, z=1)
+# hsv_menu.hue_slider = RainbowSlider(parent=hsv_menu, min=0, max=360, default=180, prev_value=180, y=.3)
+# hsv_menu.sat_slider = RainbowSlider(parent=hsv_menu, min=0, max=100, default=50, prev_value=50, y=.15)
+# hsv_menu.val_slider = RainbowSlider(parent=hsv_menu, min=0, max=100, default=50, prev_value=50, y=0)
+# hsv_menu.colorize_toggle_parent = Button(parent=hsv_menu, scale=[.1,.1], roundness=.1, text_origin=[-.5,0], text=' Colorize:', value=False, xy=[-.325,-.15], origin=[0,0], text_size=1, text_color=color.white, color=color.clear)
+# hsv_menu.colorize_toggle = Button(parent=hsv_menu.colorize_toggle_parent, scale=[.5,1], roundness=.1, text_origin=[0,0], text=' ', value=False, xy=[.5,0], origin=[-.5,0], text_size=2, color=color.dark_gray, text_color=color.white)
+# hsv_menu.colorize_toggle.on_click = def():
+#     hsv_menu.colorize_toggle.value = not hsv_menu.colorize_toggle.value
+#     hsv_menu.colorize_toggle.text = [' ', '✓'][int(hsv_menu.colorize_toggle.value)]
+#     apply_hsv_filter()
 
-def apply_hsv_filter():
-    if not hsv_menu.colorize_toggle.value:
-        apply_relative_hsv_adjustment(hsv_menu.hue_slider.value - 180, (hsv_menu.sat_slider.value-50)/100, (hsv_menu.val_slider.value-50)/100)
-    else:
-        apply_absolute_hsv_adjustment(hsv_menu.hue_slider.value, hsv_menu.sat_slider.value/100, hsv_menu.val_slider.value/100)
+# def apply_hsv_filter():
+#     if not hsv_menu.colorize_toggle.value:
+#         apply_relative_hsv_adjustment(hsv_menu.hue_slider.value - 180, (hsv_menu.sat_slider.value-50)/100, (hsv_menu.val_slider.value-50)/100)
+#     else:
+#         apply_absolute_hsv_adjustment(hsv_menu.hue_slider.value, hsv_menu.sat_slider.value/100, hsv_menu.val_slider.value/100)
 
 
-hsv_menu.hue_slider.on_value_changed = apply_hsv_filter
-hsv_menu.sat_slider.on_value_changed = apply_hsv_filter
-hsv_menu.val_slider.on_value_changed = apply_hsv_filter
+# hsv_menu.hue_slider.on_value_changed = apply_hsv_filter
+# hsv_menu.sat_slider.on_value_changed = apply_hsv_filter
+# hsv_menu.val_slider.on_value_changed = apply_hsv_filter
 
 
 def apply_relative_hsv_adjustment(hue, sat, val):
@@ -1654,12 +1662,12 @@ color_replacer.update = def update():
             REPLACE = sample_color()
             color_replacer.gizmo.color = REPLACE
             color_replacer.color = REPLACE
-            current_layer.ctx.globalCompositeOperation="source-in";
+            current_layer.ctx.globalCompositeOperation = 'source-atop'
         else:
             color_replacer.gizmo.text = 'exit\nreplace\ncolor'
             REPLACE = False
             color_replacer.color = color.clear
-            current_layer.ctx.globalCompositeOperation="destination-atop";
+            current_layer.ctx.globalCompositeOperation = 'source-over'
 
     else:
         color_replacer.gizmo.enabled = False
