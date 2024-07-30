@@ -72,6 +72,10 @@ info_text = `Shortcuts:
 [alt] sample color
 [ctrl+alt] sample current layer
 [a] / [right click] radial menu
+[u] draw under
+[i] draw inside
+[h] flip horizontally
+[v] flip vertically
 `
 info_window = Text(parent=info_button.parent, text=info_text, text_size=1.5, text_color=color.light_gray, color=color.black, alpha=.9, roundness=.005, enabled=False)
 info_window.fit_to_text()
@@ -215,9 +219,10 @@ round_bitmap_brush = {'name':'round_bitmap_brush', 'textures':["round_brush_16.p
 poke_brush = {'name':'poke_brush', 'textures':["pokebrush.png", ], 'size':[64, 64], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'min_pressure':0}
 poke_brush_small = {'name':'poke_brush_small', 'textures':["pokebrush.png", ], 'size':[16, 16], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'min_pressure':1}
 poke_brush_scatter = {'name':'poke_brush_scatter', 'textures':["pokebrush.png", 'pokebrush.png'], 'size':[256, 256], 'spacing':.25, 'painterly_brush':False, 'rotate':'random', 'draw_on_click':False, 'min_pressure':1}
-painterly_brush = {'name':'painterly_brush', 'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[178, 400], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':True, 'min_pressure':1}
+painterly_brush = {'name':'painterly_brush', 'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[89, 200], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':True, 'min_pressure':1}
+stubby_brush = {'name':'stubby_brush', 'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[64, 64], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':True, 'min_pressure':1}
 
-brushes = [round_brush, square_brush, round_bitmap_brush, poke_brush, poke_brush_small, painterly_brush, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter]
+brushes = [round_brush, square_brush, round_bitmap_brush, poke_brush, poke_brush_small, painterly_brush, stubby_brush, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter]
 current_brush = None
 brush_canvases = []
 increase_brush_size_button = *Button(x=right_button_x, y=.33, text='+', scale=[.05,.035])
@@ -546,7 +551,7 @@ def sample_color():
     ERASING = combined_sample[3] == 0
     combined_sample[3] = 255
     
-    if current_brush == painterly_brush: # make the color a bit brighter when using painterly_brush since it paints a bit darker than the selected color
+    if current_brush == painterly_brush or current_brush == stubby_brush: # make the color a bit brighter when using painterly_brush since it paints a bit darker than the selected color
         combined_sample[0] += 16
         combined_sample[1] += 16
         combined_sample[2] += 16
@@ -570,7 +575,7 @@ def paint():
         return
 
     # sample combined
-    if (held_keys['alt'] and not held_keys['control']) or held_keys['h']:
+    if (held_keys['alt'] and not held_keys['control']):
         sampled_color = sample_color()
         set_color(sampled_color)
         return
@@ -747,7 +752,6 @@ def input(key):
         zoom_label.text = `${int(target_zoom*100)}%`
 
     if key == 'middle mouse down' or key == 'space':
-    # if key == 'middle mouse down' or key == 'h':
         bg.lock_x = False
         bg.lock_y = False
         bg.start_offset = [mouse.x-bg.x , mouse.y-bg.y]
@@ -762,17 +766,17 @@ def input(key):
     if key == 'f':
         SMUDGE = True
 
-    if key == 'up arrow':
+    if key == 'h':
         for layer in layers:
             const img_data = flip_image_data_horizontally(layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height))
             layer.ctx.putImageData(img_data, 0, 0)
 
-    if key == 'left arrow':
+    if key == 'v':
         for layer in layers:
             const img_data = flip_image_data_vertically(layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height))
             layer.ctx.putImageData(img_data, 0, 0)
 
-    if held_keys['shift'] and key == '+':
+    if key == '?':
         current_color_as_hsv = rgb_to_hsv(current_color)
         # random_color = [random_int(0,360), current_color[1], current_color[2], current_color[3]]  # this was a mistake, but creates only a small variation and could be useful to have
         random_color = hsv(random_int(0,360), current_color_as_hsv[1], current_color_as_hsv[2], current_color_as_hsv[3])
@@ -813,7 +817,7 @@ def flip_image_data_vertically(imageData):
 
 def update():
     if mouse.hovered_entity == bg:
-        if not held_keys['alt'] and not held_keys['h'] and current_tool == brush_tool: # if not sampling color
+        if not held_keys['alt'] and current_tool == brush_tool: # if not sampling color
             document.body.style.cursor = 'none'
         else:
             document.body.style.cursor = 'crosshair'
@@ -1539,7 +1543,7 @@ _buttons = [
     _NW,
     ]
 
-radial_menu = RadialMenu(buttons=_buttons, shortcut='a')
+radial_menu = RadialMenu(buttons=_buttons, shortcut='q')
 Entity(visible_self=False).input = def input(key):
     if key == 'right mouse down' and not held_keys['control']:
         radial_menu.input(radial_menu.shortcut)
@@ -1677,6 +1681,49 @@ color_replacer.update = def update():
 
 # add_layer()
 # add_layer()
+animator = Entity(visible_self=False, i=0, frames=[])
+animator.frames.append(current_layer.canvas.toDataURL())
+# animator.frames.append()
+animator.input = def input(key):
+    print('----', key)
+    if key == 'right arrow' or key == 'd':
+        goto_frame(animator.i+1, True)
+
+    elif key == 'left arrow' or key == 'a':
+        goto_frame(animator.i-1)
+
+    elif held_keys['control'] and key == 'space':
+        animator.i = 0
+        for i in range(len(animator.frames)):
+            # after i/12:
+            animator.i += 1
+            goto_frame(animator.i, False)
+
+
+# animator.update = def update():
+#     if held_keys['space']:
+#         goto_frame(animator.i+1, False)
+
+
+
+def goto_frame(to_frame, make_new=False):
+    print('frame:', animator.i, to_frame)
+    # save current frame 
+    animator.frames[animator.i] = current_layer.canvas.toDataURL()
+
+    if to_frame >= len(animator.frames):
+        current_layer.ctx.clearRect(0, 0, w, h)
+        animator.frames.append(current_layer.canvas.toDataURL())
+
+    animator.i = clamp(to_frame, 0, len(animator.frames))
+
+    # load next frame
+    var loaded_image = new Image
+    loaded_image.src = animator.frames[animator.i]
+    loaded_image.onload = def():
+        current_layer.ctx.clearRect(0, 0, w, h)
+        current_layer.ctx.drawImage(loaded_image, 0, 0)
+
 
 </script>
 
