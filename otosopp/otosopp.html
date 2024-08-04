@@ -221,8 +221,9 @@ poke_brush_small = {'name':'poke_brush_small', 'textures':["pokebrush.png", ], '
 poke_brush_scatter = {'name':'poke_brush_scatter', 'textures':["pokebrush.png", 'pokebrush.png'], 'size':[256, 256], 'spacing':.25, 'painterly_brush':False, 'rotate':'random', 'draw_on_click':False, 'min_pressure':1}
 painterly_brush = {'name':'painterly_brush', 'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[89, 200], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':True, 'min_pressure':1}
 stubby_brush = {'name':'stubby_brush', 'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[64, 64], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':True, 'min_pressure':1}
+starfield_brush = {'name':'starfield_brush', 'textures':["starfield.png", ], 'size':[256, 256], 'spacing':1, 'painterly_brush':1, 'rotate':'random', 'draw_on_click':True, 'min_pressure':0}
 
-brushes = [round_brush, square_brush, round_bitmap_brush, poke_brush, poke_brush_small, painterly_brush, stubby_brush, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter]
+brushes = [round_brush, square_brush, round_bitmap_brush, poke_brush, poke_brush_small, painterly_brush, stubby_brush, starfield_brush, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter]
 current_brush = None
 brush_canvases = []
 increase_brush_size_button = *Button(x=right_button_x, y=.33, text='+', scale=[.05,.035])
@@ -320,7 +321,7 @@ mask_canvas.height = h
 mask_ctx = brush_scaling_canvas.getContext('2d', {willReadFrequently: true})
 
 
-def update_brush_tip():
+def update_brush_tip(color):
     if not using_painterly_brush: # tint the temporary brush tip
         for j in range(brush_tips.length):
             brush_canvas = brush_canvases[j]
@@ -338,10 +339,10 @@ def update_brush_tip():
                 img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
 
                 for i in range(0, img_data.data.length, 4):
-                    img_data.data[i] = img_data.data[i] * (current_color[0]/255)
-                    img_data.data[i+1] = img_data.data[i+1] * (current_color[1]/255)
-                    img_data.data[i+2] = img_data.data[i+2] * (current_color[2]/255)
-                    img_data.data[i+3] = img_data.data[i+3] * (current_color[3]/255)
+                    img_data.data[i] = img_data.data[i] * (color[0]/255)
+                    img_data.data[i+1] = img_data.data[i+1] * (color[1]/255)
+                    img_data.data[i+2] = img_data.data[i+2] * (color[2]/255)
+                    img_data.data[i+3] = img_data.data[i+3] * (color[3]/255)
 
             elif SMUDGE:
             #     print('SMUDGE')
@@ -366,9 +367,9 @@ def update_brush_tip():
 
             brush_canvas_context.putImageData(img_data, 0, 0)
     else: # special tint for paiterly brushes to keep contrast
-        color_as_hsv = rgb_to_hsv(current_color)
+        color_as_hsv = rgb_to_hsv(color)
         c = color_as_hsv[2] * 255
-        c = (current_color[0] + current_color[1] + current_color[2])/3
+        c = (color[0] + color[1] + color[2])/3
         # print('------------', c)
         sat = color_as_hsv[1]
         contrast = 64
@@ -389,13 +390,13 @@ def update_brush_tip():
             img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
 
             for i in range(0, img_data.data.length, 4):
-                # img_data.data[i] = lerp(dark, light, img_data.data[i]/255) * lerp(1, current_color[0]/255, sat)
-                # img_data.data[i+1] = lerp(dark, light, img_data.data[i+1]/255) * lerp(1, current_color[1]/255, sat)
-                # img_data.data[i+2] = lerp(dark, light, img_data.data[i+2]/255) * lerp(1, current_color[2]/255, sat)
-                img_data.data[i] = lerp(dark, light, img_data.data[i]/255) * current_color[0]/255
-                img_data.data[i+1] = lerp(dark, light, img_data.data[i+1]/255) * current_color[1]/255
-                img_data.data[i+2] = lerp(dark, light, img_data.data[i+2]/255) * current_color[2]/255
-                img_data.data[i+3] = img_data.data[i+3] * current_color[3]/255
+                # img_data.data[i] = lerp(dark, light, img_data.data[i]/255) * lerp(1, color[0]/255, sat)
+                # img_data.data[i+1] = lerp(dark, light, img_data.data[i+1]/255) * lerp(1, color[1]/255, sat)
+                # img_data.data[i+2] = lerp(dark, light, img_data.data[i+2]/255) * lerp(1, color[2]/255, sat)
+                img_data.data[i] = lerp(dark, light, img_data.data[i]/255) * color[0]/255
+                img_data.data[i+1] = lerp(dark, light, img_data.data[i+1]/255) * color[1]/255
+                img_data.data[i+2] = lerp(dark, light, img_data.data[i+2]/255) * color[2]/255
+                img_data.data[i+3] = img_data.data[i+3] * color[3]/255
 
             brush_canvas_context.putImageData(img_data, 0, 0)
 
@@ -419,7 +420,7 @@ brush_tool.input = def brush_tool_input(key):
         if tool == 'eyedropper':
             drawing = True
 
-        update_brush_tip()
+        update_brush_tip(current_color)
 
         try:
             paint()
@@ -539,11 +540,14 @@ def draw_brush_image(brush_canvas, x, y):
             #             current_layer.ctx.fillRect(int(_x), int(_y), 1, 1);
     
 
-def sample_color():
+def sample_color(position=None):
     # combined_sample = canvas_entity.color
     combined_sample = [0,0,0,0]
     for layer in layers:
-        pos = get_canvas_position(layer)
+        if not position:
+            pos = get_canvas_position(layer)
+        else:
+            pos = position
         sampled_color = layer.ctx.getImageData(pos[0], pos[1], 1, 1).data
         for i in range(4):
             combined_sample[i] = lerp(combined_sample[i], sampled_color[i], sampled_color[3]/255)
@@ -551,7 +555,7 @@ def sample_color():
     ERASING = combined_sample[3] == 0
     combined_sample[3] = 255
     
-    if current_brush == painterly_brush or current_brush == stubby_brush: # make the color a bit brighter when using painterly_brush since it paints a bit darker than the selected color
+    if current_brush.painterly_brush: # make the color a bit brighter when using painterly_brush since it paints a bit darker than the selected color
         combined_sample[0] += 16
         combined_sample[1] += 16
         combined_sample[2] += 16
@@ -587,8 +591,9 @@ def paint():
         return
 
     [x, y] = get_canvas_position()
+    
     if current_brush['min_pressure'] < 1:
-        update_brush_tip()
+        update_brush_tip(current_color)
 
     if held_keys['w'] and prev_pos:
         x = lerp(prev_pos[0], x, .025)
@@ -601,7 +606,21 @@ def paint():
                 if prev_brush_tip >= brush_tips.length:
                     prev_brush_tip = 0
 
-                    draw_brush_image(brush_canvases[prev_brush_tip], x, y)
+                if held_keys['n']:
+                    set_color(sample_color())
+
+                invoke(def anon():
+                    random_radian = random_int(0, 360) * Math.PI / 180
+                    current_layer.ctx.translate(x, y)
+                    current_layer.ctx.rotate(random_radian)
+                    # current_layer.ctx.drawImage(IMG, -brush_size[0]/2, -brush_size[1]/2)
+                    draw_brush_image(brush_canvases[prev_brush_tip], 0, 0)
+
+                    current_layer.ctx.rotate(-random_radian)
+                    current_layer.ctx.translate(-x, -y)
+                , delay=.2)
+                # draw_brush_image(brush_canvases[prev_brush_tip], x, y)
+                # print('aAAAAAA')
 
             elif current_brush.shape == 'rect':
                 draw_rect(x, y)
@@ -634,6 +653,10 @@ def paint():
     delta_pos = [x - prev_pos[0], y - prev_pos[1]]
     radians = -math.atan2(delta_pos[0], delta_pos[1])
 
+    if steps > 0 and held_keys['n']:
+        update_brush_tip(sample_color([x,y]))
+
+
     for i in range(0, steps):
         if brush_tips:
             prev_brush_tip += 1
@@ -665,7 +688,7 @@ def paint():
                 current_layer.ctx.translate(-_x, -_y)
             , delay=0)
         elif rotate_brush == 'random':
-            if brush_tips:
+            # if brush_tips:
                 # IMG.src = brush_canvases[prev_brush_tip].toDataURL()
             invoke(def anon():
                 random_radian = random_int(0, 360) * Math.PI / 180
@@ -766,12 +789,12 @@ def input(key):
     if key == 'f':
         SMUDGE = True
 
-    if key == 'h':
+    if not held_keys['control'] and key == 'h':
         for layer in layers:
             const img_data = flip_image_data_horizontally(layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height))
             layer.ctx.putImageData(img_data, 0, 0)
 
-    if key == 'v':
+    if not held_keys['control'] and key == 'v':
         for layer in layers:
             const img_data = flip_image_data_vertically(layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height))
             layer.ctx.putImageData(img_data, 0, 0)
