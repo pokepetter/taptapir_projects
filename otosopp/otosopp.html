@@ -176,6 +176,8 @@ def delete_layer(layer=current_layer):
 W = 1920
 H = 1080
 layers = []
+DOCUMENT_NAME = 'untitled'
+
 def new_document(width, height, fill_color=color.clear):
     for e in layers:
         destroy(e)
@@ -1001,7 +1003,16 @@ window.onfocus = def():
 
 save_button = *Button(xy=[(-.5*aspect_ratio)+.06,.5], origin=[-.5,.5], scale=[.05,.025], text='save', text_size=1)
 save_button.on_click = def save():
-    save_file(current_layer.canvas)
+    num_frames = len(animator.frames)
+    if num_frames == 0:
+        save_file(current_layer.canvas)
+    else: # save animation
+        for i in range(num_frames):
+            goto_frame(i)
+            number_string = `000${i}`.substr(-4)
+            # print('save frame as:', `${DOCUMENT_NAME}_${number_string}`)
+            save_file(current_layer.canvas, `${DOCUMENT_NAME}_${number_string}`)
+    
     # dataURL = canvas.toDataURL("image")
     # window.localStorage.setItem("image", dataURL)
 save_button.input = def input(key):
