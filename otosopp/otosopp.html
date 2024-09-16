@@ -240,8 +240,9 @@ poke_brush_scatter = {'name':'poke_brush_scatter', 'textures':["pokebrush.png", 
 painterly_brush = {'name':'painterly_brush', 'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[89, 200], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':True, 'min_pressure':1}
 stubby_brush = {'name':'stubby_brush', 'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[64, 64], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':True, 'min_pressure':1}
 starfield_brush = {'name':'starfield_brush', 'textures':["starfield.png", ], 'size':[256, 256], 'spacing':1, 'painterly_brush':1, 'rotate':'random', 'draw_on_click':True, 'min_pressure':0}
+star_brush = {'name':'star_brush', 'textures':["star_brush.png", ], 'size':[128, 128], 'spacing':5, 'painterly_brush':0, 'rotate':False, 'draw_on_click':True, 'min_pressure':0}
 
-brushes = [round_brush, square_brush, round_bitmap_brush, poke_brush, poke_brush_small, painterly_brush, stubby_brush, starfield_brush, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter]
+brushes = [round_brush, square_brush, round_bitmap_brush, poke_brush, poke_brush_small, painterly_brush, stubby_brush, starfield_brush, star_brush, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter]
 current_brush = None
 brush_canvases = []
 increase_brush_size_button = *Button(x=right_button_x, y=.33, text='+', scale=[.05,.035])
@@ -619,33 +620,9 @@ def paint():
 
     if prev_pos == None:
         if draw_on_click:
-            if brush_tips:
-                prev_brush_tip += 1
-                if prev_brush_tip >= brush_tips.length:
-                    prev_brush_tip = 0
-
-                if held_keys['n']:
-                    set_color(sample_color())
-
-                invoke(def anon():
-                    random_radian = random_int(0, 360) * Math.PI / 180
-                    current_layer.ctx.translate(x, y)
-                    current_layer.ctx.rotate(random_radian)
-                    # current_layer.ctx.drawImage(IMG, -brush_size[0]/2, -brush_size[1]/2)
-                    draw_brush_image(brush_canvases[prev_brush_tip], 0, 0)
-
-                    current_layer.ctx.rotate(-random_radian)
-                    current_layer.ctx.translate(-x, -y)
-                , delay=.2)
-                # draw_brush_image(brush_canvases[prev_brush_tip], x, y)
-                # print('aAAAAAA')
-
-            elif current_brush.shape == 'rect':
-                draw_rect(x, y)
-
-            elif current_brush.shape == 'circle':
-                draw_circle(x, y)
-
+            random_radian = random_int(0, 360) * Math.PI / 180
+            after .1:
+                stamp(x, y, random_radian)
 
         start_position = [x,y]
         prev_draw_pos = pos
@@ -676,49 +653,11 @@ def paint():
 
 
     for i in range(0, steps):
-        if brush_tips:
-            prev_brush_tip += 1
-            if prev_brush_tip >= brush_tips.length:
-                prev_brush_tip = 0
-
         t = i / steps
         let _x = lerp(prev_pos[0], x, t)
         let _y = lerp(prev_pos[1], y, t)
 
-
-
-        if not rotate_brush:
-            if brush_tips:
-                draw_brush_image(brush_canvases[prev_brush_tip], _x, _y)
-            elif current_brush.shape == 'rect':
-                draw_rect(_x, _y)
-            elif current_brush.shape == 'circle':
-                draw_circle(_x, _y)
-
-        elif rotate_brush == True:
-            if brush_tips:
-                # IMG.src = brush_canvases[prev_brush_tip].toDataURL()
-            invoke(def anon():
-                current_layer.ctx.translate(_x, _y)
-                current_layer.ctx.rotate(radians)
-                draw_brush_image(brush_canvases[prev_brush_tip], 0, 0)
-                current_layer.ctx.rotate(-radians)
-                current_layer.ctx.translate(-_x, -_y)
-            , delay=0)
-        elif rotate_brush == 'random':
-            # if brush_tips:
-                # IMG.src = brush_canvases[prev_brush_tip].toDataURL()
-            invoke(def anon():
-                random_radian = random_int(0, 360) * Math.PI / 180
-                current_layer.ctx.translate(_x, _y)
-                current_layer.ctx.rotate(random_radian)
-                # current_layer.ctx.drawImage(IMG, -brush_size[0]/2, -brush_size[1]/2)
-                draw_brush_image(brush_canvases[prev_brush_tip], 0, 0)
-
-                current_layer.ctx.rotate(-random_radian)
-                current_layer.ctx.translate(-_x, -_y)
-            , delay=0)
-
+        stamp(_x, _y, radians)
         prev_draw_pos = [_x, _y]
 
     pixels_traveled -= steps * spacing_in_pixels
@@ -726,6 +665,44 @@ def paint():
     # prev_pos_for_line_draw_mode = [x, y]
     # if not held_keys['shift']:
 
+def stamp(_x, _y, radians=0):
+    if brush_tips:
+        prev_brush_tip += 1
+        if prev_brush_tip >= brush_tips.length:
+            prev_brush_tip = 0
+
+    if not current_brush.rotate:
+        if brush_tips:
+            draw_brush_image(brush_canvases[prev_brush_tip], _x, _y)
+        elif current_brush.shape == 'rect':
+            draw_rect(_x, _y)
+        elif current_brush.shape == 'circle':
+            draw_circle(_x, _y)
+
+    elif current_brush.rotate == True:
+        # if brush_tips:
+            # IMG.src = brush_canvases[prev_brush_tip].toDataURL()
+        invoke(def anon():
+            current_layer.ctx.translate(_x, _y)
+            current_layer.ctx.rotate(radians)
+            draw_brush_image(brush_canvases[prev_brush_tip], 0, 0)
+            current_layer.ctx.rotate(-radians)
+            current_layer.ctx.translate(-_x, -_y)
+        , delay=0)
+
+    elif current_brush.rotate == 'random':
+        # if brush_tips:
+            # IMG.src = brush_canvases[prev_brush_tip].toDataURL()
+        invoke(def anon():
+            random_radian = random_int(0, 360) * Math.PI / 180
+            current_layer.ctx.translate(_x, _y)
+            current_layer.ctx.rotate(random_radian)
+            # current_layer.ctx.drawImage(IMG, -brush_size[0]/2, -brush_size[1]/2)
+            draw_brush_image(brush_canvases[prev_brush_tip], 0, 0)
+
+            current_layer.ctx.rotate(-random_radian)
+            current_layer.ctx.translate(-_x, -_y)
+        , delay=0)
 
 # Approximation by using octagons approach
 def distanceApprox(p1,p2):

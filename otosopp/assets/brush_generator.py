@@ -7,6 +7,7 @@ brushes = dict(
     poke_brush = ["pokebrush.png", ],
     painterly_brush = ["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png"],
     starfield_brush = ["starfield.png", ],
+    star_brush = ['star_brush.png', ],
 )
 
 brushes_as_strings = {}
