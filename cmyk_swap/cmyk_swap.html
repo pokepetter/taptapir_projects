@@ -224,7 +224,7 @@ menu.back_button = Button(parent=menu, xy=top_left, origin=[-1,1], scale=.1, col
 menu.on_enable = def():
     menu.bg.alpha = 0
     menu.bg.animate('alpha', .99)
-    menu_handler.state = 'shop'
+    menu_handler.state = shop_menu
 
 
 shop_menu = Entity(visible_self=False, parent=menu, xy=[-.27,.5])
@@ -309,7 +309,6 @@ for i in range(6):
                 card_reveal_effect_rare.xy = card.xy
                 card_reveal_effect_rare.enabled = True
                 card_reveal_effect_rare.texture = card_reveal_effect_rare.texture
-
 
 
         after .4:
@@ -559,10 +558,10 @@ for key, value in enumerate({'shop':shop_menu, 'unlocks':unlocks_menu}):
 grid_layout(tab_parent.children, max_x=1, spacing=[1,2.2], offset=[0,0])
 
 
-states = {'shop':shop_menu, 'unlocks':unlocks_menu, 'skins':skins_menu}
+states = [shop_menu, unlocks_menu, skins_menu]
 # states = {'shop':shop_menu}
 menu_handler = StateHandler(states=states, fade=False)
-menu_handler.state = None
+menu_handler.state = states[0]
 
 # line = Entity(parent=menu, scale=[.0025,1], x=-.3, z=-1, color=hsv(0,0,.1))
 # line = Entity(parent=menu, scale=[.0025,1], x=-.27, z=-1, color=hsv(0,0,.1))

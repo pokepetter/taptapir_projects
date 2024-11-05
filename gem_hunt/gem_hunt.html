@@ -1,4 +1,4 @@
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><meta charset="utf-8" /> -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><meta charset="utf-8" />
 <title>gem hunt</title>
 <script src="../taptapir/taptapir.js"></script><script type='text/sunsnake'>
 
@@ -18,7 +18,7 @@ wallet.set_gems = def (value):
 
 wallet.set_gems(99)
 
-gem_hunt_start_bet_scene = Scene('market_crop')
+gem_hunt_start_bet_scene = Scene(texture='market_crop')
 
 num_mines = 3
 multiplier = 1
@@ -75,7 +75,7 @@ gem_hunt_start_bet_scene.on_enter = def ():
 
 impact = Entity(texture='impact.gif', scale=.3, z=-100, enabled=False)
 
-gem_hunt_play_scene = Scene('taptapir_stars')
+gem_hunt_play_scene = Scene(texture='taptapir_stars')
 gem_hunt_play_scene.on_enter = def():
     current_win_label.enabled = True
     current_win_label.rotation = 0
@@ -98,8 +98,8 @@ for y in range(5):
             else:
                 print('win!')
                 impact.xy = [(e.X/5)-.4, (e.Y/5)-.4]
-                impact.texture = impact.texture
                 impact.enabled = True
+                impact.texture = impact.texture
                 set_amount_won(amount_won + int(current_bet * multiplier))
                 after .2:
                     loose_gem.xy = impact.xy
@@ -110,6 +110,7 @@ for y in range(5):
                     loose_gem.enabled = False
 
                 cash_out_button.enabled = True
+                current_win_label.enabled = True
                 back_button.enabled = False
                 e.ignore_collision = True
 
@@ -198,7 +199,7 @@ def lose():
     cash_out_button.enabled = False
     end_screen.enabled = True
     # end_text.enabled = False
-    end_text.text = `YOU LOST :(`
+    end_text.text = 'YOU LOST :('
     end_text.text_color = color.red
     end_text.text_size = 0
     end_text.animate('text_size', 5, duration=.25)
@@ -211,7 +212,7 @@ def lose():
     reveal_all()
 
 
-retry_button = Button(parent=end_screen, y=-.4, z=-4, text='🗘', scale=[.4,.25], color='#738738', shadow=True, text_size=4, text_color=color.white, on_click=start_game)
+retry_button = Button(parent=end_screen, y=-.4, z=-4, text='Play\nagain', scale=[.4,.25], color='#738738', shadow=True, text_size=4, text_color=color.white, on_click=start_game)
 bet_text_retry = Button(parent=end_screen, scale=[.2,.075], text_origin=[-.5,0], y=retry_button.y+.12, z=-4, text=`  💎 ${current_bet}`, text_size=2.5, padding=.3)
 back_button = Button(parent=end_screen, y=-.4, x=-.45, z=-4, origin=[-.5,0], text='back', scale=[.2,.25], color='#287287', shadow=True, text_color=color.white)
 back_button.on_click = def():
