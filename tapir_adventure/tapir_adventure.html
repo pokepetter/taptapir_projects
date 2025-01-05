@@ -1,0 +1,52 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" />
+    <title>CMYK Swap</title><link rel="icon" href="icon.png">
+    </head><body></body>
+    <script src="../taptapir/taptapir.js"></script>
+    <script type='text/sunsnake'>
+    
+set_background_color("#111111")
+set_window_color("#222")
+
+player = Entity(scale=.1, color=color.green, roundness=.5, text='@', speed=1/60*.5, z=-1, shadow=True)
+
+
+$virtual_joystick = Entity(parent=camera.ui, scale=.3, target_alpha=.1, roundness=.5)
+_.direction_indicator = Entity(static=True, parent=_, color=color.azure, scale=[.5,.05], origin=[-.5,0], roundness=.5)
+_.alpha = _.target_alpha
+_.input = def (key):
+    if key == 'left mouse down':
+        _.position = mouse.position
+        _.animate('alpha', _.target_alpha, duration=.1)
+        _.animate('alpha', _.target_alpha, duration=.1)
+
+    if key == 'left mouse up':
+        _.animate('alpha', 0, duration=.5)
+
+_.update = def():
+    _.direction_indicator.enabled = mouse.left
+    if mouse.left:
+        direction = normalize([mouse.x-_.x, mouse.y-_.y])
+        _.direction_indicator.look_at(direction)
+        input_speed = clamp(abs(distance(_.position, mouse.position)* 5), 0, .5) * mouse.left
+        _.direction_indicator.scale_x = input_speed
+        # print(input_speed * player.speed * delta_time)
+        player.x += input_speed * player.speed * 1 * direction[0]
+        player.y += input_speed * player.speed * 1 * direction[1]
+    else:
+        
+
+$smooth_camera = Entity(visible_self=False, target=player, bounds=[8,8], offset=[0,0])
+_.update = def():
+    speed = 10
+    camera.x = lerp(camera.x, _.target.x+_.offset[0], .1)
+    camera.y = lerp(camera.y, _.target.y+_.offset[1], .1)
+    # camera.x = clamp(camera.x, 1, _.bounds[0]-1)
+    # camera.y = clamp(camera.y, 1, _.bounds[1]-2)
+        
+
+
+level = Entity(texture='https://cdnb.artstation.com/p/assets/images/images/082/650/175/large/artem-chebokha-415-inevitable-fading-1400.jpg?1733529524', scale=1)
+
+</script>
+<script src="../taptapir/sunsnake_compiler.js"></script>
+</html>

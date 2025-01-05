@@ -193,12 +193,19 @@ def input(key):
     elif key == 'a':
         move(-1,0)
 
-def update():
-    camera.x = lerp(camera.x, player.x, .1)
-    camera.x = clamp(camera.x, 1, level_size[0]-1)
-    camera.y = lerp(camera.y, player.y+1, .1)
-    camera.y = clamp(camera.y, 1, level_size[1]-2)
+# def update():
+#     camera.x = lerp(camera.x, player.x, .1)
+#     camera.x = clamp(camera.x, 1, level_size[0]-1)
+#     camera.y = lerp(camera.y, player.y+1, .1)
+#     camera.y = clamp(camera.y, 1, level_size[1]-2)
 
+
+smooth_camera = Entity(visible=False, target=player, bounds=level_size)
+smooth_camera.update = def _(self=smooth_camera):
+    camera.x = lerp(camera.x, self.target.x, .1)
+    camera.x = clamp(camera.x, 1, self.bounds[0]-1)
+    camera.y = lerp(camera.y, self.target.y+1, .1)
+    camera.y = clamp(camera.y, 1, self.bounds[1]-2)
 
 
 

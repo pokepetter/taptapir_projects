@@ -15,7 +15,29 @@ text += '    print(\'hi :D\')\n'
 text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
 text += '    player.xy = [random_int(-5,5)*.1, random_int(-5,5)*.1]\n'
 
-ingame_console = Text(text='', color=color.clear, xy=top_left, origin=[-.5,.5], text_size=2, text_color=color.white, color=color.black, alpha=.8, enabled=False)
+
+
+# text_size = 20
+# character_spacing = 11
+# ctx.font = `${text_size}px monospace`
+DEFAULT_FONT = 'monospace'
+# text_color = hsv(0,0,.9)
+background_color = '#0a0a0a'
+set_window_color(background_color)
+
+
+text_field = TextField(scale=[.9,1], origin=[0,.5], roundness=.01, y=.45*aspect_ratio, color='#141414', text_color='#d1a469', text_size=1.5)
+
+
+preview_canvas = Entity(name='preview_canvas', parent=camera.ui, scale=[.9,aspect_ratio*.9], y=.05, z=-1, color=hsv(0,0,.1), shadow=1, enabled=False)
+preview_canvas.entity_parent = None
+border_parent = Entity(parent=preview_canvas, visible_self=False, z=-2)
+Entity(parent=border_parent, origin=[-.5,0], scale=2, color=color.black, z=-1, x=.5)
+Entity(parent=border_parent, origin=[.5,0], scale=2, color=color.black, z=-1, x=-.5)
+Entity(parent=border_parent, origin=[0,-.5], scale=2, color=color.black, z=-1, y=.5)
+Entity(parent=border_parent, origin=[0,.5], scale=2, color=color.black, z=-1, y=-.5)
+
+ingame_console = Text(text='console log:', y=.45*aspect_ratio, origin=[0,.5], text_size=2, text_color=color.red, color='#123', enabled=False)
 # print('seofiujsehofij')
 # Entity(color=color.black)
 ingame_console.model.style.wordBreak = 'break-word'
@@ -27,24 +49,6 @@ console.error = print_ingame
 # print = print_ingame
 print('------')
 
-# text_size = 20
-# character_spacing = 11
-# ctx.font = `${text_size}px monospace`
-
-# text_color = hsv(0,0,.9)
-background_color = '#0a0a0a'
-set_window_color(background_color)
-
-text_field = TextField(scale=[.9,1], origin=[0,.5], roundness=.01, y=.45*aspect_ratio, color='#141414', text_color='#d1a469')
-
-
-preview_canvas = Entity(name='preview_canvas', parent=camera.ui, scale=[.9,aspect_ratio*.9], y=.05, z=-1, color=hsv(0,0,.1), shadow=1, enabled=False)
-preview_canvas.entity_parent = None
-border_parent = Entity(parent=preview_canvas, visible_self=False, z=-2)
-Entity(parent=border_parent, origin=[-.5,0], scale=2, color=color.black, z=-1, x=.5)
-Entity(parent=border_parent, origin=[.5,0], scale=2, color=color.black, z=-1, x=-.5)
-Entity(parent=border_parent, origin=[0,-.5], scale=2, color=color.black, z=-1, y=.5)
-Entity(parent=border_parent, origin=[0,.5], scale=2, color=color.black, z=-1, y=-.5)
 
 close_button = Button(scale=[.15,.075], origin=[.5,-.5], position=[.5-.2,-.5*aspect_ratio], text='close', color=color.gray, enabled=False, text_size=2.5, z=-2)
 close_button.on_click = def close():
@@ -56,6 +60,7 @@ close_button.on_click = def close():
     camera.ui = _original_camera_ui
     print = original_print
     ingame_console.text = ''
+    ingame_console.enabled = False
 
 preview_button = Button(scale=[.2,.075], origin=[.5,-.5], position=bottom_right, text='preview', color=color.azure, text_color=color.white, text_size=2.5, z=-2)
 preview_button.on_click = def preview():
@@ -69,6 +74,10 @@ preview_button.on_click = def preview():
     text_to_compile = text_field.value
     _original_scene = scene
     _original_camera_ui = camera.ui
+    set_window_color = def (value):
+        preview_canvas.color = value
+    set_background_color = def (value):
+        return
 
     preview_canvas.entity_parent = Entity(parent=preview_canvas, visible_self=False, scale_y=1/aspect_ratio)
     fake_camera_ui = Entity(parent=preview_canvas.entity_parent, visible_self=False)
@@ -78,18 +87,23 @@ preview_button.on_click = def preview():
         result = compile(text_to_compile)
         print('compiled sucessfully')
     catch (error):
+        ingame_console.enabled = True
+        ingame_console.text += error.message
         print('error compiling:', error)
     try:
         eval(result)
         print('evaluated sucessfully')
     catch (error):
-        line_number = ''
-        for l in error.stack.split('\n'): # get line number
-            if 'eval:' in l:
-                line_number = 'line: ' + l.split('eval:')[1]
-                break
+        ingame_console.enabled = True
+        ingame_console.text += error.message
+        
+        # line_number = ''
+        # for l in error.stack.split('\n'): # get line number
+        #     if 'eval:' in l:
+        #         line_number = 'line: ' + l.split('eval:')[1]
+        #         break
 
-        print(error + ' \n' + line_number);
+        # print(error + ' \n' + line_number);
 
 
 
