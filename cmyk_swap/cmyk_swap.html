@@ -416,7 +416,7 @@ def open_loot_box(cost, num, items):
     after .4:
         for i in range(bag_parent.items_left):
             let card = bag_parent.children[i]
-            let r = random.value)
+            let r = random.random()
             cumulative = 0
             card.value = 0
             card.active_color = color.gray
