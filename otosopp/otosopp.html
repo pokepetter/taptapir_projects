@@ -32,6 +32,7 @@ else:
 set_scale(1)
 # set_scale(.5)
 canvas_scale = .8
+TEXT_SIZE_MULTIPLIER = .5
 document.addEventListener('contextmenu', event => event.preventDefault());
 
 
@@ -305,8 +306,8 @@ set_brush(painterly_brush)
 # set_brush_size([64,64])
 IMG = new Image()
 current_color = [32, 128, 128, 255]
-# print('----------------', random_int(0,360)/60)
-current_color = hsv(random_int(0,360), 1, 1, 1)
+# print('----------------', random.randint(0,360)/60)
+current_color = hsv(random.randint(0,360), 1, 1, 1)
 drawing = False
 smoothing = False
 prev_pos = None
@@ -620,7 +621,7 @@ def paint():
 
     if prev_pos == None:
         if draw_on_click:
-            random_radian = random_int(0, 360) * Math.PI / 180
+            random_radian = random.randint(0, 360) * Math.PI / 180
             after .1:
                 stamp(x, y, random_radian)
 
@@ -694,7 +695,7 @@ def stamp(_x, _y, radians=0):
         # if brush_tips:
             # IMG.src = brush_canvases[prev_brush_tip].toDataURL()
         invoke(def anon():
-            random_radian = random_int(0, 360) * Math.PI / 180
+            random_radian = random.randint(0, 360) * Math.PI / 180
             current_layer.ctx.translate(_x, _y)
             current_layer.ctx.rotate(random_radian)
             # current_layer.ctx.drawImage(IMG, -brush_size[0]/2, -brush_size[1]/2)
@@ -803,8 +804,8 @@ def input(key):
 
     if key == '?':
         current_color_as_hsv = rgb_to_hsv(current_color)
-        # random_color = [random_int(0,360), current_color[1], current_color[2], current_color[3]]  # this was a mistake, but creates only a small variation and could be useful to have
-        random_color = hsv(random_int(0,360), current_color_as_hsv[1], current_color_as_hsv[2], current_color_as_hsv[3])
+        # random_color = [random.randint(0,360), current_color[1], current_color[2], current_color[3]]  # this was a mistake, but creates only a small variation and could be useful to have
+        random_color = hsv(random.randint(0,360), current_color_as_hsv[1], current_color_as_hsv[2], current_color_as_hsv[3])
         set_color(random_color)
 
 
@@ -1165,7 +1166,7 @@ def record_undo():
     undo_index += 1
 
 
-selection = {'active':False, 'points':[], 'matrix':Array_2d(W,H,default_value=False), 'bounds':[W,H,0,0]}
+selection = {'active':False, 'points':[], 'matrix':Array2D(W,H,default_value=False), 'bounds':[W,H,0,0]}
 
 def render_selection():
     selection.active = False
@@ -1200,7 +1201,7 @@ lasso_tool.input = def lasso_tool_input(key):
         lasso_prev_pos = pos
         selection.points = []
         if not held_keys['shift'] and not held_keys['alt']:
-            selection.matrix = Array_2d(W,H)
+            selection.matrix = Array2D(W,H)
             render_selection()
             # print('clear selection')
         lasso_tool.start_point = pos
@@ -1304,7 +1305,7 @@ def set_pixel(x, y, color):
 #
 #         if held_keys['shift']:
 #             print('fill')
-#             pixel_grid = Array_2d(W, H)
+#             pixel_grid = Array2D(W, H)
 #             for _y in range(H):
 #                 for _x in range(W):
 #                     pixel_grid[_x][_y] = get_pixel(_x, _y)
@@ -1388,7 +1389,7 @@ rect_select_tool.input = def rect_select_tool_input(key):
         self.start_pos = get_canvas_position()
         if not held_keys['shift'] and not held_keys['alt']:
             selection.points = []
-            selection.matrix = Array_2d(W,H)
+            selection.matrix = Array2D(W,H)
             # print('clear selection')
 
     if key == 'left mouse up' and self.start_pos:

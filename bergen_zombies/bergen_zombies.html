@@ -207,7 +207,7 @@ item_chances = dict(gold=25, gold_stash=5, gas=10, ammo=10, snack=20, drink=10, 
 # gold, gas, ammo, weapon, food
 
 # bg = Entity(texture='https:#game-icons.net/icons/ffffff/000000/1x1/skoll/balkenkreuz.svg', tileset_size=[.2,.2], alpha=.5)
-grid = Array_2d(5,5)
+grid = Array2D(5,5)
 for _y in range(5):
     for _x in range(5):
         let x = _x
@@ -215,7 +215,7 @@ for _y in range(5):
         let tile = Entity(parent=city_scene, scale=.1, origin=[-.5,0], xy=[-.45 + x*.2,-.3 + y*.2], collor=color.white, shadow=1, roundness=.1, enabled=False, revealed=False)
         grid[y][x] = tile
 
-        i = random_int(0,9)
+        i = random.randint(0,9)
         if i <= 1:
             tile.type = 'empty'
         elif i <= 4:
@@ -236,7 +236,7 @@ for _y in range(5):
 
         tile.on_click = def():
             if tile.type == 'house':
-                r = random_int(0,1):
+                r = random.randint(0,1):
                 if r <= 0:
                     after .1s:
                         tile.type = 'zombie'

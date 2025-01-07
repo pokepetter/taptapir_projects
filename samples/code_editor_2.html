@@ -5,7 +5,7 @@
 text = `
 player = Entity(name='o', color=p1_color, enabled=False)
 # bg = Entity(parent=scene, model='quad', texture='shore', scale=(16,8), z=10, color=color.light_gray)
-board = Array_2d(3,3)
+board = Array2D(3,3)
 turns_taken = 0
 for y in range(3):
     for x in range(3):
@@ -30,8 +30,8 @@ text += '    print(i)\n\n'
 text += 'player = Button(scale=.25, color=color.azure)\n'
 text += 'player.on_click = def():\n'
 text += '    print(\'hi :D\')\n'
-text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
-text += '    player.xy = [random_int(-5,5)*.1, random_int(-5,5)*.1]\n'
+text += '    player.color = hsv(random.randint(0,360),.8,.9)\n'
+text += '    player.xy = [random.randint(-5,5)*.1, random.randint(-5,5)*.1]\n'
 
 ingame_console = Text(text='', color=color.clear, xy=top_left, origin=[-.5,.5], text_size=2, text_color=color.white, color=color.black, alpha=.8, enabled=False)
 ingame_console.model.style.wordBreak = 'break-word'

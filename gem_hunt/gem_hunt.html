@@ -127,7 +127,7 @@ def start_game():
 
     squares_copy = [e for e in squares]
     for i in range(num_mines):
-        n = random_int(0, len(squares_copy)-1)
+        n = random.randint(0, len(squares_copy)-1)
         target = squares_copy[n]
         target.value = '💀'
         # squares_copy.remove(e)
@@ -154,7 +154,7 @@ def set_amount_won(value, animate=True):
                 if value > start_amount:
                     target_rotation = 0
                     if i < 3:
-                        target_rotation = random_int(-5,5)
+                        target_rotation = random.randint(-5,5)
                     current_win_label.rotation = target_rotation
             , delay=i*.1)
 

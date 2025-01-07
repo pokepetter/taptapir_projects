@@ -4,11 +4,17 @@
 def volume(e):
     return e[0] * e[1] * e[2]
 
+Vec3 = {
+    zero: [0,0,0],
+}
+# def Vec3_zero():
+#     return [0,0,0]
+
 def create_shapes(size):
     size_x = size[0]
     size_y = size[1]
     size_z = size[2]
-    sizes = [[0,0,0] for i in range(size_x*size_y*size_z)]
+    sizes = [Vec3.zero for i in range(size_x*size_y*size_z)]
     i = 0
     for x in range(size_x):
         for y in range(size_y):
@@ -27,7 +33,7 @@ def grid_to_cubes(grid, grid_size):
     shapes = create_shapes(grid_size)
     # filled = [[[0 for z in range(grid_d)]for y in range(grid_h)] for x in range(grid_w)]
     # filled = [0 for i in range(grid_size_x * grid_size_y * grid_size_z)]
-    filled = [Array_2d(grid_size_z, grid_size_y) for x in range(grid_size_x)]
+    filled = [Array2D(grid_size_z, grid_size_y) for x in range(grid_size_x)]
     for x in range(grid_size_x):
         for y in range(grid_size_y):
             for z in range(grid_size_z):
@@ -94,7 +100,8 @@ def shape_fits_in_grid(grid, start_position, shape, filled):
 #
 size = 16
 # grid = [[[0 for z in range(size)]for y in range(size)] for x in range(size)]
-grid = [Array_2d(size,size) for i in range(size)]
+grid = [Array2D(size,size) for i in range(size)]
+print('111-------------------:', Array2D(size,size)[0])
 
 for x in range(size):
     for y in range(size):

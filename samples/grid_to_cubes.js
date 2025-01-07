@@ -21,7 +21,7 @@ function range(start, stop, step) {
     return result;
 };
 
-function Array_2d(w, h) {
+function Array2D(w, h) {
     var tiles = new Array(w)
     for (var i = 0; i < tiles.length; i++) {
         tiles[i] = new Array(h);
@@ -51,7 +51,7 @@ function grid_to_cubes(grid, grid_size) {
     grid_size_y = grid_size[1]
     grid_size_z = grid_size[2]
     shapes = create_shapes(grid_size)
-    filled = range(grid_size_x).map(x => Array_2d(grid_size_z, grid_size_y))
+    filled = range(grid_size_x).map(x => Array2D(grid_size_z, grid_size_y))
     for (const x of range(grid_size_x)) {
         for (const y of range(grid_size_y)) {
             for (const z of range(grid_size_z)) {
@@ -95,7 +95,7 @@ function shape_fits_in_grid(grid, start_position, shape, filled) {
                     return False}}}}
     return True}
 size = 16
-grid = range(size).map(i => Array_2d(size,size))
+grid = range(size).map(i => Array2D(size,size))
 for (const x of range(size)) {
     for (const y of range(size)) {
         for (const z of range(size)) {

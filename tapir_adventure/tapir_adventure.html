@@ -15,6 +15,7 @@ _.direction_indicator = Entity(static=True, parent=_, color=color.azure, scale=[
 _.alpha = _.target_alpha
 _.input = def (key):
     if key == 'left mouse down':
+        mouse.update()
         _.position = mouse.position
         _.animate('alpha', _.target_alpha, duration=.1)
         _.animate('alpha', _.target_alpha, duration=.1)
@@ -43,9 +44,56 @@ _.update = def():
     # camera.x = clamp(camera.x, 1, _.bounds[0]-1)
     # camera.y = clamp(camera.y, 1, _.bounds[1]-2)
         
+random.uniform = def (a, b):
+    return a + (b - a) * random.random()
+
+def random_point_in_circle(radius=.5):
+    r = math.sqrt(random.uniform(0, 1)) * radius
+    theta = random.uniform(0, 2 * math.pi)        
+    x = r * math.cos(theta)
+    y = r * math.sin(theta)
+    return [x, y]
 
 
-level = Entity(texture='https://cdnb.artstation.com/p/assets/images/images/082/650/175/large/artem-chebokha-415-inevitable-fading-1400.jpg?1733529524', scale=1)
+$collision_handler = Entity(visible_self=False, player=None, triggers=[])
+_.update = def ():
+    if not _.player:
+        print('no player')
+        return
+    if not _.triggers:
+        print('no triggers')
+        return
+    for tr in _.triggers:
+        if distance(tr.xy, _.player.xy) < tr.scale_x:
+            # print('trigger enter')
+            tr.on_trigger_enter()
+
+
+# class Enemy():
+#     def __init__(self, **kwargs):
+#         super().__init__(kwargs)
+
+
+a = random_point_in_circle()
+$enemy_spawner = Entity(visible_self=False)
+_.input = def (key):
+    if key == 'c':
+        for i in range(10):
+            let enemy_instance = Entity(scale=.1, xy=random_point_in_circle(.5), draggable=True, roundness=.5)
+            enemy_instance.on_trigger_enter = def on_trigger_enter(enemy=enemy_instance):
+                print('aaaa')
+                collision_handler.triggers.remove(enemy)
+                destroy(enemy)
+
+    # for e in entities:
+    #     print(e.on_trigger_enter)
+    collision_handler.triggers = [e for e in entities if e.on_trigger_enter]
+
+collision_handler.player = player
+
+
+
+# level = Entity(texture='https://cdnb.artstation.com/p/assets/images/images/082/650/175/large/artem-chebokha-415-inevitable-fading-1400.jpg?1733529524', scale=1)
 
 </script>
 <script src="../taptapir/sunsnake_compiler.js"></script>

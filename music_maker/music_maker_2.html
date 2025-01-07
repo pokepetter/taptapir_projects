@@ -26,10 +26,10 @@
 set_orientation('horizontal')   // orientation
 ASSETS_FOLDER = 'assets/'
 
-note_sections = Array_2d(5, 100)
+note_sections = Array2D(5, 100)
 for y in range(100):
     for x in range(5):
-        note_sections[x][y] = {'notes':Array_2d(16, 8), 'length':16}
+        note_sections[x][y] = {'notes':Array2D(16, 8), 'length':16}
 
 symbols = ['☀️','🌙','🌟','🪐','🌠']
 // sample_names = ['UoIowaPiano_n24.wav','UoIowaPiano_n36.wav','UoIowaPiano_n48.wav','UoIowaPiano_n60.wav','UoIowaPiano_n72.wav']
@@ -52,7 +52,7 @@ on_color = '#85B112'
 
 
 note_view_parent = Entity(xy=[-.75,-.25], color=color.black, origin=[0,-.5], scale=.075, visible_self=False)
-note_entities = Array_2d(16, 8)
+note_entities = Array2D(16, 8)
 for y in range(8):
     for x in range(16):
         let e = Entity(parent=note_view_parent, origin=[-.5,-.5], xy=[x,y], on=False, scale=.95, roundness=.1, color='#111')
@@ -224,7 +224,7 @@ def play_note(n):
     audio.play()
 
 
-note_section_buttons = Array_2d(5,8)
+note_section_buttons = Array2D(5,8)
 note_section_parent = Entity(scale=note_view_parent.scale, xy=[.5,.35], visible_self=False)
 time_indicator = Entity(parent=note_section_parent, origin=[-.5,.5], scale_x=5, z=-1, color='cyan', alpha=.2, enabled=False)
 page = 0

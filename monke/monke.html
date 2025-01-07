@@ -60,11 +60,11 @@ variation = [2,0,.002]
 
 level_size = [16,16]
 player.x = level_size[0]/2
-tiles = Array_2d(level_size[0],level_size[1])
+tiles = Array2D(level_size[0],level_size[1])
 for y in range(level_size[0]):
     for x in range(level_size[1]):
-        let tile = Entity(scale=1, xy=[x,y], z=1, color=color.white, shadow=1, roundness=.15, scale=1.1, color=hsv(h+random_int(0,10)*variation[0],s+random_int(0,10)*variation[1],v+random_int(0,10)*variation[2]), tile_type='a')
-        tile.rotation = random_int(-10,10)*.1
+        let tile = Entity(scale=1, xy=[x,y], z=1, color=color.white, shadow=1, roundness=.15, scale=1.1, color=hsv(h+random.randint(0,10)*variation[0],s+random.randint(0,10)*variation[1],v+random.randint(0,10)*variation[2]), tile_type='a')
+        tile.rotation = random.randint(-10,10)*.1
         tiles[y][x] = tile
 
 
@@ -98,7 +98,7 @@ def goto_level(i):
                     tiles[x][y].tile_type = 'palm_tree'
                     tiles[x][y].content = Entity(parent=tiles[x][y], scale=.75, text='🌴', text_origin=[0,0], color=color.clear, text_size=10, y=.3)
                     Entity(texture='radial_gradient.png', parent=tiles[x][y].content, y=-.6, x=.2, scale=[1,.5], z=1)
-                    if random_int(0,100) < 50:
+                    if random.randint(0,100) < 50:
                         player.set_num_bananas(player.num_bananas + 1)
                         # player.num_bananas += 1
 

@@ -41,7 +41,7 @@ composer_view =    Entity(visible_self=false)
 // text = Entity(text='music', text_size=7, color='#00000000', text_color='white')
 cursor = Button(parent=note_view_parent, scale=1/8,  origin=[-.5,.5], color='magenta', alpha=.5, z=1, roundness=.5)
 current_block = null
-blocks = Array_2d(8, 5)
+blocks = Array2D(8, 5)
 
 
 bg = Entity(y=.2, color=color.black, origin=[0,-.5])
@@ -156,7 +156,7 @@ def play_note(n):
     audio.play()
 
 w = 7
-keyboard = Array_2d(w, 5)
+keyboard = Array2D(w, 5)
 
 for y in range(5):
     for x in range(w):

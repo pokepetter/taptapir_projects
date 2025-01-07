@@ -625,7 +625,7 @@ def paint():
             if brush_tips:
                 IMG.src = brush_canvases[prev_brush_tip].toDataURL()
             invoke(def anon():
-                random_radian = random_int(0, 360) * Math.PI / 180
+                random_radian = random.randint(0, 360) * Math.PI / 180
                 current_layer.ctx.translate(_x, _y)
                 current_layer.ctx.rotate(random_radian)
                 current_layer.ctx.drawImage(IMG, -brush_size[0]/2, -brush_size[1]/2)
@@ -1027,7 +1027,7 @@ def record_undo():
     undo_index += 1
 
 
-selection = {'active':False, 'points':[], 'matrix':Array_2d(w,h,default_value=False), 'bounds':[w,h,0,0]}
+selection = {'active':False, 'points':[], 'matrix':Array2D(w,h,default_value=False), 'bounds':[w,h,0,0]}
 
 def render_selection():
     selection.active = False
@@ -1062,7 +1062,7 @@ lasso_tool.input = def lasso_tool_input(key):
         lasso_prev_pos = pos
         selection.points = []
         if not held_keys['shift'] and not held_keys['alt']:
-            selection.matrix = Array_2d(w,h)
+            selection.matrix = Array2D(w,h)
             render_selection()
             # print('clear selection')
         lasso_tool.start_point = pos
@@ -1166,7 +1166,7 @@ def set_pixel(x, y, color):
 #
 #         if held_keys['shift']:
 #             print('fill')
-#             pixel_grid = Array_2d(w, h)
+#             pixel_grid = Array2D(w, h)
 #             for _y in range(h):
 #                 for _x in range(w):
 #                     pixel_grid[_x][_y] = get_pixel(_x, _y)
@@ -1250,7 +1250,7 @@ rect_select_tool.input = def rect_select_tool_input(key):
         self.start_pos = get_canvas_position()
         if not held_keys['shift'] and not held_keys['alt']:
             selection.points = []
-            selection.matrix = Array_2d(w,h)
+            selection.matrix = Array2D(w,h)
             # print('clear selection')
 
     if key == 'left mouse up' and self.start_pos:

@@ -315,7 +315,7 @@ function lerp(a, b, t) {
 function clamp(num, min, max) {
   return num <= min ? min : num >= max ? max : num;
 }
-function random_int(min, max) {
+function random.randint(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -458,7 +458,7 @@ function mouse_up(e) {
 }
 
 function range(n) {return Array(n).keys()}
-function Array_2d(w, h) {
+function Array2D(w, h) {
     var tiles = new Array(w)
     for (var i = 0; i < tiles.length; i++) {
         tiles[i] = new Array(h);

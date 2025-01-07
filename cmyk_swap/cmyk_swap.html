@@ -112,8 +112,8 @@ def goto_next_level():
         e.draggable = True
         e.velocity = [0,0]
 
-    if random_int(0, 100) < save_system_load('extra_ink_chance'):
-    # if random_int(0, 100) < 50:
+    if random.randint(0, 100) < save_system_load('extra_ink_chance'):
+    # if random.randint(0, 100) < 50:
         extra_ink_button.enabled = True
         extra_ink_button.x = (-2 + random_positions[6][0]) * block_size
         extra_ink_button.y = (-2 + random_positions[6][1]) * block_size
@@ -416,7 +416,7 @@ def open_loot_box(cost, num, items):
     after .4:
         for i in range(bag_parent.items_left):
             let card = bag_parent.children[i]
-            let r = random_value()
+            let r = random.value)
             cumulative = 0
             card.value = 0
             card.active_color = color.gray

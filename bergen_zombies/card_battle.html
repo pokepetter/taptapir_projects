@@ -37,7 +37,7 @@ def draw_card():
     # if len(card_parent.children > 5):
     #     card.y -= .2
 
-    card.text = random_choice(deck)
+    card.text = random.choice(deck)
 
     reorder_cards()
     y_limit = -.35

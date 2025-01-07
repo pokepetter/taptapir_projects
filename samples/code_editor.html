@@ -15,7 +15,7 @@ text += '    print(i)\n\n'
 text += 'player = Button(scale=.25, color=color.azure)\n'
 text += 'player.on_click = def():\n'
 text += '    print(\'hi :D\')\n'
-text += '    player.color = hsv(random_int(0,360),.8,.9)\n'
+text += '    player.color = hsv(random.randint(0,360),.8,.9)\n'
 
 text = text.replaceAll('print', '<span style="color:#3af">print</span>')
 text = text.replaceAll('range(', '<span style="color:#3af">range</span>(')

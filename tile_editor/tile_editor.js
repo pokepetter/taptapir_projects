@@ -17,7 +17,7 @@ set_window_color('#111')
 w = 7
 h = parseInt(w * aspect_ratio) - 1
 
-var tiles = Array_2d(w, h)
+var tiles = Array2D(w, h)
 
 current_tool = 'place_tile'     // place_tile / colorize
 colorize_target = 'fg'
@@ -124,7 +124,7 @@ for (const x of range(w)) {
             parent:e,
             texture:'Hack_square_64x64',
             tileset_size:[16,16],
-            // tile_coordinate:[random_int(0,14), random_int(0,14)],
+            // tile_coordinate:[random.randint(0,14), random.randint(0,14)],
             tile_coordinate:[0,0],
             on_click : function() {
                 if (current_tool == 'colorize' && colorize_target == 'fg') {
@@ -167,7 +167,7 @@ function on_mouse_moved(event) {
 // tiles[w-1][h-1].on_click = function randomize() {
 //     for (const x of range(w)) {
 //         for (const y of range(h)) {
-//             tiles[x][y].tile_coordinate = [random_int(0,16), random_int(0,16)]
+//             tiles[x][y].tile_coordinate = [random.randint(0,16), random.randint(0,16)]
 //         }
 //     }
 // }
