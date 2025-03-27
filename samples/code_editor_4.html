@@ -217,34 +217,46 @@ keys = [e for e in keyboard.children if e != math_symbols_parent]
 keys.extend(math_symbols_parent.children)
 
 for e in keys:
+    e.highlight_color = hsv(lerp(180, 300,(.5+e.x)), 1, 1)
+    e.highlighted = False
     e.on_click = def():
         keyboard.prev_button = e
-        e.color = color.azure
+        e.color = e.highlight_color
 
     e.input = def _input(key):
-        if key == 'left mouse up' and keyboard.prev_button == mouse.hovered_entity:
+        # print('key:', key, e.text)
+        if key == 'left mouse up':
+            if keyboard.prev_button == mouse.hovered_entity:
+                char = mouse.hovered_entity.text
+                if mouse.hovered_entity.key:
+                    char = mouse.hovered_entity.key
+                add_text(char)
+
             keyboard.prev_button = None
-            char = e.text
-            if e.key:
-                char = e.key
-            add_text(char)
 
 
 keyboard.input = def _input(key):
     if key == 'left mouse up':
         swiped_chars = []
         for e in keys:
-            if e.color != keyboard_color:
+            if e.highlighted:
                 swiped_chars.append(e.text)
-                e.animate('color', keyboard_color, duration=.2)
+                # print('add', e.text)
+            # e.animate('color', keyboard_color, duration=.2)
+            e.animate('color', keyboard_color, duration=0)
+            e.highlighted = False
 
+        # print('swiped:', swiped_chars.sort(), '6ujb'.split('').sort(), lists_are_equal(swiped_chars.sort(), '6ujb'.split('').sort()))
         if lists_are_equal(swiped_chars.sort(), '6ujb'.split('').sort()):
             add_text(')')
 
-swipe_area = .4
+swipe_area = .175
 keyboard.update = def():
-    if mouse.left and mouse.hovered_entity in keys and mouse.point[0] > -swipe_area and mouse.point[0] < swipe_area and mouse.point[1] > -swipe_area and mouse.point[1] < swipe_area:
-        mouse.hovered_entity.color = color.azure
+    if mouse.hovered_entity:
+        print(swipe_area, distance(mouse.hovered_entity.xy, mouse.position))
+    if mouse.left and mouse.hovered_entity in keys and distance(mouse.hovered_entity.xy, mouse.position) < swipe_area:
+        mouse.hovered_entity.color = mouse.hovered_entity.highlight_color
+        mouse.hovered_entity.highlighted = True
 
 
 
