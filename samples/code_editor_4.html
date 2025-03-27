@@ -1,0 +1,326 @@
+<html><title>code_editor_2.js</title><body>
+
+<script src="../taptapir/taptapir.js"></script>
+<script type='text/javascript'>
+text = `
+player = Entity(name='o', color=p1_color, enabled=False)
+# bg = Entity(parent=scene, model='quad', texture='shore', scale=(16,8), z=10, color=color.light_gray)
+board = Array2D(3,3)
+turns_taken = 0
+for y in range(3):
+    for x in range(3):
+        let b = Entity(scale=1, position=[x,y], roundness=.1, text_origin=[0,0], text_size=8, text_color=color.white, clicked=False)
+        board[x][y] = b
+
+        b.on_click = def():
+            if b.clicked:
+                return
+            b.text = player.name
+            b.color = player.color
+            b.clicked = True
+            turns_taken += 1
+            check_for_victory()
+`
+</script>
+<script type='text/sunsnake'>
+text =  'print(\'hello world!\')\n\n'
+text += 'for i in range(10):\n'
+text += '    print(i)\n\n'
+
+text += 'player = Button(scale=.25, color=color.azure)\n'
+text += 'player.on_click = def():\n'
+text += '    print(\'hi :D\')\n'
+text += '    player.color = hsv(random.randint(0,360),.8,.9)\n'
+text += '    player.xy = [random.randint(-5,5)*.1, random.randint(-5,5)*.1]\n'
+
+ingame_console = Text(text='', color=color.clear, xy=top_left, origin=[-.5,.5], text_size=2, text_color=color.white, color=color.black, alpha=.8, enabled=False)
+ingame_console.model.style.wordBreak = 'break-word'
+ingame_console.model.style.whiteSpace = 'pre-wrap'
+# original_print = print
+# def print_ingame(message):
+#     ingame_console.text += '\n' + message
+# console.error = print_ingame
+# print = print_ingame
+# print('------')
+
+set_orientation('vertical')
+w = 512
+h = w * 2
+text_renderer = Entity(scale=[.9,.9*2], origin=[0,.5], y=.475*aspect_ratio, color=color.black, draggable=True, max_x=0, text_color='#aabbcc', text_size=2, font='monospace')
+text_renderer.min_y = text_renderer.y
+text_renderer.max_y = text_renderer.y + (text_renderer.scale_y/2)
+
+text_color = hsv(0,0,.9)
+background_color = '#0a0a0a'
+set_window_color(background_color)
+# text_size = 20
+# character_spacing = 11
+# ctx.font = `${text_size}px monospace`
+keywords = ['def', 'for', 'if', 'else', 'elif', 'while', 'return', 'pass', 'break', 'continue']
+functions = ['print', 'range']
+symbols = ['+', '-', '*', '/', '=']
+
+cursor_parent = Entity(parent=text_renderer, origin=[-.5,.5], x=-.5, scale=[1/42, 1/44], visible_self=0)
+cursor = Entity(parent=cursor_parent, scale=[1,1], z=-1, origin=[-.5,.5], color=color.azure, alpha=.5, xy=[5,-8])
+text_renderer.on_click = def set_cursor_position():
+    x = floor((.5+mouse.point[0]) * 42)
+    y = ceil((-.5+mouse.point[1]) * 43)
+    cursor.x = x
+    cursor.y = y
+
+
+def render_text():
+    text_renderer.text = text
+    # y = 0
+    return
+
+    for y, line in text.split('\n'):
+        x = 0
+        # highlight = None
+
+        for word in line.split(' '):
+            if word in keywords:
+                Entity(parent=cursor_parent, origin=[-.5,.5], color=color.violet, position=[x,-y,-1], scale_x=len(word), alpha=.5, roundness=.5)
+            if word in functions:
+                Entity(parent=cursor_parent, origin=[-.5,.5], color=color.cyan, position=[x,-y,-1], scale_x=len(word), alpha=.5, roundness=.5)
+
+            for char in word:
+                if char in symbols:
+                    Entity(parent=cursor_parent, origin=[-.5,.5], color=color.orange, position=[x,-y,-1], alpha=.2, roundness=.5)
+
+                x += 1
+
+            x += 1 # account for the space between words
+
+
+    #         if char == '[':
+    #             ctx.fillStyle = rgb32(...text_color)
+    #         if char == '(':
+    #             ctx.fillStyle = rgb32(...text_color)
+    #         if char == '=':
+    #             ctx.fillStyle = rgb32(...hsv(40,1,1))
+    #         if char == ':':
+    #             ctx.fillStyle = rgb32(...hsv(210,1,1))
+    #         # elif char == 'i':
+    #         #     ctx.fillStyle = rgb32(...color.orange)
+    #         if char == ' ':
+    #             ctx.fillStyle = rgb32(...text_color)
+    #         if char == '.':
+    #             ctx.fillStyle = rgb32(...hsv(200,.3,.8))
+    #         if char in '0123456789+-*/'.split(''):
+    #             ctx.fillStyle = rgb32(...hsv(60,1,1))
+
+    #         if char == 'i' and x < len(line)-2 and line[x+1] == 'f' and line[x+2] == ' ':
+    #             ctx.fillStyle = rgb32(...hsv(280,1,1))
+    #         if char == 'f' and x < len(line)-3 and line[x+1] == 'o' and line[x+2] == 'r'  and line[x+3] == ' ':
+    #             ctx.fillStyle = rgb32(...hsv(180,.5,1))
+    #         if char == 'd' and x < len(line)-3 and line[x+1] == 'e' and line[x+2] == 'f'  and (line[x+3] == ' ' or line[x+3] == '('):
+    #             ctx.fillStyle = rgb32(...hsv(210,.8,1))
+
+    #         else:
+    #             ctx.fillStyle = rgb(...color.white)
+
+    #         ctx.fillText(char, x*character_spacing, (y*text_size))
+        # y += 1
+
+    #         # if x > 50:
+    #         #     x = 0
+    #         #     y += 1
+# text = 'some test text'
+render_text()
+
+
+preview_canvas = Entity(name='preview_canvas', parent=camera.ui, scale=[.9,aspect_ratio*.9], y=.05, z=-1, color=hsv(0,0,.1), shadow=1, enabled=False)
+preview_canvas.entity_parent = None
+border_parent = Entity(parent=preview_canvas, visible_self=False, z=-2)
+Entity(parent=border_parent, origin=[-.5,0], scale=2, color=color.black, z=-1, x=.5)
+Entity(parent=border_parent, origin=[.5,0], scale=2, color=color.black, z=-1, x=-.5)
+Entity(parent=border_parent, origin=[0,-.5], scale=2, color=color.black, z=-1, y=.5)
+Entity(parent=border_parent, origin=[0,.5], scale=2, color=color.black, z=-1, y=-.5)
+
+close_button = Button(scale=[.15,.075], origin=[.5,-.5], position=[.5-.2,-.5*aspect_ratio], text='close', color=color.gray, enabled=False, text_size=2.5, z=-2)
+close_button.on_click = def close():
+    if preview_canvas.entity_parent:
+        destroy(preview_canvas.entity_parent)
+    preview_canvas.enabled = False
+    close_button.enabled = False
+    scene = _original_scene
+    camera.ui = _original_camera_ui
+    print = original_print
+    ingame_console.text = ''
+
+preview_button = Button(scale=[.2,.075], origin=[.5,-.5], position=bottom_right, text='preview', color=color.azure, text_color=color.white, text_size=2.5, z=-2)
+preview_button.on_click = def preview():
+    preview_canvas.enabled = True
+    close_button.enabled = True
+    ingame_console.text = ''
+    # print = print_ingame
+    # console.error = print_ingame
+    # console.log = print_ingame
+
+    text_to_compile = text
+    _original_scene = scene
+    _original_camera_ui = camera.ui
+
+    preview_canvas.entity_parent = Entity(parent=preview_canvas, visible_self=False, scale_y=1/aspect_ratio)
+    fake_camera_ui = Entity(parent=preview_canvas.entity_parent, visible_self=False)
+    scene = preview_canvas.entity_parent.el
+    camera.ui = fake_camera_ui
+    try:
+        result = compile(text_to_compile)
+        print('compiled sucessfully')
+    catch (error):
+        print('error compiling:', error)
+    try:
+        eval(result)
+        print('evaluated sucessfully')
+    catch (error):
+        line_number = ''
+        for l in error.stack.split('\n'): # get line number
+            if 'eval:' in l:
+                line_number = 'line: ' + l.split('eval:')[1]
+                break
+
+        print(error + ' \n' + line_number);
+
+
+
+w = 10
+h = .125
+keyboard_color = hsv(0,0,.05)
+keyboard = Entity(color=color.black, origin=[0,.5], y=-.15, ignore_collision=False)
+sunsnake.define(*KeyboardButton(,Button(parent=keyboard, text=e, scale=[(1/w)-.005, h], color=keyboard_color, text_color=color.gray, text_size=2, )
+
+math_symbols_parent = Entity(visible_self=False, parent=keyboard, scale=.9)
+for i, e in '+-/*'.split(''):
+    *KeyboardButton(parent=math_symbols_parent, x=-(1/15*4/2) + (i/15) + (1/w/2), y=.11+(-h-.01), origin=[0,-.5], scale=1/15, roundness=.25)
+
+for i, e in `1234567890=`.split(''):
+    *KeyboardButton(x=-.5 + (i/w) + (1/w/2), y=.05+(-h-.01))
+for i, e in 'qwertyuiop'.split(''):
+    *KeyboardButton(x=-.5 + (i/w) + (1/w/2), y=.05+(-h-.01)*2)
+for i, e in 'asdfghjkl:'.split(''):
+    *KeyboardButton(x=-.5 + (i/w) + (1/w/2), y=.05+(-h-.01)*3)
+for i, e in '_zxcvbnm'.split(''):
+    *KeyboardButton(x=-.5 + (i/w) + (1/w/2), y=.05+(-h-.01)*4)
+erase = *KeyboardButton(x=-.5 + (8.5/w) + (1/w/2), y=.05+(-h-.01)*4, text='⌫', scale_x=(1/w*2)-.005, key='erase')
+
+for i, e in '()'.split(''):
+    *KeyboardButton(x=-.5 + (i/w) + (1/w/2), y=.05+(-h-.01)*5)
+a = *KeyboardButton(x=-.5 + (0/w) + (1/w/2), y=.05+(-h-.01)*5, text=' ')
+underscore = *KeyboardButton(x=-.5 + (1.5/w) + (1/w/2), y=.05+(-h-.01)*5, text='_', scale_x=(1/w*2)-.005)
+space = *KeyboardButton(x=-.5 + (4/w) + (1/w/2), y=.05+(-h-.01)*5, text=' ', scale_x=(1/w*3)-.005)
+dot = *KeyboardButton(x=-.5 + (6.5/w) + (1/w/2), y=.05+(-h-.01)*5, text='.', scale_x=(1/w*2)-.005)
+enter = *KeyboardButton(x=-.5 + (8.5/w) + (1/w/2), y=.05+(-h-.01)*5, text='⏎', scale_x=(1/w*2)-.005, key='newline')
+
+keys = [e for e in keyboard.children if e != math_symbols_parent]
+keys.extend(math_symbols_parent.children)
+
+for e in keys:
+    e.on_click = def():
+        keyboard.prev_button = e
+        e.color = color.azure
+
+    e.input = def _input(key):
+        if key == 'left mouse up' and keyboard.prev_button == mouse.hovered_entity:
+            keyboard.prev_button = None
+            char = e.text
+            if e.key:
+                char = e.key
+            add_text(char)
+
+
+keyboard.input = def _input(key):
+    if key == 'left mouse up':
+        swiped_chars = []
+        for e in keys:
+            if e.color != keyboard_color:
+                swiped_chars.append(e.text)
+                e.animate('color', keyboard_color, duration=.2)
+
+        if lists_are_equal(swiped_chars.sort(), '6ujb'.split('').sort()):
+            add_text(')')
+
+swipe_area = .4
+keyboard.update = def():
+    if mouse.left and mouse.hovered_entity in keys and mouse.point[0] > -swipe_area and mouse.point[0] < swipe_area and mouse.point[1] > -swipe_area and mouse.point[1] < swipe_area:
+        mouse.hovered_entity.color = color.azure
+
+
+
+
+def add_text(value):
+    # print('add text:', value)
+    if value == 'erase':
+        text = text.slice(0, -1)
+        render_text()
+        return
+
+    if value == 'newline':
+        current_line = text.split('\n')[int(-cursor.y)]
+        indent = get_indent(current_line)
+        print('-----', current_line, indent)
+        value = '\n' + '-----'.repeat(current_indent)
+
+    text += value
+    render_text()
+
+
+def input(key):
+    if len(key) == 1:
+        add_text(key)
+    elif key == 'enter':
+        add_text('newline')
+    elif key == 'space':
+        add_text(' ')
+    elif key == 'backspace':
+        add_text('erase')
+
+# drawing_area = Entity(color=color.white, alpha=.1, origin=[-.5,-.5], x=-.5, y=-.5)
+# for x in range(16):
+#     for y in range(16):
+#         Entity(parent=drawing_area, x=x/16, y=y/16, scale=1/16, color=color.smoke, roundness=.1, on_click=)
+
+# $symbol_recognizer = Entity(scale=1, alpha=.2, w=3, h=7, visible_self=False)
+# _.dot_parent = Entity(parent=_, visible_self=False, enabled=False)
+# _.bg_panel = Entity(scale=2, alpha=.1)
+# _.bg_panel.on_click = def():
+#     _.xy = mouse.position
+#     _.bg_panel.enabled = False
+#     _.dot_parent.enabled = True
+#     _.knob.start_offset = _.xy
+#     _.knob.dragging = True
+#     _.smooth_cursor.xy = mouse.position
+
+# _.smooth_cursor = Entity(scale=1, color=color.pink, roundness=.5, z=-1, scale=.1, color=color.azure, shadow=True,)
+# _.knob = Entity(parent=_.dot_parent, roundness=.0, z=-1, scale=.1, color=color.red, alpha=.2, shadow=True, draggable=True, snap_x=.2, snap_y=.2)
+# _.knob.drop = def():
+#     _.knob.xy = [0,0]
+#     _.bg_panel.enabled = True
+#     _.dot_parent.enabled = False
+#     for x in range(_.w):
+#         for y in range(_.h):
+#             _.grid[x][y].color = color.white
+
+# _.target_positions = []
+# _.grid = Array2D(_.w, _.h)
+# for x in range(_.w):
+#     for y in range(_.h):
+#         _.grid[x][y] = Entity(parent=_.dot_parent, scale=.025, roundness=.5, xy=[
+#             -((_.w-1)*_.knob.snap_x*.5) + (x*_.knob.snap_x),
+#             -((_.h-1)*_.knob.snap_y*.5) + (y*_.knob.snap_y),])
+
+# _.knob.while_dragging = def():
+#     x = clamp(_.knob.x/_.knob.snap_x, -1, 1)
+#     y = clamp((_.knob.y/_.knob.snap_y)+3, -2, 3)
+#     print(x, y)
+#     _.grid[x+1][y].color = color.azure
+#     _.smooth_cursor.xy = mouse.position
+
+# text = 'def update():\n    pass\n    print(\'1234\')\n'
+# add_text('this is some test text')
+
+render_text()
+
+</script><script src="../taptapir/sunsnake_compiler.js"></script>
+<script type='text/sunsnake'>

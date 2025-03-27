@@ -1,9 +1,10 @@
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><meta charset="utf-8" />
 <title>gem hunt</title>
 <script src="../taptapir/taptapir.js"></script><script type='text/sunsnake'>
 
 set_window_color('rgb(49 72 60)')
-// set_scale(1)
+mouse.click_animation = 'impact.gif'
+# set_orientation('vertical')
+#  set_scale(1)
 # class Wallet extends Button:
 #     # get gems():
 #     #     return this._gems
@@ -13,7 +14,7 @@ set_window_color('rgb(49 72 60)')
 wallet = Button(scale=[.3,.075], origin=[-.5,.5], text_origin=[-.5,0], position=[-.5,.5*aspect_ratio], shadow=True, text=' 💎 ??  ', gems=999)
 wallet.set_gems = def (value):
     wallet.gems = value
-    wallet.text = ` 💎 ${wallet.gems}  `
+    wallet.text = ` 💎 ${wallet.gems}`
     wallet.fit_to_text()
 
 wallet.set_gems(99)
@@ -111,7 +112,6 @@ for y in range(5):
 
                 cash_out_button.enabled = True
                 current_win_label.enabled = True
-                back_button.enabled = False
                 e.ignore_collision = True
 
 amount_won = 0
@@ -175,9 +175,11 @@ def reveal_all():
     bet_text_retry.text = `  💎 ${current_bet} `
     bet_text_retry.fit_to_text()
     has_enough_for_retry = wallet.gems > current_bet
-    after .2:
-        retry_button.enabled = has_enough_for_retry
-        bet_text_retry.enabled = has_enough_for_retry
+    retry_button.enabled = False
+    bet_text_retry.enabled = False
+    if has_enough_for_retry:
+        retry_button.appear()
+        bet_text_retry.appear()
     for e in squares:
         e.text = e.value
 
@@ -198,14 +200,10 @@ def cash_out():
 def lose():
     cash_out_button.enabled = False
     end_screen.enabled = True
-    # end_text.enabled = False
     end_text.text = 'YOU LOST :('
     end_text.text_color = color.red
     end_text.text_size = 0
     end_text.animate('text_size', 5, duration=.25)
-    back_button.enabled = False
-    after .2:
-        back_button.enabled = True
 
     set_amount_won(current_bet)
     current_win_label.enabled = False
