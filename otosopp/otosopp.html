@@ -1165,8 +1165,8 @@ def record_undo():
     print('record undo')
     undo_index += 1
 
-
-selection = {'active':False, 'points':[], 'matrix':Array2D(W,H,default_value=False), 'bounds':[W,H,0,0]}
+selection_matrix = Array2D(W,H,default_value=False)
+selection = {'active':False, 'points':[], 'matrix':selection_matrix, 'bounds':[W,H,0,0]}
 
 def render_selection():
     selection.active = False
@@ -1654,6 +1654,30 @@ Entity(visible_self=False).input = def input(key):
         radial_menu.input(radial_menu.shortcut)
     if key == 'right mouse up':
         radial_menu.input(radial_menu.shortcut + ' up')
+
+
+paint_filter = Entity(visible_self=False)
+paint_filter.input = def paint_filter_input(key):
+    if held_keys['control'] and held_keys['shift'] and key == 'f':
+        paint_filter.apply_paint_filter()
+
+paint_filter.apply_paint_filter = def():
+    h_res = 16
+    w_res = floor(h_res * canvas_aspect)
+
+    brush_aspect = current_brush.size[0] / current_brush.size[1]
+    print(brush_aspect)
+    set_brush_size([H/h_res, H/h_res/brush_aspect])
+
+    for _x in range(w_res):
+        for _y in range(h_res):
+            x = (_x+.5) / w_res * W
+            y = (_y+.5) / h_res * H
+            col = sample_color([x, y])
+            # update_brush_tip(sample_color([x,y]))
+            update_brush_tip(col)
+            random_radian = random.randint(0, 360) * Math.PI / 180
+            stamp(x, y, random_radian)
 
 
 # hsv_menu_handler = Entity(visible_self=False)
