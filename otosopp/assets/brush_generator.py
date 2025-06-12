@@ -8,6 +8,8 @@ brushes = dict(
     painterly_brush = ["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png"],
     starfield_brush = ["starfield.png", ],
     star_brush = ['star_brush.png', ],
+    heavypaint_dry = ['heavypaint_dry.png', ],
+    heavypaint_dry_2 = ['heavypaint_dry_2.png', ],
 )
 
 brushes_as_strings = {}

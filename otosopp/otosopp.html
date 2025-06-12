@@ -223,6 +223,7 @@ def set_layer(layer):
 selection_canvas = document.createElement('canvas')
 selection_canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
 selection_canvas.willReadFrequently = True
+selection_canvas.imageSmoothingEnabled = False
 
 selection_canvas_entity = Entity(name='selection_canvas', parent=bg, color=color.clear, scale=[1/2,1/2], z=-1)
 selection_canvas_entity.model.appendChild(selection_canvas)
@@ -232,6 +233,8 @@ selection_ctx.fillStyle = rgb(128/255, 0/255, 0/255, 255/255)
 selection_ctx.clearRect(0, 0, W, H)
 
 
+heavypaint_dry_brush = {'name':'heavypaint_dry_brush', 'textures':["heavypaint_dry.png", ],'size':[678, 264], 'spacing':.1, 'painterly_brush':True, 'rotate':False, 'draw_on_click':True, 'pressure_stremin_pressurength':1}
+heavypaint_dry_brush_2 = {'name':'heavypaint_dry_brush', 'textures':["heavypaint_dry_2.png", ],'size':[678, 264], 'spacing':.1, 'painterly_brush':True, 'rotate':False, 'draw_on_click':True, 'pressure_stremin_pressurength':1}
 square_brush = {'name':'square_brush', 'textures':None, 'shape':'rect', 'size':[50, 50], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'pressure_stremin_pressurength':1}
 round_brush = {'name':'round_brush', 'textures':None, 'shape':'circle', 'size':[1, 1], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'min_pressure':1}
 round_bitmap_brush = {'name':'round_bitmap_brush', 'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'min_pressure':0}
@@ -243,7 +246,7 @@ stubby_brush = {'name':'stubby_brush', 'textures':["RGBA anim 01.png", "RGBA ani
 starfield_brush = {'name':'starfield_brush', 'textures':["starfield.png", ], 'size':[256, 256], 'spacing':1, 'painterly_brush':1, 'rotate':'random', 'draw_on_click':True, 'min_pressure':0}
 star_brush = {'name':'star_brush', 'textures':["star_brush.png", ], 'size':[128, 128], 'spacing':5, 'painterly_brush':0, 'rotate':False, 'draw_on_click':True, 'min_pressure':0}
 
-brushes = [round_brush, square_brush, round_bitmap_brush, poke_brush, poke_brush_small, painterly_brush, stubby_brush, starfield_brush, star_brush, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter]
+brushes = [heavypaint_dry_brush, heavypaint_dry_brush_2, round_brush, square_brush, round_bitmap_brush, poke_brush, poke_brush_small, painterly_brush, stubby_brush, starfield_brush, star_brush, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter]
 current_brush = None
 brush_canvases = []
 increase_brush_size_button = *Button(x=right_button_x, y=.33, text='+', scale=[.05,.035])
@@ -365,7 +368,7 @@ def update_brush_tip(color):
                     img_data.data[i+3] = img_data.data[i+3] * (color[3]/255)
 
             elif SMUDGE:
-            #     print('SMUDGE')
+                print('SMUDGE')
             #     # sample the canvas for colors and multiply with brush alpha
                 pos = get_canvas_position()
                 img_data = current_layer.ctx.getImageData(pos[0]-(brush_size[0]/2), pos[1]-brush_size[1]/2, brush_size[0], brush_size[1])
@@ -406,6 +409,7 @@ def update_brush_tip(color):
             brush_canvas.width = brush_size[0]
             brush_canvas.height = brush_size[1]
             brush_canvas_context = brush_canvas.getContext("2d", {willReadFrequently: true})
+            brush_canvas_context.imageSmoothingEnabled = false
             brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
             img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
 
@@ -534,7 +538,7 @@ def draw_brush_image(brush_canvas, x, y):
     # erase
     else:
         current_layer.ctx.globalCompositeOperation = "destination-out"
-        
+
     brush_scaling_canvas.width = brush_data.width
     brush_scaling_canvas.height = brush_data.height
     brush_scaling_ctx.putImageData(brush_data, 0, 0)
@@ -549,7 +553,7 @@ def draw_brush_image(brush_canvas, x, y):
         #     brush_half_w = brush_size[0] / 2
         #     brush_half_h = brush_size[1] / 2
         #     current_layer.ctx.fillStyle = 'cyan'
-            
+
             # for _y in range(clamp(y-brush_half_h, 0, H-1), int(clamp(y+brush_half_h, 0, H-1))):
             #     for _x in range(clamp(x-brush_half_w, 0, W-1), int(clamp(x+brush_half_w, 0, W-1))):
             #         current_pixel_color = current_layer.ctx.getImageData(_x, _y, 1, 1).data
@@ -558,7 +562,7 @@ def draw_brush_image(brush_canvas, x, y):
             #         if current_pixel_color[3] > 0:
             #         # if current_pixel_color[0] == current_color[0] and current_pixel_color[1] == current_color[1] and current_pixel_color[2] == current_color[2]:
             #             current_layer.ctx.fillRect(int(_x), int(_y), 1, 1);
-    
+
 
 def sample_color(position=None):
     # combined_sample = canvas_entity.color
@@ -574,12 +578,12 @@ def sample_color(position=None):
 
     ERASING = combined_sample[3] == 0
     combined_sample[3] = 255
-    
+
     if current_brush.painterly_brush: # make the color a bit brighter when using painterly_brush since it paints a bit darker than the selected color
         combined_sample[0] += 16
         combined_sample[1] += 16
         combined_sample[2] += 16
-    
+
     return combined_sample
 
 
@@ -611,7 +615,7 @@ def paint():
         return
 
     [x, y] = get_canvas_position()
-    
+
     if current_brush['min_pressure'] < 1:
         update_brush_tip(current_color)
 
@@ -619,7 +623,12 @@ def paint():
         x = lerp(prev_pos[0], x, .025)
         y = lerp(prev_pos[1], y, .025)
 
+
     if prev_pos == None:
+        if held_keys['g']:
+            set_color(sample_color(get_canvas_position()))
+            update_brush_tip(current_color)
+
         if draw_on_click:
             random_radian = random.randint(0, 360) * Math.PI / 180
             after .1:
@@ -752,10 +761,10 @@ def input(key):
             navigator.clipboard.writeText(`local_image:${JSON.stringify([data, selection.bounds[0], selection.bounds[1], selection.bounds[2]-selection.bounds[0], selection.bounds[3]-selection.bounds[1]])}`)
         else:
             # copied_image_data = copy_all()
-            
-            current_layer.canvas.toBlob(function(blob) { 
+
+            current_layer.canvas.toBlob(function(blob) {
                 const item = new ClipboardItem({ "image/png": blob });
-                navigator.clipboard.write([item]); 
+                navigator.clipboard.write([item]);
             });
 
 
@@ -791,6 +800,7 @@ def input(key):
 
     if key == 'f':
         SMUDGE = True
+        print('toggle smudge:', SMUDGE)
 
     if not held_keys['control'] and key == 'h':
         for layer in layers:
@@ -1023,7 +1033,7 @@ async def save_animation():
     #     # print('save frame as:', `${DOCUMENT_NAME}_${number_string}`)
     #     # save_file(current_layer.canvas, `${DOCUMENT_NAME}_${number_string}`)
     #     gif.addFrame(current_layer.canvas, {delay: int(1/FPS*1000)})
-        
+
     # # // Render the GIF and automatically download it
     # const options = {
     #     types: [{
@@ -1044,7 +1054,7 @@ async def save_animation():
     # gif.render() # Start rendering the GIF
     # print('RENDER GIF!!!')
 
-    
+
     # dataURL = canvas.toDataURL("image")
     # window.localStorage.setItem("image", dataURL)
 
@@ -1481,7 +1491,7 @@ async def open_file():
             FPS = data['fps']
             animator.frames = data['frames']
             print('loaded animation')
-        
+
 
         reader.readAsText(file)
         return
@@ -1804,7 +1814,7 @@ color_replacer.update = def update():
 
     else:
         color_replacer.gizmo.enabled = False
-    
+
 
 # set_color(color.red)
 
@@ -1837,7 +1847,7 @@ animator.input = def input(key):
 
     if combined_key == 'delete':
         pass
-        
+
 
 def add_frame():
     print('add frame')
@@ -1862,7 +1872,7 @@ def goto_frame(to_frame, save_previous_frame=True):
     print('frame:', animator.i, to_frame)
     if save_previous_frame:
         animator.frames[animator.i] = current_layer.canvas.toDataURL()
-    
+
 
     if to_frame >= len(animator.frames):
         to_frame = 0
