@@ -1,0 +1,242 @@
+<html><title>Taptapir Editor</title><body>
+<script src="../taptapir/taptapir.js"></script>
+<script type='text/sunsnake'>
+
+
+DEFAULT_FONT = 'monospace'
+
+currencies = '🪙🔑⭐💎🪵🪨🫐🍉🥝'
+current_scene = None
+
+
+button_editor = Entity(parent=camera.ui, color=color.clear, enabled=False, target=None)
+button_editor.bg = Entity(parent=button_editor, scale=2, color='#191029f2', z=1)
+button_editor.button_text_field = InputField(parent=button_editor, value='?', scale_x=.5, y=-.4, scale=[.7,.075*2])
+fields = {'cost': {}, 'reward': {}}   # {} are dicts of input fields
+for category_name, value in fields:
+    if category_name == 'cost' or category_name == 'reward':
+        for curr in currencies:
+            value[curr] = None
+
+# init fields
+def CategoryLabel(text, y):
+    return Button(parent=button_editor, text=text, scale=[.975,.05], y=y, text_origin=[-.5,0], color=color.clear, text_color=color.white, text_size=2)
+
+i = 0
+for category_name, fields_dict in (fields):
+    # print('category:', category, 'fields:', fields)
+    if category_name == 'cost' or category_name == 'reward':
+        category_label = CategoryLabel(text=category_name, y=.5-(i*.25), text_origin=[-.5,0])
+        once_checkbox = Button(parent=category_label, shadow=True, scale=[.05,1.], position=[.4,0,-1])
+        once_checkbox = Button(parent=category_label, scale=[.15,1], position=[.3,0,-1], text='once', text_size=2, text_color=color.light_gray, color=color.clear)
+        button_parent = Entity(parent=button_editor, x=-.4, y=category_label.y-.075, visible_self=False)
+        # currency_fields = dict()
+        for curr in currencies:
+            icon = Button(parent=button_parent, text=curr, scale=[.175,.075], text_origin=[-.5,0])
+            inpf = InputField(parent=icon, value='?', x=.25, scale_x=.5)
+            fields_dict[curr] = inpf
+
+        grid_layout(button_parent.children, dict(max_x=5, spacing=[1.1,1.1]))
+
+
+    i += 1
+
+category_label = CategoryLabel(text='require save trigger', y=-.0)
+i += 1
+category_label = CategoryLabel(text='goto scene', y=-.15)
+i += 1
+button_editor.next_scene_button = Button(parent=button_editor, scale=[.3,.1], origin=[-.5,.5], x=-.49, y=-.175, text='None', text_origin=[-.5,0], text_size=2)
+button_editor.next_scene_button.on_click = def _select_next_scene():
+    scene_selection.enabled = True
+    scene_selection.target = button_editor.target
+
+
+# unlockable once
+# actions: goto scene
+
+
+# def load_settings():
+# load button settings
+button_editor.on_enable = def():
+    if not button_editor.target:
+        print('button editor: no target set')
+        return
+    button_editor.button_text_field.value = button_editor.target.text
+    for category_name, fields_dict in enumerate(fields):
+        for key, value in button_editor.target[category_name]:
+            # print(`${category_name}:`, key, value, fields[category_name][key])
+            fields[category_name][key].value = value
+
+    if button_editor.target.next_scene:
+        button_editor.next_scene_button.text = button_editor.target.next_scene.title_field.value
+    else:
+        button_editor.next_scene_button.text = 'None'
+
+
+# load_settings()
+
+# save changes
+button_editor.save_button = Button(parent=button_editor, scale=[.5,.2], color=color.azure, text_color=color.white, text='Save', y=-.5, origin=[0,.5], shadow=True)
+button_editor.save_button.on_click = def save_button_settings():
+    if not button_editor.target:
+        return
+
+    button_editor.target.text = button_editor.button_text_field.value
+
+    for category, currency_fields in fields:
+        for curr in currencies:
+            # print('changed:', category, curr, button_editor.target[category][curr], '->', currency_fields[curr].text)
+            button_editor.target[category][curr] = currency_fields[curr].value
+            # print(button_editor.target[category][curr])
+
+    # button_editor.target['next_scene'] = # scene_selection.target['next_scene'] = scene_instance.title_field.value
+    button_editor.enabled = False
+    current_scene.on_enable()   # update with new data
+
+
+button_editor.close_button = Button(parent=button_editor, scale=[.2,.2], color='#b00909', text_color=color.white, text='X', y=-.5, x=-.375, roundness=.5, origin=[0,.5], shadow=True)
+button_editor.close_button.on_click = def():
+    button_editor.enabled = False
+
+
+
+def make_default_scene(scene_name, bg_color=color.black):
+    let scene_instance = Entity(name=scene_name, visible_self=False, enabled=False, button_input_fields=[])
+    scene_instance.bg = Entity(parent=scene_instance, z=10, scale=2, color=bg_color)
+
+    field_color = '#ffffff3b'
+    # field_color = hsv(0,0,1,.2)
+    scene_instance.id_tag = Entity(parent=scene_instance, text=scene_name, origin=[0,.5], text_origin=[0,0], scale=[.1,.05], text_size=1, y=aspect_ratio*.5, color=hsv(0,0,0,.2), text_color=color.white)
+    scene_instance.title_field = InputField(parent=scene_instance, value=scene_name, scale=[.8,.1], y=.6, color=field_color)
+    scene_instance.description_field = InputField(parent=scene_instance, value=`Description`, scale=[.8,.3], origin=[0,.5], roundness=.025, text_origin=[-.5,.5], color=field_color, y=.525)
+
+    for i in range(5):
+        let button = Button(parent=scene_instance, text=`Button ${i}`, scale=[.5,.1], origin=[0,0], text_origin=[0,0], color=field_color, y=0-(.15*i), roundness=.5)
+        scene_instance.button_input_fields.append(button)
+        button.next_scene = None
+        button.cost = {}
+        button.reward = {}
+        for curr in currencies:
+            button.cost[curr] = 0
+            button.reward[curr] = 0
+
+        button.cost_label = Button(parent=button, text='?', text_origin=[-.5,0], text_size=1.5, color='#5d5d5dff',text_color='#c5c5c5', scale=[.9,.5], y=.55, roundness=.5)
+        # button.cost_label.fit_to_text()
+        # button.cost_label.x = -.45
+        # button.cost_label.origin = [-.5,0]
+
+        button.edit_button = Button(parent=button, x=.65, color=field_color, text='✏️', scale=[.2,1], roundness=.5, text_size=1.25)
+        button.edit_button.on_click = def():
+            button_editor.target = button
+            button_editor.enabled = True
+
+    scene_instance.on_enable = def():
+        for button in scene_instance.button_input_fields:
+            cost_text = 'cost: '
+            for curr, amount in button.cost:
+                print(curr, amount)
+                if amount > 0:
+                    cost_text += `${amount}${curr} `
+
+            button.cost_label.text = cost_text
+            button.cost_label.fit_to_text()
+            button.cost_label.x = -.45
+            button.cost_label.origin = [-.5,0]
+        #         print(button, button)
+
+    # print('---', scene_instance.button_input_fields)
+    return scene_instance
+
+
+scene_selection = Entity(parent=camera.ui, scale=.9, color='#bcbcbc00', enabled=False, z=-1, target=None)
+scene_selection.bg = Entity(parent=scene_selection, z=1, scale=1.1, color='#19191b')
+button_grid = Array2D(8, 8, None)
+scene_grid = Array2D(8, 8, None)
+
+for x in range(8):
+    for y in range(8):
+        scene_name = `[${x},${y}]`
+        scene_name = `[${x},${y}]`
+        bg_color = rgb(.25+(x/16), .0+(y/16), .2)
+        let scene_instance = make_default_scene(scene_name, bg_color=bg_color)
+        # print('---', scene_instance.button_input_fields)
+        scene_grid[x][y] = scene_instance
+
+        let scene_button = Entity(parent=scene_selection, scale=1/8*.9, color=bg_color, xy=[(x/8)-.44, (y/8)-.44], roundness=.1, text=scene_name, text_size=1, text_color=color.white, text_origin=[0,0], target_scene=scene_instance)
+        button_grid[x][y] = scene_button
+        scene_button.on_click = def():
+            if scene_selection.target == None:
+                # print('goto scene', scene_name)
+                current_scene = scene_instance
+                scene_selection.enabled = False
+                for s in scene_grid.flatten():
+                    s.enabled = s == scene_instance
+
+            else:
+                # use scene_selection ui to set a field, like next scene
+                print('set field value to scene', scene_instance)
+                scene_selection.target['next_scene'] = scene_instance
+                button_editor.next_scene_button.text = scene_instance.title_field.value
+                scene_selection.enabled = False
+
+
+scene_selection.bg_bg = Entity(parent=scene_selection.bg, z=1, scale=3, color='#000000', on_click=def():scene_selection.enabled=False)
+
+scene_selection_button = Button(parent=camera.ui, z=0, text='select\nscene', text_size=1, scale=[.2,.1], position=window.bottom, origin=[0,-.5])
+scene_selection_button.on_click = def():
+    scene_selection.target = None
+    scene_selection.enabled=True
+
+scene_selection.on_enable = def():
+    for x in range(button_grid.width):
+        for y in range(button_grid.height):
+            button_grid[x][y].text = scene_grid[x][y].title_field.value
+
+
+
+
+
+save_button = Button(parent=camera.ui, xy=[.475, (-.5*aspect_ratio)+.025], scale=.15, origin=[.5,-.5], text='💾')
+save_button.on_click = def save():
+    DATA = {
+        'currencies': {},
+        'scenes':[],
+    }
+    for key in currencies:
+        DATA['currencies'][key] = 0
+
+    for y in range(scene_grid.height):
+        row = []
+        for x in range(scene_grid.height):
+            scene_data = {
+                'title' : scene_grid[x][y].title_field.value,
+                'description' : scene_grid[x][y].description_field.value,
+                'buttons' : [],
+                }
+
+            for i in range(5):
+                button_data = {
+                    'button_text' : '?',
+                    'cost' : button.data['cost'],
+                    'reward' : button.data['reward'],
+                    'appear_requirement' : {},
+                    'cooldown': 0,
+                    'next_scene' : 'None',
+                }
+                scene_data.buttons.append(button_data)
+
+            row.append(scene_data)
+        DATA['scenes'].append(row)
+    print('save:')
+    print(DATA)
+#     save_system_save('data', pages)
+
+
+
+button_grid[0][0].on_click()
+# target_scene = button_grid[0][0].target_scene
+# # print('----', target_scene, target_scene.button_input_fields)
+# field = target_scene.button_input_fields[0]
+# edit_button = field.edit_button.on_click()
+
+</script><script src="../taptapir/sunsnake_compiler.js"></script>
