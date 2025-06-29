@@ -29,7 +29,6 @@ for category_name, value in fields:
 
 
 
-
 def CategoryLabel(text, y):
     return Button(parent=button_editor, text=text, scale=[.975,.05], y=y, text_origin=[-.5,0], color=color.clear, text_color=color.white, text_size=2)
 
@@ -135,7 +134,8 @@ def make_default_scene(scene_name, bg_color=color.black):
             button.cost[curr] = 0
             button.reward[curr] = 0
 
-        button.cost_label = Button(parent=button, text='?', text_origin=[-.5,0], text_size=1.5, color='#5d5d5dff',text_color='#c5c5c5', scale=[.9,.5], y=.55, roundness=.5)
+        button.cost_label = Button(parent=button, text='?', text_origin=[-.5,0], text_size=1.5, color='#5d5d5dff',text_color='#c5c5c5', scale=[.9,.5], y=.55, roundness=.5, padding=[.5,0])
+        button.reward_label = Button(parent=button, text='?', text_origin=[.5,0], text_size=1.5, color='#5d5d5dff',text_color='#c5c5c5', scale=[.9,.5], x=.5, y=-.45, roundness=.5, padding=[.5,0])
         # button.cost_label.fit_to_text()
         # button.cost_label.x = -.45
         # button.cost_label.origin = [-.5,0]
@@ -147,17 +147,31 @@ def make_default_scene(scene_name, bg_color=color.black):
 
     scene_instance.on_enable = def():
         for button in scene_instance.buttons:
-            cost_text = ''
+            label = button.cost_label
+            text = ''
             for curr, amount in button.cost:
                 if amount > 0:
-                    cost_text += `${amount}${curr} `
-            if cost_text:
-                cost_text = 'cost: ' + cost_text
+                    text += `${amount}${curr} `
+            if text:
+                text = 'cost: ' + text
 
-            button.cost_label.text = cost_text
-            button.cost_label.fit_to_text()
-            button.cost_label.x = -.45
-            button.cost_label.origin = [-.5,0]
+            label.text = text
+            label.fit_to_text()
+            label.x = -.45
+            label.origin = [-.5,0]
+
+            label = button.reward_label
+            text = ''
+            for curr, amount in button.reward:
+                if amount > 0:
+                    text += `${amount}${curr} `
+            if text:
+                text = '+' + text
+
+            label.text = text
+            label.fit_to_text()
+            label.x = .45
+            label.origin = [.5,0]
         #         print(button, button)
 
     # print('---', scene_instance.buttons)
@@ -209,6 +223,23 @@ scene_selection.on_enable = def():
             button_grid[x][y].text = scene_grid[x][y].title_field.value
 
 
+MOVE_MODE = False
+move_mode_toggle = Button(parent=camera.ui, z=0, text='move', text_size=1, scale=[.1,.1], position=[.25,-.5*aspect_ratio*.975], origin=[0,-.5], color=editor_ui_color, text_color=color.white)
+move_mode_toggle.on_click = def toggle_move_mode():
+    MOVE_MODE = not MOVE_MODE
+    set_move_mode(MOVE_MODE)
+
+def set_move_mode(value):
+    MOVE_MODE = value
+    if not MOVE_MODE:
+        move_mode_toggle.color = editor_ui_color
+    else:
+        move_mode_toggle.color = color.orange
+        for b in current_scene.buttons:
+            b.draggable = True
+            b.snap_x = .025
+            b.snap_y = .025
+
 
 
 save_button = Button(parent=camera.ui, xy=[.475, (-.5*aspect_ratio)+.025], scale=.1, origin=[.5,-.5], text='💾', color=editor_ui_color)
@@ -226,31 +257,54 @@ save_button.on_click = def save():
             scene_instance = scene_grid[x][y]
             default_title = `[${x},${y}]`
             default_description = 'Description'
-            if scene_instance.title_field.value == default_title and scene_instance.description_field.value == default_description
+            default_button_data = {
+                'button_text' : '?',
+                'cost' : {},
+                'reward' : {},
+                'appear_requirement' : {},
+                'cooldown': 0,
+                'next_scene' : 'None',
+            }
 
-            scene_data = {
-                'x': x,
-                'y': y,
-                'title': scene_instance.title_field.value != default_title ? scene_instance.title_field.value : '',
-                'description': scene_instance.description_field.value != default_description ? scene_instance.description_field.value : '',
-                'buttons': [],
-                }
-
+            buttons = []
             for b in scene_instance.buttons:
+                cost = {}
+                for key, value in b.cost:
+                    if value > 0:
+                        cost[key] = value
+                reward = {}
+                for key, value in b.reward:
+                    if value > 0:
+                        reward[key] = value
+
                 button_data = {
                     'button_text' : b.text,
-                    'cost' : b.cost ? b.cost : None,
-                    'reward' : b.reward ? b.reward : None,
+                    'cost' : cost,
+                    'reward' : reward,
                     'appear_requirement' : {},
                     'cooldown': 0,
                     'next_scene' : 'None',
                 }
-            #     scene_data.buttons.append(button_data)
+                if not button_data.equals(default_button_data):
+                   buttons.append(button_data)
+
+            print(len(buttons))
+            if scene_instance.title_field.value == default_title and scene_instance.description_field.value == default_description and len(buttons) == 0:
+                continue
+
+            scene_data = {
+                'title': scene_instance.title_field.value != default_title ? scene_instance.title_field.value : '',
+                'x': x,
+                'y': y,
+                'description': scene_instance.description_field.value != default_description ? scene_instance.description_field.value : '',
+                'buttons': buttons,
+                }
+
 
             # row.append(scene_data)
             DATA['scenes'].append(scene_data)
     print('save:')
-    print(DATA)
+    print(JSON.stringify(DATA, None, 4))
     navigator.clipboard.writeText(JSON.stringify(DATA, None, 4))
 #     save_system_save('data', pages)
 
