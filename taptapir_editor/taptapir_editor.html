@@ -3,30 +3,53 @@
 <script type='text/sunsnake'>
 
 
-def make_canvas(name='canvas', enabled=True, border_color=color.black):
-    canvas = Entity(name=name, parent=camera.ui, scale=[.9,aspect_ratio*.9], x=.035, y=.05, z=-1, color=hsv(0,0,.1), shadow=1, enabled=enabled, ignore_collision=False)
+def make_canvas(name='canvas', enabled=True, border_color=color.black, x=0, y=0, z=-1, scale_multiplier=.8):
+    canvas = Entity(name=name, parent=camera.ui, scale=[scale_multiplier,aspect_ratio*scale_multiplier], x=x, y=y, z=z, color=hsv(0,0,.1), shadow=1, enabled=enabled, ignore_collision=False)
     canvas.entity_parent = Entity(parent=canvas, visible_self=False, scale_y=1/aspect_ratio)
 
-    border_parent = Entity(parent=canvas, visible_self=False, z=-2)
+    border_parent = Entity(parent=canvas, visible_self=False, z=z)
     Entity(parent=border_parent, origin=[-.5,0], scale=2, color=border_color, z=-1, x=.5)
     Entity(parent=border_parent, origin=[.5,0], scale=2, color=border_color, z=-1, x=-.5)
     Entity(parent=border_parent, origin=[0,-.5], scale=2, color=border_color, z=-1, y=.5)
     Entity(parent=border_parent, origin=[0,.5], scale=2, color=border_color, z=-1, y=-.5)
     return canvas
 
-editor_canvas = make_canvas('editor_canvas', enabled=True, border_color=color.dark_gray)
-preview_canvas = make_canvas('preview_canvas', enabled=False)
+editor = Entity(visible_self=False)
+editor_canvas = make_canvas('editor_canvas', enabled=True, border_color=color.dark_gray, x=.1-.01, y=.175-.01)
+editor_canvas.parent = editor
+Text(parent=editor, text='Edit', origin=[0,.5], y=.5*aspect_ratio, text_origin=[0,.5], text_color=color.white)
 
-play_button = Button(scale=[.15,.1], origin=[0,-.5], position=window.bottom, text='play', color=color.azure, text_color=color.white, text_size=2.5, z=-2)
-play_button.on_click = def preview():
-    preview_canvas.enabled = True
-    close_button.enabled = True
+preview = Entity(visible_self=False)
+preview_canvas = make_canvas('preview_canvas', enabled=True, color.black, 0, .05, -1, scale_multiplier=.9)
+preview_canvas.parent = preview
+Text(parent=preview, text='Preview', origin=[0,.5], y=.5*aspect_ratio, text_origin=[0,.5], text_color=color.white)
+
+editor_state_handler = StateHandler(states={'editor_canvas':editor, 'preview_canvas':preview})
+def input(key):
+    print(editor_state_handler.states.values()[0])
+    if key == '1':
+        editor_state_handler.state = editor_state_handler.states.values()[0]
+        # print(editor_state_handler.state)
+    if key == '2':
+        # print(key)
+        editor_state_handler.state = editor_state_handler.states.values()[1]
+editor_state_handler.state = editor
+
+
+original_print = print
+play_button = Button(parent=editor, scale=[.15,.1], origin=[0,-.5], position=window.bottom, text='play', color=color.azure, text_color=color.white, text_size=2.5, z=-2, x=.3, on_click=def():editor_state_handler.state = preview)
+preview.on_enable = def preview():
+    # preview_canvas.enabled = True
+    # close_button.enabled = True
     ingame_console.text = ''
     # print = print_ingame
     # console.error = print_ingame
     # console.log = print_ingame
+    text_to_compile = ''
+    for e in entities:
+        print(e)
 
-    text_to_compile = `print('compiled')`
+    # text_to_compile = `print('compiled')`
     _original_scene = scene
     _original_camera_ui = camera.ui
 
@@ -54,88 +77,104 @@ ingame_console = Text(text='', color=color.clear, xy=top_left, origin=[-.5,.5], 
 ingame_console.model.style.wordBreak = 'break-word'
 ingame_console.model.style.whiteSpace = 'pre-wrap'
 
-placement_cursor = Entity(parent=camera.ui, scale=.1, alpha=.2, z=-1,roundness=.1, enabled=False)
-placement_cursor.update = def():
-    placement_cursor.xy = mouse.position
-
-add_button = Button(scale=.1, origin=[.5,-.5], xy=window.bottom_right, color=color.magenta, text='+', text_color=color.white, z=-1, draggable=True, resettable=True, lock_x=True, lock_y=True)
-add_button.original_position = add_button.position
-add_button.original_color = add_button.original_color
-
-add_button.on_click = def():
-    add_button.enabled = False
-    placement_cursor.enabled = True
-
-SELECTED = None
-
-def input(key):
-    if key == 'left mouse down':
-        if mouse.hovered_entity == editor_canvas:
-            if SELECTED:
-                SELECTED.color = SELECTED.original_color
-            SELECTED = None
-
-        elif mouse.hovered_entity in editor_canvas.entity_parent.children:
-            if SELECTED:
-                SELECTED.color = SELECTED.original_color
-
-            SELECTED = mouse.hovered_entity
-            SELECTED.original_color = SELECTED.color
-            SELECTED.color = color.magenta
-
-add_button.drop = def():
-    add_button.enabled = True
-    placement_cursor.enabled = False
-    if mouse.hovered_entity != editor_canvas:
-        return
-    print(mouse.point)
-    let instance = Button(parent=editor_canvas.entity_parent, scale=.2, position=[mouse.point[0], mouse.point[1]*(editor_canvas.scale_y/editor_canvas.scale_x)], draggable=True, snap_x=.02, snap_y=.02)
-    # instance.on_click = def select(e=instance):
-    #     if SELECTED:
-    #         SELECTED.color = SELECTED.original_color
-    #     SELECTED = e
-    #     e.original_color = e.color
-    #     e.color = color.magenta
-
-    instance.on_double_click = def edit(e=instance):
-        print('edit')
-        editor.enabled = True
-
-    # print('a')
-    # instance.drop = def deselect(e=instance):
-    #     SELECTED = None
-    #     e.color = e.original_color
-
-
-editor = Entity(parent=camera.ui, color=color.light_gray, z=-2, scale=[.5,.5], roundness=.1, shadow=True, popup=True)
-for roundness_value in [0,.1,.25,.5]:
-    let b = Button(parent=editor, scale=[.2,.2], roundness=roundness_value, color=color.azure)
-
-for key, value in color:
-    let b = Button(parent=editor, scale=[.2,.2], color=value)
-
-    # print('-----', value)
-    # i += 1
-# print('ccccccccccccc', editor.children)
-grid_layout(editor.children, {'offset':[-.385,-.25], 'max_x':5})
-    # scene.entities.append(Button(scale=.1))
-
-# require: 1g 10d
-# go_to_scene: scene_name / previous
-# cost: 10g
-# gain: 1d
-# cooldown:
-
-close_button = Button(scale=[.15,.075], origin=[.5,-.5], position=[.5-.2,-.5*aspect_ratio], text='close', color=color.gray, enabled=False, text_size=2.5, z=-2)
-close_button.on_click = def close():
+preview.on_disable = def close():
     if preview_canvas.entity_parent:
         destroy(preview_canvas.entity_parent)
-    preview_canvas.enabled = False
-    close_button.enabled = False
+
     scene = _original_scene
     camera.ui = _original_camera_ui
     print = original_print
     ingame_console.text = ''
+close_button = Button(parent=preview, scale=[.15,.075], origin=[.5,-.5], position=[.5-.2,-.5*aspect_ratio], text='close', color=color.gray, text_size=2.5, z=-2, on_click=def():editor_state_handler.state = editor)
+
+entities = []
+selected = None
+num_entities_indicator = Button(position=window.top_left, text='?', z=-2, origin=[-.5,.5], scale=.05, color=color.clear, text_color=color.white,)
+
+def add_entity():
+    print('add entity')
+    e = Entity(parent=editor_canvas.entity_parent, scale=.1, z=-1)
+    selected = e
+    entities.append(e)
+    num_entities_indicator.text = `${len(entities)}`
+
+
+add_button = Button(parent=editor, scale=.1, origin=[-.5,-.5], xy=[-.5+.05,-.55], color=color.magenta, text='+', text_color=color.white, z=-1, on_click=add_entity)
+add_button.input = def():
+    if key == 'n':
+        add_entity()
+
+ui = Entity(parent=editor, position=window.bottom_left, z=-1, visible_self=False, scale=.1)
+
+def move_direction(dx, dy):
+    if selected:
+        selected.x += dx
+        selected.y += dy
+
+def scale(dx, dy):
+    if selected:
+        selected.scale_x += dx
+        selected.scale_y += dy
+        selected.scale_x = max(selected.scale_x, .05)
+        selected.scale_y = max(selected.scale_y, .05)
+
+
+move_left_button = Button(parent=ui, text='<-', scale=1, color=color.orange, xy=[0, 1], origin=[-.5, -.5], action=[move_direction, [-.1,0]], shortcuts=['left arrow', 'a'])
+move_right_button = Button(parent=ui, text='->', scale=1, color=color.orange, xy=[2, 1], origin=[-.5, -.5], action=[move_direction, [.1,0]], shortcuts=['right arrow', 'd'])
+move_down_button = Button(parent=ui, text='|\nv', scale=1, color=color.lime, xy=[1, 0], origin=[-.5, -.5], action=[move_direction, [0,-.1]], shortcuts=['down arrow', 's'])
+move_up_button = Button(parent=ui, text='^\n|', scale=1, color=color.lime, xy=[1,2], origin=[-.5, -.5], action=[move_direction, [0,.1]], shortcuts=['up arrow', 'w'])
+scale_bigger_button = Button(parent=ui, text=' ^ \n<      >\n v', scale=1, color=color.azure, xy=[5,2], origin=[-.5, -.5], action=[scale, [.1,.1]], shortcuts=['e', ])
+scale_smaller_button = Button(parent=ui, text=' v \n>    <\n ^', scale=1, color=color.azure, xy=[4,1], origin=[-.5, -.5], action=[scale, [-.1,-.1]], shortcuts=['q', ])
+scale_x_bigger_button = Button(parent=ui, text='<->', scale=[1,.5], color=color.azure, xy=[5,1.5], origin=[-.5, -.5], action=[scale, [.1,0]], shortcuts=['l', ])
+scale_x_smaller_button = Button(parent=ui, text='><', scale=[.75,.5], color=color.azure, xy=[5,1], origin=[-.5, -.5], action=[scale, [-.1,0]], shortcuts=['j', ])
+scale_y_bigger_button = Button(parent=ui, text='^\n|\nv', scale=[.5,1], color=color.azure, xy=[4.5,2], origin=[-.5, -.5], action=[scale, [0,.1]], shortcuts=['i', ])
+scale_y_smaller_button = Button(parent=ui, text='v\n^', scale=[.5,.75], color=color.azure, xy=[4,2], origin=[-.5, -.5], action=[scale, [0,-.1]], shortcuts=['k', ])
+
+buttons = [move_left_button, move_right_button, move_up_button, move_down_button, scale_bigger_button, scale_smaller_button, scale_x_bigger_button, scale_x_smaller_button, scale_y_bigger_button, scale_y_smaller_button]
+for b in buttons:
+    b.on_click = def():
+        b.action[0](b.action[1][0], b.action[1][1])
+    b.input = def input(key):
+        if key in b.shortcuts:
+            b.on_click()
+
+
+add_entity()
+
+
+entity_list = Entity(parent=editor, origin=[-.5,.5], xy=[-.5+.01,(.5*aspect_ratio)-.1], z=-1, scale=[.175,.075], visible_self=False)
+for i in range(16):
+    Button(parent=entity_list, text=i+1, scale=1, origin=[-.5,.5], y=-i, on_click=def(): selected=entities[i])
+
+# editor = Entity(parent=camera.ui, color=color.light_gray, z=-2, scale=[.5,.5], roundness=.1, shadow=True, popup=True)
+# for roundness_value in [0,.1,.25,.5]:
+#     let b = Button(parent=editor, scale=[.2,.2], roundness=roundness_value, color=color.azure)
+
+# for key, value in color:
+#     let b = Button(parent=editor, scale=[.2,.2], color=value)
+
+#     # print('-----', value)
+#     # i += 1
+# # print('ccccccccccccc', editor.children)
+# grid_layout(editor.children, {'offset':[-.385,-.25], 'max_x':5})
+#     # scene.entities.append(Button(scale=.1))
+
+# # require: 1g 10d
+# # go_to_scene: scene_name / previous
+# # cost: 10g
+# # gain: 1d
+# # cooldown:
+
+# close_button = Button(scale=[.15,.075], origin=[.5,-.5], position=[.5-.2,-.5*aspect_ratio], text='close', color=color.gray, enabled=False, text_size=2.5, z=-2)
+# close_button.on_click = def close():
+#     if preview_canvas.entity_parent:
+#         destroy(preview_canvas.entity_parent)
+#     preview_canvas.enabled = False
+#     close_button.enabled = False
+#     scene = _original_scene
+#     camera.ui = _original_camera_ui
+#     print = original_print
+#     ingame_console.text = ''
 
 
 </script><script src="../taptapir/sunsnake_compiler.js"></script>
