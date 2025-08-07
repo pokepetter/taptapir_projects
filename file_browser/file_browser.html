@@ -1,0 +1,121 @@
+<title>file_browser</title><link rel="icon" href="icon.png">
+</head><body></body><script src="../taptapir/taptapir.js"></script>
+
+<script>
+
+async function requestFolderAccess() {
+    try {
+        const directoryHandle = await window.showDirectoryPicker();
+        const tree = await readDirectoryTree(directoryHandle);
+        return tree;
+    } catch (error) {
+        console.error('Failed to access folder:', error);
+        return [];
+    }
+}
+
+async function readDirectoryTree(dirHandle) {
+    const tree = [];
+
+    for await (const entry of dirHandle.values()) {
+        if (entry.kind === 'directory') {
+            const children = await readDirectoryTree(entry);
+            tree.push({
+                name: entry.name,
+                kind: 'directory',
+                children
+            });
+        } else if (entry.kind === 'file') {
+            tree.push({
+                name: entry.name,
+                kind: 'file'
+            });
+        }
+    }
+
+    return tree;
+}
+</script>
+
+<script type='text/sunsnake'>
+set_orientation('auto')
+set_window_color('#eeeeee')
+set_background_color('#000000')
+
+
+left_bar = Entity(scale=[.15,1], color='#123123', origin=[-.5,.5], position=window.top_left, shadow=True)
+self = left_bar
+open_folder_button = Entity(parent=self, scale=[.25,.05], color=color.azure, origin=[-.5,.5], position=[0,0], text='^')
+folder_list_parent = Entity(visible_self=False, parent=self)
+
+FOLDER_CONTENT = []
+def load_folder(data):
+    print(data)
+    FOLDER_CONTENT = data
+    sub_folders = [e for e in FOLDER_CONTENT if e.kind=='directory' and not e.name.startswith('.')]
+    # sub_folders = ['cmyk_swap', 'framgang', 'hyposolus', 'shadow_alchemy', '']
+    folder_buttons = []
+    folder_list_parent.destroy_children()
+
+    for i, folder in sub_folders:
+        # let folder_name = folder_name
+        let folder_button = Button(parent=folder_list_parent, text=`    ${folder.name}`, text_size=1, text_origin=[-.5,0], parent=left_bar, y=-.1+(-.08*i), origin=[-.5,.5], scale=[1,.075],)
+        folder_button.content = folder.children
+        folder_buttons.append(folder_button)
+        folder_button.on_click = def _(btn=folder_button):
+            goto_folder(btn)
+
+
+open_folder_button.on_click = def():
+    folder_content_promise = requestFolderAccess()
+    folder_content_promise.then(load_folder)
+
+# current_folder_label = Entity()
+
+
+
+folder_parent = Entity(position=[(-.5*window.aspect_ratio)+.15,.5, -1], origin=[-.5,.5], scale=[.4,1], color="#D6D6D6")
+squares = []
+THUMBNAIL_SIZE =.075
+SPACING = .025
+
+for i in range(24):
+    img_preview = Button(text=`${i}`, origin=[-.5,.5], scale=THUMBNAIL_SIZE, text_size=1, roundness=.05, position=[folder_parent.x+(i*THUMBNAIL_SIZE)+(i*SPACING)+.025, folder_parent.y-.02], shadow=False)
+    squares.append(img_preview)
+
+grid_layout(squares, dict(max_x=4, offset=[folder_parent.x+.025, folder_parent.y-.02]))
+
+
+FILE_BUTTON_SIZE = [1,.05]
+FILE_BUTTON_SPACING = .01
+
+text_file_parent = Entity(parent=folder_parent, y=-.525, scale=[1,.05], color='#ffffff', text_color='#4e4e4e', origin=[-.5,.5], text=' Text Files', text_size=1, text_origin=[-.5,0], )
+
+def goto_folder(folder_button):
+    print('goto_folder:', name)
+    for e in folder_buttons:
+        print(e.text, name)
+        if e == folder_button:
+            e.color = color.azure
+        else:
+            e.color = color.white
+
+    for e in squares:
+        e.enabled = False
+
+    images = [e for e in folder_button.content if e.kind == 'file' and e.name.endswith('.png')]
+    other_files = [e for e in folder_button.content if e.kind == 'file' and not e.name.endswith('.png')]
+    # images = ['image_1', 'landscape', 'reference', 'image2', 'some_long_name']
+    for i, img in images:
+        squares[i].enabled = True
+        squares[i].text = img
+
+    text_file_parent.destroy_children()
+
+    for i, file in other_files:
+        print(file.name)
+        Entity(parent=text_file_parent, text=`${file.name}`, origin=[-.5,.5], scale=FILE_BUTTON_SIZE, text_size=1, text_origin=[-.5,0], roundness=.05, y=-i-1, shadow=False)
+
+
+
+</script><script src="../taptapir/sunsnake_compiler.js"></script></html>
