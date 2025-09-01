@@ -10,6 +10,7 @@ brushes = dict(
     star_brush = ['star_brush.png', ],
     heavypaint_dry = ['heavypaint_dry.png', ],
     heavypaint_dry_2 = ['heavypaint_dry_2.png', ],
+    chaos = ['chaos_0.png', 'chaos_1.png', 'chaos_2.png'],
 )
 
 brushes_as_strings = {}

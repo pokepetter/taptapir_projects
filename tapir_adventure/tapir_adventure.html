@@ -91,10 +91,14 @@ _.input = def (key):
 
 collision_handler.player = player
 
-
-
+level_parent = Entity(visible_self=False, scale=.25, z=1)
+for y in range(32):
+    for x in range(32):
+        let tile = Entity(parent=level_parent, xy=[x,y], color=hsv(0,.1,random.uniform(.3,.2)), roundness=.1)
+        if random.random() < .1:
+            tile.color = color.black
 # level = Entity(texture='https://cdnb.artstation.com/p/assets/images/images/082/650/175/large/artem-chebokha-415-inevitable-fading-1400.jpg?1733529524', scale=1)
-
+camera.fov = 1.5
 </script>
 <script src="../taptapir/sunsnake_compiler.js"></script>
 </html>

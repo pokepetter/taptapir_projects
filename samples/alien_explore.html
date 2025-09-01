@@ -1,0 +1,184 @@
+<html><title>Alien: Explore</title>
+<head><meta charset="UTF-8"></head><body>
+<script src="../taptapir/taptapir.js"></script>
+<script type='text/sunsnake'>
+
+set_scale(.8)
+set_background_color('#111111')
+set_window_color('#3d529c')
+
+DEFAULT_FONT = 'monospace'
+
+class CurrencyHandler(Entity):
+    def __init__(self, currencies={'🪙':0, }):
+        super().__init__(color=color.red, visible_self=False)
+        self.ui_parent = Entity(parent=camera.ui, position=[.5-.05,(.5*aspect_ratio)-.05], visible_self=False)
+        self.currency_icons = dict()
+        self.currencies = currencies
+        self.prev_amounts = {}
+        for name, obj in self.currencies:
+            self.prev_amounts[name] = obj.amount
+
+        self.data = {}
+        for name, obj in self.currencies:
+            self.data[name] = obj.amount
+        return self.data
+
+    get currencies():
+        return self._currencies
+    set currencies(value):
+        self._currencies = value
+        self.ui_parent.destroy_children()
+        i = 0
+        for name, obj in value:
+            print(name, obj)
+            if not obj.amount:
+                obj.amount = 0
+            if not obj.unlocked:
+                obj.unlocked = true
+
+            if not obj.unlocked:
+                continue
+
+            let currency_icon = Button(parent=self.ui_parent, scale=.075, y=-(i*.08), roundness=.5, text=obj.icon, text_size=2.5, shadow=True)
+            currency_icon.original_scale = currency_icon.scale
+            currency_icon.counter = Button(parent=currency_icon, padding=[.5,.25], origin=[.5,0], scale=[2,.9], position=[-.2,-.1,1], roundness=.5, text=obj.amount+' ', text_origin=[.5,0], text_size=2, text_color='#3e3e3e')
+            currency_icon.counter.fit_to_text()
+            self.currency_icons[name] = currency_icon
+            i += 1
+
+
+    def update(self):
+        for name, amount in self.data:
+            if amount != self.prev_amounts[name]:
+                self.currency_icons[name].counter.text = amount
+                let difference = amount - self.prev_amounts[name]
+                let icon = self.currencies[name].icon
+                let number = Entity(parent=camera.ui, scale=.1, text=`+${difference}${icon}`, position=[mouse.x, mouse.y+.1], z=-10, roundness=.25, alpha=1)
+                number.fit_to_text(1)
+                number.padding=.5
+                number.animate('y', number.y+.2, .3)
+                after .3:
+                    destroy(number)
+                # self.currency_icons[name].scale = .1
+                # self.currency_icons[name].animate('scale', self.currency_icons[name].original_scale, .1)
+                self.currency_icons[name].counter.text_size = 2.5
+                self.currency_icons[name].counter.animate('text_size', 2, .1)
+                print(name, self.prev_amounts[name], '-->', amount)
+                self.prev_amounts[name] = amount
+
+
+
+
+credits = dict(icon='🪙', amount=100)
+keys = dict(icon='🔑', amount=2)
+triangles = dict(icon='🔺', unlocked=False)
+currs = dict(credits=credits, triangles=triangles)
+currency = CurrencyHandler(currs)
+# currency.triangles += 1
+# currency.currencies = dict(keys=keys, start=stars)
+
+# region tutorial
+engine_room_scene = Scene(color=color.azure)
+
+energy_button = Button(scale=.2, text='+1 energy')
+energy_button.on_click = def():
+    energy_bar.value += 1
+    if energy_bar.value >= energy_bar.max and not power_up_button.enabled:
+        power_up_button.enabled = True
+        Entity(parent=power_up_button, texture='sparkle_impact.gif', scale=2)
+
+energy_button.prev_trigger_time = time
+energy_button.update = def _():
+    if mouse.hovered_entity == energy_button and mouse.left and time-energy_button.prev_trigger_time > .1:
+        energy_button.on_click()
+        energy_button.prev_trigger_time = time
+
+power_up_button = Button(y=-.3, color=color.azure, text=' power up', padding=1, shadow=True, text_color=color.white, enabled=False, on_click=def():goto_scene(main_scene)).fit_to_text()
+
+energy_bar = HealthBar(y=.3, bar_color=color.azure, text_color=color.white, max=20)
+energy_bar.value = 0
+
+
+# region main scene
+main_scene = Scene(color='#111111')
+
+class MissionButton(Button):
+    def __init__(self, kwargs):
+        super().__init__(roundness=.5, text='asteroid', text_size=1)
+        for key, value in kwargs.items():
+            self[key] = value
+            # print('---', key, value)
+        self.mission = kwargs.mission
+        self.position = kwargs.position
+
+    def on_click(self):
+        show_mission_info(self)
+
+mission_panel = Entity(scale=[.6,.3], color=color.black, alpha=.9, roundness=.05, z=-2, enabled=False, on_click=def():return)
+mission_panel.title = Entity(parent=mission_panel, scale=[.95,.25], color='#123123', text='Asteroid', roundness=.1, text_origin=[0,0], text_color=color.white, y=.5)
+mission_panel.description = Entity(parent=mission_panel, text='Success rate: 50%\nReward:10\nRequirements:', text_color=color.white, origin=[0,.5], y=.25, scale=[.9,.7], text_size=2.5, text_origin=[-.5,.5], color=color.clear)
+mission_panel.start_mission_button = Button(parent=mission_panel, scale=[.8,.2], text='Start', color=color.orange, text_color=color.white, padding=[2,.5], y=-.5, roundness=2, shadow=True).fit_to_text()
+
+
+mission_panel.bg = Entity(parent=mission_panel, scale=10, z=1, visible_self=False, on_click=def():mission_panel.enabled=False)
+# mission_panel.enabled = False
+def show_mission_info(mb):
+    mission_panel.title.text = mb.mission.title
+    mission_panel.description.text = '???'
+    mission_panel.xy = mb.xy
+    mission_panel.appear(.2)
+    mission_panel.start_mission_button.on_click = def():
+        print('start mission:', b.mission)
+        mission_panel.enabled = False
+
+
+missions = [
+    dict(title='Asteroid', position=[[-.2,.4]]),
+    dict(title='Asteroid', position=[[-.2,.4]]),
+]
+for m in missions:
+    mission_button = MissionButton(mission=m, position=m.position)
+#     mission_button.on_click = def():
+#         show_mission_info(mission_button)
+
+
+# region bottom panel
+bottom_panel = Entity(parent=scene, origin=[0,-.5], scale_y=.3, position=window.bottom)
+button_group = Entity(parent=bottom_panel, scale=[.8,.9], y=.5, color=color.gray)
+button_data = [
+    dict(name='Engine\nRoom', target_scene=engine_room_scene),
+    dict(name='Explore', target_scene=main_scene),
+    dict(name='Upgrades', target_scene=None),
+]
+
+for i, data in button_data:
+    b = Button(parent=button_group, text=data.name, scale=[.33,1], text_color=color.white, color=color.azure, x=(i/3)-.5+(.33/2))
+    b.on_click = def():
+        goto_scene(data.target_scene, fade_in_duration=.01, fade_out_duration=.1)
+
+# levels_parent = Entity(parent=scene, scale=[.7,.1], color=color.gray, position=[0,-.525], visible_self=False)
+# for i in range(7):
+#     Button(parent=levels_parent, scale=[1/7,1], roundness=.25, color=color.red, text=`${i}`, text_size=2, x=-.5+(i*1/7)+(1/7/2))
+
+goto_scene(main_scene, False) # set start scene
+
+# b = Button(scale=.2, text='+2🪙', on_click=def():currency.credits += 2)
+# b = Button(scale=.2, text='+1🔺', y=-.3, on_click=def():currency.triangles += 1)
+# currency.gain('keys', 10)
+# currency.gold += 10
+# currencies = dict(
+#     gold = dict(icon='🪙', amount=100),
+#     keys = dict(icon='🔑', amount=0),
+#     stars = dict(icon='⭐'),
+#     # '💎','🪵','🪨','🫐','🍉','🥝']
+# )
+
+mouse.click_animation = 'impact_effect.gif'
+def input(key):
+    if key == 'space': # cheats
+        for c in scene_handler.state.children:
+            c.enabled = True
+
+</script><script src="../taptapir/sunsnake_compiler.js"></script>
+<script type='text/sunsnake'>

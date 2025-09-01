@@ -14,7 +14,6 @@ banana_counter = Entity(parent=camera.ui, xy=[-.5+.05,(-.5*aspect_ratio)+.0], sc
 
 camera.fov = 5
 
-
 player = Entity(visible_self=False, num_bananas=0)
 player.banana_effect = Entity(parent=player, roundness=.2, scale=[.75,.4], text_origin=[0,0], text_size=2.5, text=`+1🍌`, y=.5, color=color.black, alpha=.9, text_color=color.white, enabled=False)
 

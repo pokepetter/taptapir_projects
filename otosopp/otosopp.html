@@ -29,6 +29,7 @@ if browser_aspect_ratio > 1:
 else:
     print('mobile------------------')
     set_orientation('vertical')
+# set_orientation('vertical')
 set_scale(1)
 # set_scale(.5)
 canvas_scale = .8
@@ -38,29 +39,37 @@ document.addEventListener('contextmenu', event => event.preventDefault());
 
 bg = Entity(visible_self=False, scale=[2*canvas_scale, 2*canvas_scale], draggable=True, lock_x=True, lock_y=True, ignore_collision=False)
 
-right_menu_bg = Entity(origin=[.5,0], scale=[.115,1], position=right, color=hsv(0,0,.07), alpha=.9, ignore_collision=False)
+right_menu_bg = Entity(origin=[.5,0], scale=[.115,1], position=window.right, color=hsv(0,0,.07), alpha=.9, ignore_collision=False)
 menu_parent = Entity(parent=camera.ui, visible_self=False)
-right_button_x = (.5*aspect_ratio)-.005
+right_button_x = window.right[0]-.005
 left_button_x = right_button_x-.055
 sunsnake.define(*Button(,Entity(parent=menu_parent, roundness=.01, origin=[.5,.5], text_origin=[0,0], x=(.5*aspect_ratio)-.01, scale=[.05,.05], z=-1, text_size=1.5, color=hsv(0,0,.03), text_color=hsv(0,.0,.8),)
 
 
 new_canvas_handler = Entity(visible_self=False)
-new_canvas_prompt = Entity(scale=[.25,.125], enabled=False, roundness=.05, shadow=True, parent=camera.ui, color=color.black, text_origin=[0,.5], text=' New Canvas', text_color=color.light_gray, text_size=2, ignore_collision=False)
-Entity(parent=new_canvas_prompt, text='x', scale=.1, color=new_canvas_prompt.color, text_color=new_canvas_prompt.text_color, text_origin=[0,0], text_size=2)
-new_canvas_prompt.close_button = Entity(parent=new_canvas_prompt, text='x', scale=.2, color=color.red, text_color=color.white, text_origin=[0,0], text_size=2, roundness=.5, xy=[.6,.5], origin=[.5,0], on_click=def():new_canvas_prompt.enabled=False)
+new_canvas_prompt = Entity(scale=[.5,.5/2], y=-.25, enabled=1, roundness=.05, shadow=True, parent=camera.ui, z=-10, color=color.black, text_origin=[0,.5], text=' New Canvas', text_color=color.light_gray, text_size=2, ignore_collision=False)
+new_canvas_prompt.bg = Entity(parent=new_canvas_prompt, scale=10, color=color.black, alpha=.8, ignore_collision=False, z=1)
+new_canvas_prompt.close_button = Entity(parent=new_canvas_prompt, text='x', scale=[.2,.4], color=color.red, text_color=color.white, text_origin=[0,0], text_size=2, roundness=.25, xy=[.6,.4], origin=[.5,0], on_click=def():new_canvas_prompt.enabled=False)
 w_field = InputField(parent=new_canvas_prompt, scale=(1,.3), origin=[.5,0], x=-.05, value=512)
 h_field = InputField(parent=new_canvas_prompt, scale=(1,.3), origin=[-.5,0], x=.05, value=512)
-create_button = Button(parent=new_canvas_prompt, color=color.azure, origin=[0,-.5], scale=[.4,.25], roundness=.5, y=-.5, text='Create', text_size=2, text_color=color.light_gray, on_click=def():new_document(w_field.value,h_field.value); new_canvas_prompt.enabled=False)
+create_button = Button(parent=new_canvas_prompt, color=color.azure, origin=[0,-.5], scale=[.5,.4], roundness=.5, y=-.7, text='Create', text_size=3, text_color=color.light_gray, on_click=def():new_document(w_field.value,h_field.value); new_canvas_prompt.enabled=False)
 create_button.input = def input(key):
     if held_keys['control'] and key == 'enter':
         create_button.on_click()
-canvas_sizes = [[512,512], [1024,1024], [2048,2048], [1920,1080], [1920*2,1080*2], [2048,1024], [3440,1440]]
-for i, size in canvas_sizes:
-    let b = *Button(parent=new_canvas_prompt, scale=[.3,1/len(canvas_sizes)], origin=[0,.5], x=-.68, y=.5-(1/len(canvas_sizes)*i), text=`${size}`, text_size=1.25, color=hsv(0,0,0), text_color=color.light_gray, roundness=.5)
-    b.on_click = def():
-        w_field.value = size[0]
-        h_field.value = size[1]
+canvas_sizes = [
+[[512,512], [1024,1024], [2048,2048]],
+[[1920,1080], [1920*2,1080*2]],
+[[3440,1440]],
+[[2048,1024]],
+]
+for y, aspect_group in canvas_sizes:
+    for x, size in aspect_group:
+        size_text = `${size}`.replace(',',' x ')
+        aspect_text = `${size[0]/size[0]}:${round(size[0]/size[1], 2)}`
+        let b = *Button(parent=new_canvas_prompt, scale=[.3,.4], origin=[-.5,.5], x=-.5+(x*.325), y=1+(.45*y), text=`${size_text}\n(${aspect_text})`, text_size=2.5, text_color=color.light_gray, roundness=.1, shadow=True, color='#311230')
+        b.on_click = def():
+            w_field.value = size[0]
+            h_field.value = size[1]
 
 
 new_canvas_handler.input = def input(key):
@@ -71,8 +80,8 @@ new_canvas_handler.input = def input(key):
 
 
 resolution_info = *Button(origin=[-.5,-.5], position=bottom_left, scale=[.075,.015], text='??? x ???', roundness=0, alpha=.5, text_size=1)
-new_file_button = *Button(position=top_left, origin=[-.5,.5], text='+', scale=[.05,.025], on_click=def():new_canvas_prompt.enabled=True)
-info_button = *Button(xy=[(-.5*aspect_ratio)+.125,.5], origin=[-.5,.5], text='ⓘ', scale=[.025,.025], ignore_collision=False)
+new_file_button = *Button(position=top_left, origin=[-.5,.5], text='+', scale=[.1,.075], on_click=def():new_canvas_prompt.enabled=True)
+info_button = *Button(xy=[top_left[0],top_left[1]-.1], origin=[-.5,.5], text='ⓘ', scale=[.025,.025], ignore_collision=False)
 info_button.el.onmouseenter = def():
     info_window.enabled = True
 info_button.el.onmouseleave = def():
@@ -95,7 +104,7 @@ info_text = `Shortcuts:
 [h] flip horizontally
 [v] flip vertically
 `
-info_window = Text(parent=info_button.parent, text=info_text, text_size=1.5, text_color=color.light_gray, color=color.black, alpha=.9, roundness=.005, enabled=False)
+info_window = Text(parent=info_button.parent, z=-4, text=info_text, text_size=1.5, text_color=color.light_gray, color=color.black, alpha=.9, roundness=.005, enabled=False)
 info_window.fit_to_text()
 info_window.origin=[-.5,.5]
 info_window.xy = [info_button.x, info_button.y-info_button.scale_y]
@@ -106,15 +115,17 @@ canvas_entity.el.style.overflow = 'hidden'
 shadow_entity = Entity(parent=bg, scale=canvas_entity.scale, shadow='0px 0px 100px #0008', visible_self=False)
 
 
-layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=((.5*aspect_ratio)-.0125)-.045, y=-.39, visible_self=True, roundness=.005, color=hsv(0,0,.03), ignore_collision=False)
+# region layers
+layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=(right[0]-.0125)-.045, y=window.bottom_right[1]+.1, visible_self=True, roundness=.005, color=hsv(0,0,.03), ignore_collision=False)
 
 background_color_menu = Entity(parent=layer_menu.parent, x=layer_menu.x, origin=layer_menu.origin, y=layer_menu.y-.0125, visible_self=False, scale=[layer_menu.scale_x*.95, .010], z=1, alpha=.4)
 for i, col in ['#000000', '#404040', '#606060', '#bfbfbf', '#ffffff']:
     let change_bg_color_button = *Button(parent=background_color_menu, x=-.5+(i/5), color=col, origin=[-.5,-.5], scale=[1/6,1], roundness=.25, on_click=def():canvas_entity.color=col)
 
-add_layer_button = *Button(text='+', scale=[layer_menu.scale_x/2,.03], roundness=.005, origin=[.5,-.5], x=layer_menu.x, y=layer_menu.y-.05, on_click=add_layer)
-delete_layer_button = *Button(text='-', scale=[layer_menu.scale_x/2,.03], roundness=.005, origin=[.5,-.5], x=layer_menu.x+layer_menu.scale_x/2, y=layer_menu.y-.05, on_click=delete_layer)
+add_layer_button = *Button(text='+', scale=[layer_menu.scale_x/2,.1], roundness=.005, origin=[.5,-.5], x=layer_menu.x, y=layer_menu.y-.1, on_click=add_layer)
+delete_layer_button = *Button(text='-', scale=[layer_menu.scale_x/2,.1], roundness=.005, origin=[.5,-.5], x=layer_menu.x+layer_menu.scale_x/2, y=layer_menu.y-.1, on_click=delete_layer)
 
+layer_button_height = .1
 def add_layer(name='layer', _w=W, _h=H, enabled=True, select=True):
     if name == 'layer':
         name = `layer ${len(layers)}`
@@ -133,7 +144,7 @@ def add_layer(name='layer', _w=W, _h=H, enabled=True, select=True):
     if not enabled:
         return layer
 
-    layer.layer_button = Button(enabled=enabled, x=layer_menu.x, origin=[0,-.5], scale=[.105,.03], roundness=.1, y=layer_menu.y+((len(layers)-1)*1.01*.03), text_size=1, text=name, text_color=color.light_gray,
+    layer.layer_button = Button(enabled=enabled, x=layer_menu.x, origin=[0,-.5], scale=[.105,layer_button_height], roundness=.1, y=layer_menu.y+((len(layers)-1)*1.01*layer_button_height), text_size=1, text=name, text_color=color.light_gray,
         draggable=True, lock_x=True, min_y=layer_menu.y-.015, max_y=layer_menu.y+layer_menu.scale_y+.015, color=hsv(0,0,.1), layer=layer)
     layer.layer_button.original_color = layer.layer_button.color
     layer.layer_button.on_click = def():
@@ -145,7 +156,7 @@ def add_layer(name='layer', _w=W, _h=H, enabled=True, select=True):
 
         layer_buttons.sort(sort_by_y)
         for i, lb in layer_buttons:
-            lb.y = layer_menu.y+((i)*1.01*.03)
+            lb.y = layer_menu.y+((i)*1.01*layer_button_height)
 
         layers = [lb.layer for lb in layer_buttons]
         set_layer(layer)
@@ -175,7 +186,7 @@ def delete_layer(layer=current_layer):
 
     current_layer
 
-
+# region new document
 W = 1920
 H = 1080
 layers = []
@@ -233,6 +244,7 @@ selection_ctx.fillStyle = rgb(128/255, 0/255, 0/255, 255/255)
 selection_ctx.clearRect(0, 0, W, H)
 
 
+#region brushes
 heavypaint_dry_brush = {'name':'heavypaint_dry_brush', 'textures':["heavypaint_dry.png", ],'size':[678, 264], 'spacing':.1, 'painterly_brush':True, 'rotate':False, 'draw_on_click':True, 'pressure_stremin_pressurength':1}
 heavypaint_dry_brush_2 = {'name':'heavypaint_dry_brush', 'textures':["heavypaint_dry_2.png", ],'size':[678, 264], 'spacing':.1, 'painterly_brush':True, 'rotate':False, 'draw_on_click':True, 'pressure_stremin_pressurength':1}
 square_brush = {'name':'square_brush', 'textures':None, 'shape':'rect', 'size':[50, 50], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'pressure_stremin_pressurength':1}
@@ -245,19 +257,36 @@ painterly_brush = {'name':'painterly_brush', 'textures':["RGBA anim 01.png", "RG
 stubby_brush = {'name':'stubby_brush', 'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[64, 64], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':True, 'min_pressure':1}
 starfield_brush = {'name':'starfield_brush', 'textures':["starfield.png", ], 'size':[256, 256], 'spacing':1, 'painterly_brush':1, 'rotate':'random', 'draw_on_click':True, 'min_pressure':0}
 star_brush = {'name':'star_brush', 'textures':["star_brush.png", ], 'size':[128, 128], 'spacing':5, 'painterly_brush':0, 'rotate':False, 'draw_on_click':True, 'min_pressure':0}
+chaos = {'name':'chaos', 'textures':["chaos_0.png", "chaos_1.png", "chaos_2.png"], 'size':[256, 256], 'spacing':.2, 'painterly_brush':0, 'rotate':True, 'draw_on_click':True, 'min_pressure':0}
 
-brushes = [heavypaint_dry_brush, heavypaint_dry_brush_2, round_brush, square_brush, round_bitmap_brush, poke_brush, poke_brush_small, painterly_brush, stubby_brush, starfield_brush, star_brush, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter, poke_brush_scatter]
+brushes = [heavypaint_dry_brush,
+# heavypaint_dry_brush_2,
+# round_brush,
+# square_brush,
+# round_bitmap_brush,
+poke_brush,
+# poke_brush_small,
+painterly_brush,
+stubby_brush,
+starfield_brush,
+# star_brush,
+chaos,
+]
+# poke_brush_scatter,
+# poke_brush_scatter,
+# poke_brush_scatter,
+# poke_brush_scatter,
 current_brush = None
 brush_canvases = []
-increase_brush_size_button = *Button(x=right_button_x, y=.33, text='+', scale=[.05,.035])
+increase_brush_size_button = *Button(x=window.right[0], y=.5, text='+', scale=[.1,.1])
 increase_brush_size_button.on_click = def():
     new_brush_size = [e*1.5 for e in brush_size]
     set_brush_size(new_brush_size)
-decrease_brush_size_button = *Button(y=.33, x=left_button_x, text='-', scale=[.05,.035])
+decrease_brush_size_button = *Button(y=.4, x=window.right[0], text='-', scale=[.1,.1])
 decrease_brush_size_button.on_click = def():
     new_brush_size = [e*1/1.5 for e in brush_size]
     set_brush_size(new_brush_size)
-brush_size_label = *Button(text='??', y=increase_brush_size_button.y+(increase_brush_size_button.scale_y*.55), x=lerp(increase_brush_size_button.x, decrease_brush_size_button.x, .5), scale_y=.025)
+brush_size_label = *Button(text='??', y=increase_brush_size_button.y+(increase_brush_size_button.scale_y*.55), x=lerp(increase_brush_size_button.x, decrease_brush_size_button.x, .5), scale_y=.05)
 
 def set_brush(brush):
     current_brush = brush
@@ -867,8 +896,8 @@ def update():
 
     # brush_size = [e*mouse.pressure for e in brush]
 
-color_menu = Entity(parent=camera.ui, visible_self=False, position=[left_button_x,.465,-1])
-color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=1, scale=[.1,.2], enabled=True)
+color_menu = Entity(parent=camera.ui, visible_self=False, position=top_left)
+color_menu.menu = Entity(parent=color_menu, visible_self=False, enabled=1, scale=[.4,.4], xy=[.2,-.2], enabled=True)
 
 def color_menu_input(key):
     if key == 'w':
@@ -880,8 +909,8 @@ def color_menu_input(key):
 #         color_menu.menu.enabled = not color_menu.menu.enabled
 color_menu.input = color_menu_input
 
-slider_height = .075
-sunsnake.define(*color_slider_style, parent=color_menu.menu, scale_y=.075, roundness=.1, draggable=True, lock_x=True, lock_y=True)
+slider_height = .1
+sunsnake.define(*color_slider_style, parent=color_menu.menu, scale_y=.1, roundness=.1, draggable=True, lock_x=True, lock_y=True)
 # color_menu_bg = Entity(parent=color_menu.menu, x=.15, scale=[1.05+.3, (slider_height*1.1*3)+.05], color=color.black, alpha=.8, roundness=.05, z=2, ignore_collision=False)
 color_preview = Entity(parent=color_menu.menu, scale=[1, slider_height*2], y=-.25, origin=[0,0], roundness=.25)
 lighter_color_button = Entity(parent=color_preview, x=.5, origin=[.5,0], scale=[.2,1], roundness=color_preview.roundness)
@@ -897,7 +926,7 @@ def move_color_slider(slider):
     slider.indicator.x = mouse.point[0]
     set_color(hsv(int((hue_slider.indicator.x+.5)*360), (sat_slider.indicator.x+.5)*1, (val_slider.indicator.x+.5)*1), move_sliders=False)
 
-hue_slider = Entity(*color_slider_style, y=slider_height*1.5, texture='rainbow.png', name='hue_slider')
+hue_slider = Entity(*color_slider_style, y=slider_height*1.1, texture='rainbow.png', name='hue_slider')
 hue_slider.indicator = Entity(parent=hue_slider, scale_x=.015, color=color.black, z=-2)
 hue_slider.while_dragging = def():
     move_color_slider(hue_slider)
@@ -910,7 +939,7 @@ sat_slider.while_dragging = def():
     move_color_slider(sat_slider)
 sat_slider.on_click = sat_slider.while_dragging
 
-val_slider = Entity(*color_slider_style, y=-slider_height*1.5)
+val_slider = Entity(*color_slider_style, y=-slider_height*1.1)
 val_slider.overlay = Entity(parent=val_slider, texture='horizontal_gradient.png', color=color.black, rotation=180, y=0, z=-1, roundness=.15)
 val_slider.indicator = Entity(parent=val_slider, scale_x=.015, color=color.black, z=-2)
 val_slider.while_dragging = def():
@@ -947,11 +976,7 @@ def set_color(value, move_sliders=True):
 
 for i, e in enumerate(brushes):
     let brush = e
-    let brush_button = *Button(x=-.1, y=.295+(.055*-floor(i/2)), roundness=.01, text_size=.75, text_origin=[-.5,-.5], text=e.name.replace('_', '\n'))
-    if i%2 == 0:
-        brush_button.x = left_button_x
-    else:
-        brush_button.x = right_button_x
+    let brush_button = *Button(scale=.1, x=window.right[0], y=window.top_right[1]+(i*-.1), roundness=.01, text_size=2, text_origin=[-.5,-.5], text=e.name.replace('_', '\n'))
 
     if not e.textures:
         if e.shape == 'rect':
@@ -991,7 +1016,7 @@ window.onfocus = def():
             held_keys[key] = 0
 
 
-save_button = *Button(xy=[(-.5*aspect_ratio)+.06,.5], origin=[-.5,.5], scale=[.05,.025], text='save', text_size=1)
+save_button = *Button(xy=[new_file_button.x+new_file_button.scale_x+.01,top_left[1]], origin=[-.5,.5], scale=[.075,.075], text='save', text_size=1)
 save_button.on_click = def save():
     save_file(current_layer.canvas)
 
@@ -999,7 +1024,7 @@ save_button.input = def input(key):
     if held_keys['shift'] and key == 's':
         save_button.on_click()
 
-save_animation_button = *Button(xy=[(-.5*aspect_ratio)+.12,.5], origin=[-.5,.5], scale=[.075,.025], text='save\nanimation', text_size=1, on_click=save_animation)
+save_animation_button = *Button(xy=[save_button.x+save_button.scale_x+.01,top_left[1]], origin=[-.5,.5], scale=[.075,.075], text='save\nanimation', text_size=1, on_click=save_animation)
 
 async def save_animation():
     num_frames = len(animator.frames)

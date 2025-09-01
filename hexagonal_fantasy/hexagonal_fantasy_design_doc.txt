@@ -1,0 +1,5 @@
+hexagonal tiles of world pieces
+
+inspired by: final fantasy class and fire emblem.
+goal is to get lvl 100 of all the classes. when you max a base class, you can choose a specialization to upgrade to.
+each class has one ability, so you have to assemble the team carefully.
