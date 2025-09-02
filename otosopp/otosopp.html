@@ -144,8 +144,7 @@ def add_layer(name='layer', _w=W, _h=H, enabled=True, select=True):
     if not enabled:
         return layer
 
-    layer.layer_button = Button(enabled=enabled, x=layer_menu.x, origin=[0,-.5], scale=[.105,layer_button_height], roundness=.1, y=layer_menu.y+((len(layers)-1)*1.01*layer_button_height), text_size=1, text=name, text_color=color.light_gray,
-        draggable=True, lock_x=True, min_y=layer_menu.y-.015, max_y=layer_menu.y+layer_menu.scale_y+.015, color=hsv(0,0,.1), layer=layer)
+    layer.layer_button = Button(enabled=enabled, x=layer_menu.x, origin=[0,-.5], scale=[.105,layer_button_height], roundness=.1, y=layer_menu.y+((len(layers)-1)*1.01*layer_button_height), text_size=1, text=name, text_color=color.light_gray, draggable=True, lock_x=True, min_y=layer_menu.y-.015, max_y=layer_menu.y+layer_menu.scale_y+.015, color=hsv(0,0,.1), layer=layer)
     layer.layer_button.original_color = layer.layer_button.color
     layer.layer_button.on_click = def():
         set_layer(layer)
