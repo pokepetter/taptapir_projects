@@ -47,7 +47,7 @@ sunsnake.define(*Button(,Entity(parent=menu_parent, roundness=.01, origin=[.5,.5
 
 
 new_canvas_handler = Entity(visible_self=False)
-new_canvas_prompt = Entity(scale=[.5,.5/2], y=-.25, enabled=1, roundness=.05, shadow=True, parent=camera.ui, z=-10, color=color.black, text_origin=[0,.5], text=' New Canvas', text_color=color.light_gray, text_size=2, ignore_collision=False)
+new_canvas_prompt = Entity(scale=[.5,.5/2], y=-.25, enabled=1, roundness=.05, shadow=True, parent=camera.ui, z=-10, color=color.black, text_origin=[0,.5], text=' New Canvas', text_color=color.light_gray, text_size=2, ignore_collision=False, enabled=False)
 new_canvas_prompt.bg = Entity(parent=new_canvas_prompt, scale=10, color=color.black, alpha=.8, ignore_collision=False, z=1)
 new_canvas_prompt.close_button = Entity(parent=new_canvas_prompt, text='x', scale=[.2,.4], color=color.red, text_color=color.white, text_origin=[0,0], text_size=2, roundness=.25, xy=[.6,.4], origin=[.5,0], on_click=def():new_canvas_prompt.enabled=False)
 w_field = InputField(parent=new_canvas_prompt, scale=(1,.3), origin=[.5,0], x=-.05, value=512)
@@ -244,23 +244,25 @@ selection_ctx.clearRect(0, 0, W, H)
 
 
 #region brushes
-heavypaint_dry_brush = {'name':'heavypaint_dry_brush', 'textures':["heavypaint_dry.png", ],'size':[678, 264], 'spacing':.1, 'painterly_brush':True, 'rotate':False, 'draw_on_click':True, 'pressure_stremin_pressurength':1}
-heavypaint_dry_brush_2 = {'name':'heavypaint_dry_brush', 'textures':["heavypaint_dry_2.png", ],'size':[678, 264], 'spacing':.1, 'painterly_brush':True, 'rotate':False, 'draw_on_click':True, 'pressure_stremin_pressurength':1}
-square_brush = {'name':'square_brush', 'textures':None, 'shape':'rect', 'size':[50, 50], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'pressure_stremin_pressurength':1}
-round_brush = {'name':'round_brush', 'textures':None, 'shape':'circle', 'size':[1, 1], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'min_pressure':1}
-round_bitmap_brush = {'name':'round_bitmap_brush', 'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.1, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'min_pressure':0}
-poke_brush = {'name':'poke_brush', 'textures':["pokebrush.png", ], 'size':[64, 64], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'min_pressure':0}
-poke_brush_small = {'name':'poke_brush_small', 'textures':["pokebrush.png", ], 'size':[16, 16], 'spacing':.075, 'painterly_brush':False, 'rotate':False, 'draw_on_click':True, 'min_pressure':1}
-poke_brush_scatter = {'name':'poke_brush_scatter', 'textures':["pokebrush.png", 'pokebrush.png'], 'size':[256, 256], 'spacing':.25, 'painterly_brush':False, 'rotate':'random', 'draw_on_click':False, 'min_pressure':1}
-painterly_brush = {'name':'painterly_brush', 'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[89, 200], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':True, 'min_pressure':1}
-stubby_brush = {'name':'stubby_brush', 'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[64, 64], 'spacing':.5, 'painterly_brush':True, 'rotate':True, 'draw_on_click':True, 'min_pressure':1}
+heavypaint_dry_brush = {'name':'heavypaint_dry_brush', 'textures':["heavypaint_dry.png", ],'size':[678, 264], 'spacing':.1, brush_type:'painterly_brush', 'rotate':False, 'draw_on_click':True, 'pressure_stremin_pressurength':1}
+heavypaint_dry_brush_2 = {'name':'heavypaint_dry_brush', 'textures':["heavypaint_dry_2.png", ],'size':[678, 264], 'spacing':.1, brush_type:'painterly', 'rotate':False, 'draw_on_click':True, 'pressure_stremin_pressurength':1}
+square_brush = {'name':'square_brush', 'textures':None, 'shape':'rect', 'size':[50, 50], 'spacing':.1, brush_type:'basic', 'rotate':False, 'draw_on_click':True, 'pressure_stremin_pressurength':1}
+round_brush = {'name':'round_brush', 'textures':None, 'shape':'circle', 'size':[1, 1], 'spacing':.1, brush_type:'basic', 'rotate':False, 'draw_on_click':True, 'min_pressure':1}
+round_bitmap_brush = {'name':'round_bitmap_brush', 'textures':["round_brush_16.png", ], 'size':[2, 2], 'spacing':.1, brush_type:'basic', 'rotate':False, 'draw_on_click':True, 'min_pressure':0}
+poke_brush = {'name':'poke_brush', 'textures':["pokebrush.png", ], 'size':[64, 64], 'spacing':.075, brush_type:'basic', 'rotate':False, 'draw_on_click':True, 'min_pressure':0}
+poke_brush_small = {'name':'poke_brush_small', 'textures':["pokebrush.png", ], 'size':[16, 16], 'spacing':.075, brush_type:'basic', 'rotate':False, 'draw_on_click':True, 'min_pressure':1}
+poke_brush_scatter = {'name':'poke_brush_scatter', 'textures':["pokebrush.png", 'pokebrush.png'], 'size':[256, 256], 'spacing':.25, brush_type:'basic', 'rotate':'random', 'draw_on_click':False, 'min_pressure':1}
+painterly_brush = {'name':'painterly_brush', 'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[89, 200], 'spacing':.5, brush_type:'painterly', 'rotate':True, 'draw_on_click':True, 'min_pressure':1}
+stubby_brush = {'name':'stubby_brush', 'textures':["RGBA anim 01.png", "RGBA anim 02.png", "RGBA anim 03.png", "RGBA anim 04.png", ], 'size':[64, 64], 'spacing':.5, brush_type:'painterly', 'rotate':True, 'draw_on_click':True, 'min_pressure':1}
 starfield_brush = {'name':'starfield_brush', 'textures':["starfield.png", ], 'size':[256, 256], 'spacing':1, 'painterly_brush':1, 'rotate':'random', 'draw_on_click':True, 'min_pressure':0}
 star_brush = {'name':'star_brush', 'textures':["star_brush.png", ], 'size':[128, 128], 'spacing':5, 'painterly_brush':0, 'rotate':False, 'draw_on_click':True, 'min_pressure':0}
-chaos = {'name':'chaos', 'textures':["chaos_0.png", "chaos_1.png", "chaos_2.png"], 'size':[256, 256], 'spacing':.2, 'painterly_brush':0, 'rotate':True, 'draw_on_click':True, 'min_pressure':0}
+chaos = {'name':'chaos', 'textures':["chaos_0.png", "chaos_1.png", "chaos_2.png"], 'size':[256, 256], 'spacing':.2, 'painterly_brush':0, 'rotate':'random', 'draw_on_click':True, 'min_pressure':0}
+lasso_line = {'name':'lasso_line', 'textures':None, 'shape':'circle', 'size':[2, 2], 'spacing':.1, brush_type:'lasso', 'rotate':False, 'draw_on_click':True, 'min_pressure':1}
+# lasso_line.draw = def(x, y, )
 
 brushes = [heavypaint_dry_brush,
 # heavypaint_dry_brush_2,
-# round_brush,
+round_brush,
 # square_brush,
 # round_bitmap_brush,
 poke_brush,
@@ -270,6 +272,7 @@ stubby_brush,
 starfield_brush,
 # star_brush,
 chaos,
+lasso_line,
 ]
 # poke_brush_scatter,
 # poke_brush_scatter,
@@ -305,7 +308,7 @@ def set_brush(brush):
     print('set brush', brush)
     set_brush_size(brush.size)
     SPACING = brush.spacing
-    using_painterly_brush = brush.painterly_brush
+    using_painterly_brush = brush.brush_type == 'painterly'
     rotate_brush = brush.rotate
     draw_on_click = brush.draw_on_click
 
@@ -332,7 +335,7 @@ draw_on_click = False
 rotate_brush = True
 using_painterly_brush = True
 prev_brush_tip = -1
-set_brush(painterly_brush)
+set_brush(lasso_line)
 # set_brush(round_brush)
 # set_brush_size([64,64])
 IMG = new Image()
@@ -502,10 +505,15 @@ def get_canvas_position(layer=current_layer):
     return [int((((pos[0]-(layer.x*.5))*2)+.5) * W), int((((pos[1]-(layer.y*.5))*2)-.5) * -H)]
     # return [int((((pos[0])*2)+.5) * W), int((((pos[1])*2)-.5) * -H)]
 
-
+COLOR_JITTER = 128
 def draw_circle(x, y):
     current_layer.ctx.globalAlpha = current_color[3]/255
-    current_layer.ctx.fillStyle = `rgba(${current_color[0]}, ${current_color[1]}, ${current_color[2]}, ${current_color[3]})`
+    _colr = [
+        current_color[0] + random.randint(-COLOR_JITTER, COLOR_JITTER),
+        current_color[1] + random.randint(-COLOR_JITTER, COLOR_JITTER),
+        current_color[2] + random.randint(-COLOR_JITTER, COLOR_JITTER),
+    ]
+    current_layer.ctx.fillStyle = `rgba(${_colr[0]}, ${_colr[1]}, ${_colr[2]}, ${current_color[3]})`
     if ERASING:
         current_layer.ctx.globalAlpha = 0
         # current_layer.ctx.fillStyle = `rgba(256, 256, 256, 64)`
@@ -518,7 +526,6 @@ def draw_circle(x, y):
         current_layer.ctx.arc(x, y, brush_size[0], 0, 2*Math.PI)
         current_layer.ctx.fill()
         current_layer.ctx.closePath()
-        print('fill')
         return
 
     brush_half_w = brush_size[0] / 2
@@ -607,7 +614,7 @@ def sample_color(position=None):
     ERASING = combined_sample[3] == 0
     combined_sample[3] = 255
 
-    if current_brush.painterly_brush: # make the color a bit brighter when using painterly_brush since it paints a bit darker than the selected color
+    if current_brush.brush_type == 'painterly': # make the color a bit brighter when using painterly_brush since it paints a bit darker than the selected color
         combined_sample[0] += 16
         combined_sample[1] += 16
         combined_sample[2] += 16
@@ -658,12 +665,15 @@ def paint():
             update_brush_tip(current_color)
 
         if draw_on_click:
-            random_radian = random.randint(0, 360) * Math.PI / 180
+            radian = 0
+            if current_brush.rotate == 'random':
+                radian = random.randint(0, 360) * Math.PI / 180
+
             after .1:
-                stamp(x, y, random_radian)
+                stamp(x, y, radian)
+
 
         start_position = [x,y]
-        prev_draw_pos = pos
         prev_pos = [x,y]
         pixels_traveled = 0
         return
@@ -683,33 +693,45 @@ def paint():
     spacing_in_pixels = brush_size[1]*SPACING
     steps = floor(pixels_traveled / spacing_in_pixels)
 
+
+    radians = 0
     delta_pos = [x - prev_pos[0], y - prev_pos[1]]
-    radians = -math.atan2(delta_pos[0], delta_pos[1])
+    if current_brush.rotate == True:
+        radians = -math.atan2(delta_pos[0], delta_pos[1])
 
     if steps > 0 and held_keys['n']:
         update_brush_tip(sample_color([x,y]))
 
-
-    for i in range(0, steps):
-        t = i / steps
-        let _x = lerp(prev_pos[0], x, t)
-        let _y = lerp(prev_pos[1], y, t)
-
-        stamp(_x, _y, radians)
-        prev_draw_pos = [_x, _y]
+    if current_brush.brush_type == 'lasso':
+        draw_line(start_position, [x,y], 100)
+    else:
+        draw_line(prev_pos, [x,y], steps)
 
     pixels_traveled -= steps * spacing_in_pixels
     prev_pos = [x, y]
-    # prev_pos_for_line_draw_mode = [x, y]
-    # if not held_keys['shift']:
 
-def stamp(_x, _y, radians=0):
+
+
+def draw_line(from_pos, to_pos, steps=1):
+    for i in range(0, steps):
+        t = i / steps
+        let _x = lerp(from_pos[0], to_pos[0], t)
+        let _y = lerp(from_pos[1], to_pos[1], t)
+
+        if current_brush.rotate == 'random':
+            radians = random.randint(0, 360) * Math.PI / 180
+
+        stamp(_x, _y, radians)
+
+
+def stamp(_x, _y, rotation_in_radians=0):
+    # print('stamp:', rotation_in_radians)
     if brush_tips:
         prev_brush_tip += 1
         if prev_brush_tip >= brush_tips.length:
             prev_brush_tip = 0
 
-    if not current_brush.rotate:
+    if rotation_in_radians == 0:
         if brush_tips:
             draw_brush_image(brush_canvases[prev_brush_tip], _x, _y)
         elif current_brush.shape == 'rect':
@@ -717,30 +739,16 @@ def stamp(_x, _y, radians=0):
         elif current_brush.shape == 'circle':
             draw_circle(_x, _y)
 
-    elif current_brush.rotate == True:
-        # if brush_tips:
-            # IMG.src = brush_canvases[prev_brush_tip].toDataURL()
+    else:
         invoke(def anon():
             current_layer.ctx.translate(_x, _y)
-            current_layer.ctx.rotate(radians)
+            current_layer.ctx.rotate(rotation_in_radians)
             draw_brush_image(brush_canvases[prev_brush_tip], 0, 0)
-            current_layer.ctx.rotate(-radians)
+            current_layer.ctx.rotate(-rotation_in_radians)
             current_layer.ctx.translate(-_x, -_y)
         , delay=0)
 
-    elif current_brush.rotate == 'random':
-        # if brush_tips:
-            # IMG.src = brush_canvases[prev_brush_tip].toDataURL()
-        invoke(def anon():
-            random_radian = random.randint(0, 360) * Math.PI / 180
-            current_layer.ctx.translate(_x, _y)
-            current_layer.ctx.rotate(random_radian)
-            # current_layer.ctx.drawImage(IMG, -brush_size[0]/2, -brush_size[1]/2)
-            draw_brush_image(brush_canvases[prev_brush_tip], 0, 0)
 
-            current_layer.ctx.rotate(-random_radian)
-            current_layer.ctx.translate(-_x, -_y)
-        , delay=0)
 
 # Approximation by using octagons approach
 def distanceApprox(p1,p2):
