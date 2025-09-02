@@ -107,13 +107,14 @@ class MissionButton(Button):
     def __init__(self, kwargs):
         super().__init__(roundness=.5, text='asteroid', text_size=1)
         for key, value in kwargs.items():
-            self[key] = value
+            this[key] = value
             # print('---', key, value)
         self.mission = kwargs.mission
         self.position = kwargs.position
+        self.progress_bar = HealthBar(parent=this, y=1, max_value=100, scale=[1.3,.1], text_color=color.black, text_size=1, bar_color=color.lime, enabled=False)
+        self.progress_bar.value = 0
+        self.reward_panel = Entity(parent=this, scale=[1.5,1], color=color.black, alpha=.9, y=.75, text='Success!', text_origin=[0,.5], text_color=color.lime, roundness=.3, padding=.5, text_size=2, shadow=True, enabled=False)
 
-    def on_click(self):
-        show_mission_info(self)
 
 mission_panel = Entity(scale=[.6,.3], color=color.black, alpha=.9, roundness=.05, z=-2, enabled=False, on_click=def():return)
 mission_panel.title = Entity(parent=mission_panel, scale=[.95,.25], color='#123123', text='Asteroid', roundness=.1, text_origin=[0,0], text_color=color.white, y=.5)
@@ -129,18 +130,20 @@ def show_mission_info(mb):
     mission_panel.xy = mb.xy
     mission_panel.appear(.2)
     mission_panel.start_mission_button.on_click = def():
-        print('start mission:', b.mission)
         mission_panel.enabled = False
+        mb.progress_bar.enabled = True
+        mb.progress_bar.value = 0
+        print('start mission:', mb.mission)
 
 
 missions = [
-    dict(title='Asteroid', position=[[-.2,.4]]),
-    dict(title='Asteroid', position=[[-.2,.4]]),
+    dict(title='Asteroid', position=[-.2,.4]),
+    dict(title='Asteroid2', position=[.2,.2]),
 ]
 for m in missions:
-    mission_button = MissionButton(mission=m, position=m.position)
-#     mission_button.on_click = def():
-#         show_mission_info(mission_button)
+    let mission_button = MissionButton(mission=m, position=m.position)
+    mission_button.on_click = def():
+        show_mission_info(mission_button)
 
 
 # region bottom panel
