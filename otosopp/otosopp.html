@@ -118,8 +118,8 @@ shadow_entity = Entity(parent=bg, scale=canvas_entity.scale, shadow='0px 0px 100
 # region layers
 layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=(right[0]-.0125)-.045, y=window.bottom_right[1]+.1, visible_self=True, roundness=.005, color=hsv(0,0,.03), ignore_collision=False)
 
-background_color_menu = Entity(parent=layer_menu.parent, x=layer_menu.x, origin=layer_menu.origin, y=layer_menu.y-.0125, visible_self=False, scale=[layer_menu.scale_x*.95, .010], z=1, alpha=.4)
-for i, col in ['#000000', '#404040', '#606060', '#bfbfbf', '#ffffff']:
+background_color_menu = Entity(parent=layer_menu.parent, x=layer_menu.x, origin=layer_menu.origin, y=0, visible_self=False, scale=[layer_menu.scale_x*.95, .010], z=1, alpha=.4)
+for i, col in ['#000000', '#111111', '#606060', '#bfbfbf', '#ffffff']:
     let change_bg_color_button = *Button(parent=background_color_menu, x=-.5+(i/5), color=col, origin=[-.5,-.5], scale=[1/6,1], roundness=.25, on_click=def():canvas_entity.color=col)
 
 add_layer_button = *Button(text='+', scale=[layer_menu.scale_x/2,.1], roundness=.005, origin=[.5,-.5], x=layer_menu.x, y=layer_menu.y-.1, on_click=add_layer)
@@ -289,6 +289,7 @@ decrease_brush_size_button.on_click = def():
     new_brush_size = [e*1/1.5 for e in brush_size]
     set_brush_size(new_brush_size)
 brush_size_label = *Button(text='??', y=increase_brush_size_button.y+(increase_brush_size_button.scale_y*.55), x=lerp(increase_brush_size_button.x, decrease_brush_size_button.x, .5), scale_y=.05)
+
 
 def set_brush(brush):
     current_brush = brush
@@ -505,14 +506,34 @@ def get_canvas_position(layer=current_layer):
     return [int((((pos[0]-(layer.x*.5))*2)+.5) * W), int((((pos[1]-(layer.y*.5))*2)-.5) * -H)]
     # return [int((((pos[0])*2)+.5) * W), int((((pos[1])*2)-.5) * -H)]
 
-COLOR_JITTER = 128
+COLOR_JITTER = 32
+JITTER_TYPE = 'hue' # hue, saturation
+jitter_type_button = *Button(scale=.1, text='hue', x=window.right[0], y=0)
+jitter_type_button.title = Entity(parent=jitter_type_button, scale=1, origin=jitter_type_button.origin, text='jitter type', text_color=color.light_gray, color=color.clear, y=-.1, text_origin=[0,.5], text_size=1.5)
+jitter_type_button.on_click = def():
+    if JITTER_TYPE == 'hue':
+        JITTER_TYPE = 'RGB'
+        COLOR_JITTER = 64
+    elif JITTER_TYPE == 'RGB':
+        JITTER_TYPE = 'hue'
+        COLOR_JITTER = 128
+    jitter_type_button.text = JITTER_TYPE
+
 def draw_circle(x, y):
     current_layer.ctx.globalAlpha = current_color[3]/255
-    _colr = [
-        current_color[0] + random.randint(-COLOR_JITTER, COLOR_JITTER),
-        current_color[1] + random.randint(-COLOR_JITTER, COLOR_JITTER),
-        current_color[2] + random.randint(-COLOR_JITTER, COLOR_JITTER),
-    ]
+    if JITTER_TYPE == 'RGB':
+        _colr = [
+            current_color[0] + random.randint(-COLOR_JITTER, COLOR_JITTER),
+            current_color[1] + random.randint(-COLOR_JITTER, COLOR_JITTER),
+            current_color[2] + random.randint(-COLOR_JITTER, COLOR_JITTER),
+        ]
+    elif JITTER_TYPE == 'hue':
+        _color_as_hsv = rgb_to_hsv(current_color)
+        _colr =hsv(_color_as_hsv[0] + random.randint(-COLOR_JITTER, COLOR_JITTER), _color_as_hsv[1], _color_as_hsv[2])
+    # elif JITTER_TYPE == 'saturation':
+    #     _color_as_hsv = rgb_to_hsv(current_color)
+    #     _colr =hsv(_color_as_hsv[0], _color_as_hsv[1] + random.randint(-COLOR_JITTER, COLOR_JITTER)/255, _color_as_hsv[2])
+
     current_layer.ctx.fillStyle = `rgba(${_colr[0]}, ${_colr[1]}, ${_colr[2]}, ${current_color[3]})`
     if ERASING:
         current_layer.ctx.globalAlpha = 0
@@ -763,6 +784,9 @@ zoom_label.update = def zoom_label_update():
     bg.scale_x = lerp(bg.scale[0], target_zoom*canvas_aspect, .2)
     bg.scale_y = lerp(bg.scale[1], target_zoom, .2)
 
+zoom_out_button = *Button(text='zoom\nout', scale=.1, x=window.right[0], y=-.25, z=-1, color=color.red, on_click=def():target_zoom-=.25)
+zoom_out_button = *Button(text='zoom\nin', scale=.1, x=window.right[0], y=-.25+.1, z=-1, color=color.red, on_click=def():target_zoom+=.25)
+
 def input(key):
     # print(key)
     for i, e in enumerate(opacity_keys):
@@ -983,15 +1007,15 @@ def set_color(value, move_sliders=True):
 
 for i, e in enumerate(brushes):
     let brush = e
-    let brush_button = *Button(scale=.1, x=window.right[0], y=window.top_right[1]+(i*-.1), roundness=.01, text_size=2, text_origin=[-.5,-.5], text=e.name.replace('_', '\n'))
+    let brush_button = *Button(scale=[.1,.05], x=window.right[0], y=window.top_right[1]+(i*-.05), roundness=.01, text_size=2, text_origin=[-.5,-.5], text=e.name.replace('_', '\n'))
 
     if not e.textures:
         if e.shape == 'rect':
-            icon = Entity(roundness=0, parent=brush_button, xy=[-.5,-.5], color=color.white, z=-1, scale=.6, alpha=.75)
+            icon = Entity(roundness=0, parent=brush_button, xy=[-.5,-.5], color=color.white, z=-1, scale=[.3,.6], alpha=.75)
         if e.shape == 'circle':
-            icon = Entity(roundness=.5, parent=brush_button, xy=[-.5,-.5], color=color.white, z=-1, scale=.6, alpha=.75)
+            icon = Entity(roundness=.5, parent=brush_button, xy=[-.5,-.5], color=color.white, z=-1, scale=[.3,.6], alpha=.75)
     else:
-        icon = Entity(roundness=.01, parent=brush_button, xy=[-.5,-.5], color=color.black, z=-1, scale=.8, alpha=.75)
+        icon = Entity(roundness=.01, parent=brush_button, xy=[-.5,-.5], color=color.black, z=-1, scale=[.3,.6], alpha=.75)
         icon.texture = `assets/${e.textures[0]}`
         icon_aspect = brush.size[0] / brush.size[1]
         if icon_aspect > 1:
