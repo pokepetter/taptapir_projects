@@ -1009,7 +1009,7 @@ def set_color(value, move_sliders=True):
 
 for i, e in enumerate(brushes):
     let brush = e
-    let brush_button = *Button(scale=[.1,.05], origin=[-.5,0], x=window.left[0], y=window.top_right[1]-.2+(i*-.05), roundness=.01, text_size=2, text_origin=[-.5,-.5], text=e.name.replace('_', '\n'))
+    let brush_button = *Button(scale=[.1,.05], origin=[-.5,0], x=window.left[0], y=window.top_right[1]-.2+(i*-.055), roundness=.01, text_size=1, text_origin=[-.5,-.5], text=e.name.replace('_', '\n'))
 
     if not e.textures:
         if e.shape == 'rect':
@@ -1049,8 +1049,16 @@ window.onfocus = def():
             held_keys[key] = 0
 
 
-save_button = *Button(xy=[new_file_button.x+new_file_button.scale_x+.01,top_left[1]], origin=[-.5,.5], scale=[.075,.075], text='save', text_size=1)
+save_button = *Button(xy=[new_file_button.x+new_file_button.scale_x+.01,top_left[1]], origin=[-.5,.5], scale=[.075,.075], text='export', text_size=1)
 save_button.on_click = def save():
+    canvas_for_saving.width = W
+    canvas_for_saving.height = H
+    canvas_for_saving.getContext('2d').clearRect(0, 0, W, H)
+    canvas_for_saving.getContext('2d').fillStyle = canvas_entity.color
+    canvas_for_saving.getContext('2d').fillRect(0, 0, W, H)
+    for layer in layers:
+        if layer.enabled:
+            canvas_for_saving.getContext('2d').drawImage(layer.canvas, 0, 0)
     save_file(current_layer.canvas)
 
 save_button.input = def input(key):
@@ -1531,9 +1539,6 @@ CURRENT_FILE = None
 file_handler = Entity(visible_self=False)
 file_handler.input = def file_handler_input(key):
     if key == 'o':
-        open_file()
-
-    if key == 'i':
         import_file()
 
 
@@ -1558,29 +1563,7 @@ async def save_project():
     print('File saved successfully!')
 
 
-open_project_button = *Button(xy=[save_project_button.x+save_project_button.scale_x+.01,top_left[1]], origin=[-.5,.5], scale=[.075,.075], text='open\nproject', text_size=1, on_click=open_project)
-async def open_project():
-    const [fileHandle] = await window.showOpenFilePicker({types: [{ description: 'otosopp Files', accept: { 'application/json': ['.otosopp'] } }], multiple: false})
-    CURRENT_FILE = fileHandle
-    const file = await fileHandle.getFile()
-    const fileContent = await file.text()
-    # print('loaded:', fileContent)
-    const jsonData = JSON.parse(fileContent)
-
-    # new_document(jsonData[])
-    for i, layer_data in enumerate(jsonData['layers']):
-        print(i, layer_data)
-        var loaded_image = new Image
-        loaded_image.src = layer_data
-        loaded_image.onload = def():
-            if i == 0:
-                print(i, loaded_image)
-    #             # get the dimensions of the image
-
-    #         current_layer.ctx.clearRect(0, 0, W, H)
-    #         current_layer.ctx.drawImage(loaded_image, 0, 0)
-
-
+open_project_button = *Button(xy=[save_project_button.x+save_project_button.scale_x+.01,top_left[1]], origin=[-.5,.5], scale=[.075,.075], text='open\nproject', text_size=1, on_click=import_file)
 
 async def import_file():
     const pickerOpts = {types: [{description: "Images", accept:{"image/*": [".png", ".gif", ".jpeg", ".jpg", ".otosopp", ".otomation"],},},], excludeAcceptAllOption: true, multiple: false};
