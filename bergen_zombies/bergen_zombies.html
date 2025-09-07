@@ -112,8 +112,7 @@ battle.on_enter = def():
         for j, e in ['normal', 'fire', 'water', 'sand', 'leaf']:
             dmg = card.spell[`${e}_damage`]
             if dmg:
-                damage_label = Entity(parent=card, scale=[.035/card.scale_x*1.8, .035/card.scale_y], roundness=.5, x=.5-.025, origin=[.5,.5], text_size=1.4, text_origin=[.5,0], text_color=hsv(0,0,1   ), alpha=.9, font='monospace',
-                    color=element_colors[j], text=`  ${dmg}  `, text_color=text_colors[j], y=(.5-.0275)-(.35    *(k))/(card.scale_y*10))
+                damage_label = Entity(parent=card, scale=[.035/card.scale_x*1.8, .035/card.scale_y], roundness=.5, x=.5-.025, origin=[.5,.5], text_size=1.4, text_origin=[.5,0], text_color=hsv(0,0,1), alpha=.9, font='monospace', color=element_colors[j], text=`  ${dmg}  `, text_color=text_colors[j], y=(.5-.0275)-(.35    *(k))/(card.scale_y*10))
                 if j > 0:
                     damage_label.model.innerHTML = `&nbsp;<img style='vertical-align:middle; height:16px;' src='textures/icon_${e}.png'></img> ${dmg}  `
                 damage_label.fit_to_text()
@@ -193,88 +192,88 @@ possible_tiles = dict(
     house = 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/house.svg',
     crate = 'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/wooden-crate.svg',
 )
-print(possible_tiles['crate'])
-# loot_boxes = {
-#
-#     'small' :       new Object(draws=1, gold=4, gas=1, ammo=1, food=1},
-#     'medium':       new Object(draws=2, gold=2, ammo=2, food=2),
-#     'food_crate':   new Object(draws=2, snack=5, food=2, drink=3),
-#     'ammo_crate':   new Object(draws=2, snack=5, food=2, drink=3),
-#
-#
-# }
-item_chances = dict(gold=25, gold_stash=5, gas=10, ammo=10, snack=20, drink=10, food=10, weapon=1)
+# print(possible_tiles['crate'])
+# # loot_boxes = {
+# #
+# #     'small' :       new Object(draws=1, gold=4, gas=1, ammo=1, food=1},
+# #     'medium':       new Object(draws=2, gold=2, ammo=2, food=2),
+# #     'food_crate':   new Object(draws=2, snack=5, food=2, drink=3),
+# #     'ammo_crate':   new Object(draws=2, snack=5, food=2, drink=3),
+# #
+# #
+# # }
+# item_chances = dict(gold=25, gold_stash=5, gas=10, ammo=10, snack=20, drink=10, food=10, weapon=1)
 # gold, gas, ammo, weapon, food
 
 # bg = Entity(texture='https:#game-icons.net/icons/ffffff/000000/1x1/skoll/balkenkreuz.svg', tileset_size=[.2,.2], alpha=.5)
-grid = Array2D(5,5)
-for _y in range(5):
-    for _x in range(5):
-        let x = _x
-        let y = _y
-        let tile = Entity(parent=city_scene, scale=.1, origin=[-.5,0], xy=[-.45 + x*.2,-.3 + y*.2], collor=color.white, shadow=1, roundness=.1, enabled=False, revealed=False)
-        grid[y][x] = tile
+# grid = Array2D(5,5)
+# for _y in range(5):
+#     for _x in range(5):
+#         let x = _x
+#         let y = _y
+#         let tile = Entity(parent=city_scene, scale=.1, origin=[-.5,0], xy=[-.45 + x*.2,-.3 + y*.2], collor=color.white, shadow=1, roundness=.1, enabled=False, revealed=False)
+#         grid[y][x] = tile
 
-        i = random.randint(0,9)
-        if i <= 1:
-            tile.type = 'empty'
-        elif i <= 4:
-            tile.type = 'zombie'
-        elif i <= 7:
-            tile.type = 'house'
-        else:
-            tile.type = 'crate'
+#         i = random.randint(0,9)
+#         if i <= 1:
+#             tile.type = 'empty'
+#         elif i <= 4:
+#             tile.type = 'zombie'
+#         elif i <= 7:
+#             tile.type = 'house'
+#         else:
+#             tile.type = 'crate'
 
-        tile.reveal = def():
-            if tile.revealed:
-                return
-            tile.enabled = True
-            # tile.text = tile.type
-            print('-----------------', possible_tiles[tile.type])
-            tile.texture = possible_tiles[tile.type]
-            tile.revealed = True
+#         tile.reveal = def():
+#             if tile.revealed:
+#                 return
+#             tile.enabled = True
+#             # tile.text = tile.type
+#             print('-----------------', possible_tiles[tile.type])
+#             tile.texture = possible_tiles[tile.type]
+#             tile.revealed = True
 
-        tile.on_click = def():
-            if tile.type == 'house':
-                r = random.randint(0,1):
-                if r <= 0:
-                    after .1s:
-                        tile.type = 'zombie'
-                        tile.texture = possible_tiles[tile.type]
-                    after .8s:
-                        goto_scene(battle)
-                    return
-                else:
-                    tile.type = 'crate'
+#         tile.on_click = def():
+#             if tile.type == 'house':
+#                 r = random.randint(0,1):
+#                 if r <= 0:
+#                     after .1s:
+#                         tile.type = 'zombie'
+#                         tile.texture = possible_tiles[tile.type]
+#                     after .8s:
+#                         goto_scene(battle)
+#                     return
+#                 else:
+#                     tile.type = 'crate'
 
-                tile.texture = possible_tiles[tile.type]
+#                 tile.texture = possible_tiles[tile.type]
 
-            tile.texture = None
-            tile.color = color.lime
-            if tile.type == 'zombie':
-                goto_scene(battle)
+#             tile.texture = None
+#             tile.color = color.lime
+#             if tile.type == 'zombie':
+#                 goto_scene(battle)
 
-            offsets = [[1,0], [-1,0], [0,1], [0,-1]]
-            for offset in offsets:
-                # print(offset)
-                try:
-                    grid[y+offset[0]][x+offset[1]].reveal()
-                catch:
-                    print('a')
-                # after .2s:
-grid[0][2].reveal()
-grid[0][2].type = 'empty'
-grid[0][2].color = color.white
-grid[0][2].texture = possible_tiles[grid[0][2].type]
+#             offsets = [[1,0], [-1,0], [0,1], [0,-1]]
+#             for offset in offsets:
+#                 # print(offset)
+#                 try:
+#                     grid[y+offset[0]][x+offset[1]].reveal()
+#                 catch:
+#                     print('a')
+#                 # after .2s:
+# grid[0][2].reveal()
+# grid[0][2].type = 'empty'
+# grid[0][2].color = color.white
+# grid[0][2].texture = possible_tiles[grid[0][2].type]
 
-goto_scene(battle)
-# goto_scene(menu)
+# goto_scene(battle)
+# # goto_scene(menu)
 
 
-# goto_scene(menu)
-</script><script src="../taptapir/sunsnake_compiler.js"></script></html>
+# # goto_scene(menu)
+# </script><script src="../taptapir/sunsnake_compiler.js"></script></html>
 
-# real time combat?
-# tetris style inventory/skillbar, turn based
-# slay the spire type combat
-#
+# # real time combat?
+# # tetris style inventory/skillbar, turn based
+# # slay the spire type combat
+# #

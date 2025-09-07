@@ -3,7 +3,7 @@
 <script src="../taptapir/taptapir.js"></script>
 <script type='text/sunsnake'>
 
-set_scale(.8)
+# set_scale(.8)
 set_background_color('#111111')
 set_window_color('#3d529c')
 
@@ -34,29 +34,32 @@ class CurrencyHandler(Entity):
             print(name, obj)
             if not obj.amount:
                 obj.amount = 0
-            if not obj.unlocked:
-                obj.unlocked = true
+            if not 'unlocked' in obj:
+                obj.unlocked = True
 
-            if not obj.unlocked:
-                continue
-
-            let currency_icon = Button(parent=self.ui_parent, scale=.075, y=-(i*.08), roundness=.5, text=obj.icon, text_size=2.5, shadow=True)
+            let currency_icon = Button(parent=self.ui_parent, scale=.075, y=-(i*.08), roundness=.5, texture=obj.icon, text_size=2.5, shadow=True, enabled=obj.unlocked)
             currency_icon.original_scale = currency_icon.scale
-            currency_icon.counter = Button(parent=currency_icon, padding=[.5,.25], origin=[.5,0], scale=[2,.9], position=[-.2,-.1,1], roundness=.5, text=obj.amount+' ', text_origin=[.5,0], text_size=2, text_color='#3e3e3e')
+            currency_icon.counter = Button(parent=currency_icon, padding=[.2,.1], origin=[.5,0], scale=[2,.9], position=[-.2,-.1,1], roundness=.5, text=obj.amount+' ', text_origin=[.5,0], text_size=2, text_color='#3e3e3e')
             currency_icon.counter.fit_to_text()
             self.currency_icons[name] = currency_icon
             i += 1
+
+    # def unlock(self, name):
+    #     self.currency_icons[name].enabled = True
 
 
     def update(self):
         for name, amount in self.data:
             if amount != self.prev_amounts[name]:
+                if not self.currency_icons[name].enabled:
+                    self.currency_icons[name].enabled = True
+
                 self.currency_icons[name].counter.text = amount
                 let difference = amount - self.prev_amounts[name]
                 let icon = self.currencies[name].icon
                 let number = Entity(parent=camera.ui, scale=.1, text=`+${difference}${icon}`, position=[mouse.x, mouse.y+.1], z=-10, roundness=.25, alpha=1)
                 number.fit_to_text(1)
-                number.padding=.5
+                number.padding=.05
                 number.animate('y', number.y+.2, .3)
                 after .3:
                     destroy(number)
@@ -70,10 +73,15 @@ class CurrencyHandler(Entity):
 
 
 
-credits = dict(icon='🪙', amount=100)
-keys = dict(icon='🔑', amount=2)
-triangles = dict(icon='🔺', unlocked=False)
-currs = dict(credits=credits, triangles=triangles)
+# credits = dict(icon='🪙', amount=100)
+# keys = dict(icon='🔑', amount=2)
+# triangles = dict(icon='🔺', unlocked=False)
+currs = {
+    # 'credits' : dict(icon='https://game-icons.net/icons/ffffff/000000/1x1/delapouite/credits-currency.svg', amount=100),
+    'energy' : dict(icon='https://game-icons.net/icons/ffffff/000000/1x1/sbed/battery-pack-alt.svg', amount=5),
+    'crew' : dict(icon='https://game-icons.net/icons/ffffff/000000/1x1/lorc/space-suit.svg', amount=5),
+    'triangles' : dict(icon='https://game-icons.net/icons/ffffff/000000/1x1/lorc/moebius-triangle.svg', unlocked=False),
+}
 currency = CurrencyHandler(currs)
 # currency.triangles += 1
 # currency.currencies = dict(keys=keys, start=stars)
@@ -94,7 +102,7 @@ energy_button.update = def _():
         energy_button.on_click()
         energy_button.prev_trigger_time = time
 
-power_up_button = Button(y=-.3, color=color.azure, text=' power up', padding=1, shadow=True, text_color=color.white, enabled=False, on_click=def():goto_scene(main_scene)).fit_to_text()
+power_up_button = Button(y=-.3, color=color.azure, text=' power up', padding=.25, shadow=True, text_color=color.white, enabled=False, on_click=def():goto_scene(main_scene)).fit_to_text()
 
 energy_bar = HealthBar(y=.3, bar_color=color.azure, text_color=color.white, max=20)
 energy_bar.value = 0
@@ -111,39 +119,92 @@ class MissionButton(Button):
             # print('---', key, value)
         self.mission = kwargs.mission
         self.position = kwargs.position
-        self.progress_bar = HealthBar(parent=this, y=1, max_value=100, scale=[1.3,.1], text_color=color.black, text_size=1, bar_color=color.lime, enabled=False)
+        self.progress_bar = HealthBar(parent=this, y=1, max_value=100, scale=[1.3,.1], text_color=color.clear, text_size=1, bar_color=color.lime, enabled=False)
         self.progress_bar.value = 0
-        self.reward_panel = Entity(parent=this, scale=[1.5,1], color=color.black, alpha=.9, y=.75, text='Success!', text_origin=[0,.5], text_color=color.lime, roundness=.3, padding=.5, text_size=2, shadow=True, enabled=False)
+        self.reward_panel = Entity(parent=this, scale=[1.5,1.5], color=color.black, alpha=.9, y=.75, text='Success!', text_origin=[0,.5], text_color=color.lime, roundness=.1, padding=.1, text_size=2, shadow=True, enabled=False)
+        self.reward_panel.description = Entity(parent=self.reward_panel, scale=[1,.4], y=.125, text='survivors: 10\niron: 2\ngold: 1', text_size=1.75, color=color.clear, text_color=color.light_gray)
+        self.reward_panel.claim_button = Button(parent=self.reward_panel, text='Claim', color=color.azure, scale=[1,.4], y=-.3, text_color=color.white)
+        self.reward_panel.claim_button.on_click = def():
+            print('claim reward')
+            print(self.reward_panel)
+            self.reward_panel.enabled = False
+            self.mission.in_progress = False
+            for key, value in self.mission.reward:
+                # if not key in currency.currencies:
+                #     print('error: no currency', key)
+                #     continue
+                currency[key] += value
+
+
+    # def reward_setter(self, value):
+    #     self._reward = value
+    #     # self.reward_panel.description.text =
+
+
+    def update(self):
+        if self.mission.in_progress:
+            self.progress_bar.value += self.mission.rate + (held_keys['f']*10)
+            if self.progress_bar.value >= self.progress_bar.max_value:
+                self.mission.in_progress = False
+                self.reward_panel.enabled = True
+                self.progress_bar.enabled = False
+
 
 
 mission_panel = Entity(scale=[.6,.3], color=color.black, alpha=.9, roundness=.05, z=-2, enabled=False, on_click=def():return)
 mission_panel.title = Entity(parent=mission_panel, scale=[.95,.25], color='#123123', text='Asteroid', roundness=.1, text_origin=[0,0], text_color=color.white, y=.5)
 mission_panel.description = Entity(parent=mission_panel, text='Success rate: 50%\nReward:10\nRequirements:', text_color=color.white, origin=[0,.5], y=.25, scale=[.9,.7], text_size=2.5, text_origin=[-.5,.5], color=color.clear)
-mission_panel.start_mission_button = Button(parent=mission_panel, scale=[.8,.2], text='Start', color=color.orange, text_color=color.white, padding=[2,.5], y=-.5, roundness=2, shadow=True).fit_to_text()
+mission_panel.start_mission_button = Button(parent=mission_panel, scale=[.8,.2], text='Start', color=color.orange, text_color=color.white, padding=[.2,.05], y=-.5, roundness=2, shadow=True).fit_to_text()
+mission_panel.start_mission_button.cost_label = Button(parent=mission_panel.start_mission_button, origin=[-.5,-.5], x=-.25, text='?', text_origin=[-.5,0], text_size=1.5, color='#5d5d5dff', text_color='#c5c5c5', scale=[.5,.5], y=.5, roundness=.5, padding=[.05,.025])
+# button.reward_label = Button(parent=button, text='?', text_origin=[.5,0], text_size=1.5, color='#5d5d5dff',text_color='#c5c5c5', scale=[.9,.5], x=.5, y=-.45, roundness=.5, padding=[.5,0])
 
 
 mission_panel.bg = Entity(parent=mission_panel, scale=10, z=1, visible_self=False, on_click=def():mission_panel.enabled=False)
 # mission_panel.enabled = False
 def show_mission_info(mb):
+    if mb.mission.in_progress:
+        return
     mission_panel.title.text = mb.mission.title
     mission_panel.description.text = '???'
     mission_panel.xy = mb.xy
     mission_panel.appear(.2)
+    cost_text = ''
+    for curr, amount in mb.mission.cost:
+        if amount > 0:
+            cost_text += `${amount}${curr} `
+    if cost_text:
+        cost_text = 'cost: ' + cost_text
+    mission_panel.start_mission_button.cost_label.text = cost_text
+    mission_panel.start_mission_button.cost_label.fit_to_text()
+
+
+    # region start mission
     mission_panel.start_mission_button.on_click = def():
         mission_panel.enabled = False
-        mb.progress_bar.enabled = True
+        for key, value in mb.mission.cost:
+            currency[key] -= value
+
         mb.progress_bar.value = 0
+        mb.progress_bar.enabled = True
+        mb.mission.in_progress = True
         print('start mission:', mb.mission)
 
 
 missions = [
-    dict(title='Asteroid', position=[-.2,.4]),
-    dict(title='Asteroid2', position=[.2,.2]),
+    dict(title='Asteroid', position=[-.2,.4], rate=.1, cost={crew=1, energy=10}, reward={credits=20, iron=1}, texture='https://img.freepik.com/premium-vector/asteroid-cartoon-icon-space-element-meteorite-sign_53562-23237.jpg'),
+    dict(title='Asteroid2', position=[.2,.2], rate=.05, cost={energy=20}, reward={credits=35, iron=1}, texture='https://cdn-icons-png.flaticon.com/512/8146/8146602.png'),
 ]
 for m in missions:
-    let mission_button = MissionButton(mission=m, position=m.position)
+    let mission_button = MissionButton(mission=m, position=m.position, texture=m.texture)
     mission_button.on_click = def():
         show_mission_info(mission_button)
+
+
+research_scene = Scene()
+title = Entity(y=.5*aspect_ratio, origin=[0,.5], scale=[1,.2], color='#3e363e', text='Research', text_origin=[0,0], text_size=5, text_color='#b8b8b8')
+
+sunsnake.define(ResearchNode(, Button(scale=.15, roundness=.5, color='#897a7a', shadow=True, text='*', )
+reseach_node = ResearchNode(position=[0,0])
 
 
 # region bottom panel
@@ -152,7 +213,7 @@ button_group = Entity(parent=bottom_panel, scale=[.8,.9], y=.5, color=color.gray
 button_data = [
     dict(name='Engine\nRoom', target_scene=engine_room_scene),
     dict(name='Explore', target_scene=main_scene),
-    dict(name='Upgrades', target_scene=None),
+    dict(name='Research', target_scene=research_scene),
 ]
 
 for i, data in button_data:
@@ -163,6 +224,7 @@ for i, data in button_data:
 # levels_parent = Entity(parent=scene, scale=[.7,.1], color=color.gray, position=[0,-.525], visible_self=False)
 # for i in range(7):
 #     Button(parent=levels_parent, scale=[1/7,1], roundness=.25, color=color.red, text=`${i}`, text_size=2, x=-.5+(i*1/7)+(1/7/2))
+
 
 goto_scene(main_scene, False) # set start scene
 
@@ -176,7 +238,17 @@ goto_scene(main_scene, False) # set start scene
 #     stars = dict(icon='⭐'),
 #     # '💎','🪵','🪨','🫐','🍉','🥝']
 # )
+cheat_inputs = Entity(visible_self=False)
+cheat_inputs.input = def input(key):
+    if key == '1':
+        currency.energy += 1
+    if key == '2':
+        currency.crew += 1
+    if key == '3':
+        currency.triangles += 1
 
+
+# set_scale(.25)
 mouse.click_animation = 'impact_effect.gif'
 def input(key):
     if key == 'space': # cheats
