@@ -133,7 +133,7 @@ def add_layer(name='layer', _w=W, _h=H, enabled=True, select=True):
     layers.append(layer)
 
     layer.canvas = document.createElement('canvas');
-    layer.canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none;'
+    layer.canvas.style = 'width:100%; height:100%; top:0%; bottom:0%; pointer-events:none; image-rendering: pixelated'
     layer.canvas.width = _w
     layer.canvas.height = _h
     layer.model.appendChild(layer.canvas)
@@ -258,7 +258,8 @@ stubby_brush = {'name':'stubby_brush', 'textures':["RGBA anim 01.png", "RGBA ani
 starfield_brush = {'name':'starfield_brush', 'textures':["starfield.png", ], 'size':[256, 256], 'spacing':1, 'painterly_brush':1, 'rotate':'random', 'draw_on_click':True, 'min_pressure':0}
 star_brush = {'name':'star_brush', 'textures':["star_brush.png", ], 'size':[128, 128], 'spacing':5, 'painterly_brush':0, 'rotate':False, 'draw_on_click':True, 'min_pressure':0}
 chaos = {'name':'chaos', 'textures':["chaos_0.png", "chaos_1.png", "chaos_2.png"], 'size':[256, 256], 'spacing':.2, 'painterly_brush':0, 'rotate':'random', 'draw_on_click':True, 'min_pressure':0}
-lasso_line = {'name':'lasso_line', 'textures':None, 'shape':'circle', 'size':[2, 2], 'spacing':.1, brush_type:'lasso', 'rotate':False, 'draw_on_click':True, 'min_pressure':1}
+lasso_line_100 = {'name':'lasso_line_100', 'textures':None, 'shape':'circle', 'size':[2, 2], 'spacing':1, line_spacing:100, brush_type:'lasso', 'rotate':False, 'draw_on_click':True, 'min_pressure':1, steps:2}
+lasso_line = {'name':'lasso_line', 'textures':None, 'shape':'circle', 'size':[2, 2], 'spacing':1, line_spacing:'auto', brush_type:'lasso', 'rotate':False, 'draw_on_click':True, 'min_pressure':1}
 # lasso_line.draw = def(x, y, )
 
 brushes = [heavypaint_dry_brush,
@@ -273,6 +274,7 @@ stubby_brush,
 starfield_brush,
 # star_brush,
 chaos,
+lasso_line_100,
 lasso_line,
 ]
 # poke_brush_scatter,
@@ -391,35 +393,42 @@ def update_brush_tip(color):
                 brush_canvas.height *= mouse.pressure
             brush_canvas_context = brush_canvas.getContext("2d", {willReadFrequently: true})
             brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
-            if not SMUDGE:
-                img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
+            # if not SMUDGE:
+            img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
 
-                for i in range(0, img_data.data.length, 4):
-                    img_data.data[i] = img_data.data[i] * (color[0]/255)
-                    img_data.data[i+1] = img_data.data[i+1] * (color[1]/255)
-                    img_data.data[i+2] = img_data.data[i+2] * (color[2]/255)
-                    img_data.data[i+3] = img_data.data[i+3] * (color[3]/255)
+            for i in range(0, img_data.data.length, 4):
+                img_data.data[i] = img_data.data[i] * (color[0]/255)
+                img_data.data[i+1] = img_data.data[i+1] * (color[1]/255)
+                img_data.data[i+2] = img_data.data[i+2] * (color[2]/255)
+                img_data.data[i+3] = img_data.data[i+3] * (color[3]/255)
 
-            elif SMUDGE:
-                print('SMUDGE')
-            #     # sample the canvas for colors and multiply with brush alpha
-                pos = get_canvas_position()
-                img_data = current_layer.ctx.getImageData(pos[0]-(brush_size[0]/2), pos[1]-brush_size[1]/2, brush_size[0], brush_size[1])
-                brush_pixels = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
-
-                for i in range(0, img_data.data.length, 4):
-                    img_data.data[i+3] = img_data.data[i+3] * brush_pixels.data[i+3] * (1/255*SMUDGE_STRENGTH)
-                    # img_data.data[i+3] = img_data.data[i+3]
-            #     # brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
-            #     # img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
-            #     # self.smudge_IMG = self.parent.current_layer.img_data.crop((
-            #     #         stamp_pos[0], stamp_pos[1],
-            #     #         stamp_pos[0]+self.brush.width, stamp_pos[1]+self.brush.height))
-            #     #
-            #     #     try:
-            #     #         self.smudge_IMG.putalpha(self.brush.split()[-1])
-            #     #     except:
-            #     #         pass
+            # elif SMUDGE:
+            #     print('SMUDGE')
+            # #     # sample the canvas for colors and multiply with brush alpha
+            #     print('sample under')
+            #     pos = get_canvas_position()
+            #     set_color(sample_color(pos))
+            #     color = current_color
+            #     # img_data = current_layer.ctx.getImageData(pos[0]-(brush_size[0]/2), pos[1]-brush_size[1]/2, brush_size[0], brush_size[1])
+            #     # brush_pixels = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
+            #     img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
+            #     for i in range(0, img_data.data.length, 4):
+            #         img_data.data[i] = img_data.data[i] * (color[0]/255)
+            #         img_data.data[i+1] = img_data.data[i+1] * (color[1]/255)
+            #         img_data.data[i+2] = img_data.data[i+2] * (color[2]/255)
+            #         img_data.data[i+3] = img_data.data[i+3] * (color[3]/255)
+            #         # img_data.data[i+3] = img_data.data[i+3] * (1/255*SMUDGE_STRENGTH)
+            #         # img_data.data[i+3] = img_data.data[i+3]
+            # #     # brush_canvas_context.drawImage(brush, 0, 0, brush_size[0], brush_size[1])
+            # #     # img_data = brush_canvas_context.getImageData(0, 0, brush_size[0], brush_size[1])
+            # #     # self.smudge_IMG = self.parent.current_layer.img_data.crop((
+            # #     #         stamp_pos[0], stamp_pos[1],
+            # #     #         stamp_pos[0]+self.brush.width, stamp_pos[1]+self.brush.height))
+            # #     #
+            # #     #     try:
+            # #     #         self.smudge_IMG.putalpha(self.brush.split()[-1])
+            # #     #     except:
+            # #     #         pass
 
             brush_canvas_context.putImageData(img_data, 0, 0)
     else: # special tint for paiterly brushes to keep contrast
@@ -511,14 +520,24 @@ COLOR_JITTER = 32
 JITTER_TYPE = 'hue' # hue, saturation
 jitter_type_button = *Button(scale=.1, text='hue', x=window.right[0], y=0)
 jitter_type_button.title = Entity(parent=jitter_type_button, scale=1, origin=jitter_type_button.origin, text='jitter type', text_color=color.light_gray, color=color.clear, y=-.1, text_origin=[0,.5], text_size=1.5)
+jitter_settings = {
+    'hue~128': ['hue', 128],
+    'hue~64': ['hue', 64],
+    'RGB~64': ['RGB', 64],
+    'RGB~32': ['RGB', 32],
+    'None'   : ['RGB', 0],
+}
+jitter_type_button.text = jitter_settings.keys()[0]
 jitter_type_button.on_click = def():
-    if JITTER_TYPE == 'hue':
-        JITTER_TYPE = 'RGB'
-        COLOR_JITTER = 64
-    elif JITTER_TYPE == 'RGB':
-        JITTER_TYPE = 'hue'
-        COLOR_JITTER = 128
-    jitter_type_button.text = JITTER_TYPE
+    index = jitter_settings.keys().index(jitter_type_button.text) + 1
+    if index >= len(jitter_settings.keys()):
+        index = 0
+    print(index, 'JITTER_TYPE:', JITTER_TYPE, )
+    next_name = jitter_settings.keys()[index]
+    jitter_type_button.text = next_name
+    JITTER_TYPE = jitter_settings[next_name][0]
+    COLOR_JITTER = jitter_settings[next_name][1]
+
 
 def draw_circle(x, y):
     current_layer.ctx.globalAlpha = current_color[3]/255
@@ -531,15 +550,12 @@ def draw_circle(x, y):
     elif JITTER_TYPE == 'hue':
         _color_as_hsv = rgb_to_hsv(current_color)
         _colr =hsv(_color_as_hsv[0] + random.randint(-COLOR_JITTER, COLOR_JITTER), _color_as_hsv[1], _color_as_hsv[2])
-    # elif JITTER_TYPE == 'saturation':
-    #     _color_as_hsv = rgb_to_hsv(current_color)
-    #     _colr =hsv(_color_as_hsv[0], _color_as_hsv[1] + random.randint(-COLOR_JITTER, COLOR_JITTER)/255, _color_as_hsv[2])
 
     current_layer.ctx.fillStyle = `rgba(${_colr[0]}, ${_colr[1]}, ${_colr[2]}, ${current_color[3]})`
     if ERASING:
         current_layer.ctx.globalAlpha = 0
         # current_layer.ctx.fillStyle = `rgba(256, 256, 256, 64)`
-        print('aaa')
+        # print('aaa')
 
 
     if not selection.active:
@@ -620,7 +636,7 @@ def draw_brush_image(brush_canvas, x, y):
             #         # if current_pixel_color[0] == current_color[0] and current_pixel_color[1] == current_color[1] and current_pixel_color[2] == current_color[2]:
             #             current_layer.ctx.fillRect(int(_x), int(_y), 1, 1);
 
-alt_button = *Button(scale=.1, text='eyeropper\n(hold)', x=window.right[0], y=.1)
+alt_button = *Button(scale=.1, text='eyeropper\n(hold)', x=window.right[0], y=.1, color=color.azure, roundness=.5)
 
 def sample_color(position=None):
     # combined_sample = canvas_entity.color
@@ -699,6 +715,10 @@ def paint():
         start_position = [x,y]
         prev_pos = [x,y]
         pixels_traveled = 0
+
+        if SMUDGE: # sample color on start
+            set_color(sample_color())
+
         return
 
     if snap_to_hex:
@@ -714,7 +734,9 @@ def paint():
     distance_since_last_frame = distanceApprox(prev_pos, [x,y])
     pixels_traveled += distance_since_last_frame
     spacing_in_pixels = brush_size[1]*SPACING
-    steps = floor(pixels_traveled / spacing_in_pixels)
+    steps = current_brush.steps
+    if not steps:
+        steps = floor(pixels_traveled / spacing_in_pixels)
 
 
     radians = 0
@@ -726,7 +748,17 @@ def paint():
         update_brush_tip(sample_color([x,y]))
 
     if current_brush.brush_type == 'lasso':
-        draw_line(start_position, [x,y], 100)
+        _line_spacing = current_brush.line_spacing
+        if _line_spacing == 'auto':
+            _distance = distanceApprox(start_position, [x,y])
+            spacing_in_pixels = brush_size[1]*SPACING
+            _line_spacing = floor(_distance / spacing_in_pixels)
+
+        for i in range(0, steps):
+            t = i / steps
+            let _x = lerp(prev_pos[0], x, t)
+            let _y = lerp(prev_pos[1], y, t)
+            draw_line(start_position, [_x,_y], _line_spacing)
     else:
         draw_line(prev_pos, [x,y], steps)
 
@@ -915,7 +947,7 @@ def flip_image_data_vertically(imageData):
 
 def update():
     if mouse.hovered_entity == bg:
-        if not held_keys['alt'] and current_tool == brush_tool: # if not sampling color
+        if not held_keys['alt'] and current_tool == brush_tool and current_brush.brush_type != 'lasso': # if not sampling color
             document.body.style.cursor = 'none'
         else:
             document.body.style.cursor = 'crosshair'
@@ -1175,12 +1207,9 @@ async def paste(e):
         loaded_image = new Image();
         loaded_image.onload = def on_load():
             current_layer.ctx.clearRect(0, 0, W, H)
-            current_layer.ctx.drawImage(loaded_image, 0, 0)
+            current_layer.ctx.drawImage(loaded_image, 0, 0, W, H)  # Stretch the image to fit W, H
 
         loaded_image.src = source
-        # current_layer.ctx.drawImage(pastedImage, 0, 0)
-        # after .01:
-        #     current_layer.ctx.drawImage(pastedImage, 0, 0)
         record_undo()
 
 window.addEventListener("paste", paste)
@@ -2000,6 +2029,11 @@ def goto_frame(to_frame, save_previous_frame=True):
         current_layer.ctx.drawImage(loaded_image, 0, 0)
 
     frame_counter.text = `frame ${animator.i}/${len(animator.frames)-1}`
+
+
+set_brush(round_bitmap_brush)
+set_brush_size([100,100])
+SMUDGE = True
 
 </script>
 
