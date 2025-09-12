@@ -110,6 +110,9 @@ energy_bar.value = 0
 
 # region main scene
 main_scene = Scene(color='#111111')
+# Entity(parent=main_scene, texture='main_screen', scale=[1,2], alpha=.2)
+Entity(parent=main_scene, texture='map_3x3', scale=[1,2], alpha=.2)
+
 
 class MissionButton(Button):
     def __init__(self, kwargs):
@@ -166,7 +169,8 @@ def show_mission_info(mb):
         return
     mission_panel.title.text = mb.mission.title
     mission_panel.description.text = '???'
-    mission_panel.xy = mb.xy
+    mission_panel.x = clamp(mb.x, -.2, .2)
+    mission_panel.y = mb.y + .2
     mission_panel.appear(.2)
     cost_text = ''
     for curr, amount in mb.mission.cost:
@@ -180,6 +184,16 @@ def show_mission_info(mb):
 
     # region start mission
     mission_panel.start_mission_button.on_click = def():
+        can_afford = True
+        for key, value in mb.mission.cost:
+            if currency[key] - value < 0:
+                can_afford = False
+                break
+
+        if not can_afford:
+            print('cant afford')
+            return
+
         mission_panel.enabled = False
         for key, value in mb.mission.cost:
             currency[key] -= value
@@ -193,14 +207,59 @@ def show_mission_info(mb):
 missions = [
     dict(title='Asteroid', position=[-.2,.4], rate=.1, cost={crew=1, energy=10}, reward={credits=20, iron=1}, texture='https://img.freepik.com/premium-vector/asteroid-cartoon-icon-space-element-meteorite-sign_53562-23237.jpg'),
     dict(title='Asteroid2', position=[.2,.2], rate=.05, cost={energy=20}, reward={credits=35, iron=1}, texture='https://cdn-icons-png.flaticon.com/512/8146/8146602.png'),
+    dict(title='Asteroid2', position=[.2,.2], rate=.05, cost={energy=20}, reward={credits=35, iron=1}, texture='https://cdn-icons-png.flaticon.com/512/8146/8146602.png'),
+    dict(title='Asteroid2', position=[.2,.2], rate=.05, cost={energy=20}, reward={credits=35, iron=1}, texture='https://cdn-icons-png.flaticon.com/512/8146/8146602.png'),
+    dict(title='Asteroid2', position=[.2,.2], rate=.05, cost={energy=20}, reward={credits=35, iron=1}, texture='https://cdn-icons-png.flaticon.com/512/8146/8146602.png'),
+    dict(title='Asteroid2', position=[.2,.2], rate=.05, cost={energy=20}, reward={credits=35, iron=1}, texture='https://cdn-icons-png.flaticon.com/512/8146/8146602.png'),
+    dict(title='Asteroid2', position=[.2,.2], rate=.05, cost={energy=20}, reward={credits=35, iron=1}, texture='https://cdn-icons-png.flaticon.com/512/8146/8146602.png'),
+    dict(title='Asteroid2', position=[.2,.2], rate=.05, cost={energy=20}, reward={credits=35, iron=1}, texture='https://cdn-icons-png.flaticon.com/512/8146/8146602.png'),
+    dict(title='Asteroid2', position=[.2,.2], rate=.05, cost={energy=20}, reward={credits=35, iron=1}, texture='https://cdn-icons-png.flaticon.com/512/8146/8146602.png'),
 ]
-for m in missions:
-    let mission_button = MissionButton(mission=m, position=m.position, texture=m.texture)
+planet_parent = Entity(visible_self=False)
+for i, m in missions:
+    let mission_button = MissionButton(parent=planet_parent, mission=m, position=m.position, texture=m.texture, text=`${i}`, text_color=color.white, text_size=2, text_origin=[-.5,.5])
     mission_button.on_click = def():
         show_mission_info(mission_button)
 
+grid_layout(planet_parent.children, dict(spacing=[1.5,1.5], offset=[-.25,-.2], max_x=3, y_direction=-1))
+
+class Variable:
+    def __init__(self, start_value):
+        print('init variable to:', start_value)
+        self.value = start_value
+
+    get value():
+        return self._value
+    set value(value):
+        print(self._value, '-->', value)
+        if self._value != value:
+            print('set value to:', value, self.on_value_changed)
+            if self.on_value_changed:
+                self.on_value_changed()
+        self._value = value
+
+# region survey button and planet unlocking
+survey_button = Button(text='survey', y=.755, scale=[.25,.15], cost=0)
+NUM_PLANETS_UNLOCKED = Variable(0)
+NUM_PLANETS_UNLOCKED.on_value_changed = def():
+    print('unlock planets')
+    for e in planet_parent.children:
+        e.locked = True
+    for i in range(NUM_PLANETS_UNLOCKED):
+        planet_parent.children[i].locked = False
+
+survey_button.on_click = def():
+    print(NUM_PLANETS_UNLOCKED.value)
+    if NUM_PLANETS_UNLOCKED.value < 8:
+        NUM_PLANETS_UNLOCKED.value += 1
+        save_system_save('num_planets_unlocked', NUM_PLANETS_UNLOCKED.value)
+NUM_PLANETS_UNLOCKED.value = save_system_load('num_planets_unlocked', 1)
 
 research_scene = Scene()
+ref = Entity(parent=research_scene, texture='research', scale=[1,2], alpha=.2)
+ref.scale_x *= .9
+ref.scale_y *= .9
+
 title = Entity(y=.5*aspect_ratio, origin=[0,.5], scale=[1,.2], color='#3e363e', text='Research', text_origin=[0,0], text_size=5, text_color='#b8b8b8')
 
 sunsnake.define(ResearchNode(, Button(scale=.15, roundness=.5, color='#897a7a', shadow=True, text='*', )

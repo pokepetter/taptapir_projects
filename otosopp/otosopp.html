@@ -8,6 +8,7 @@
 <script type='text/sunsnake'>
 
 
+
 def get_combined_key(key):
     modifier_keys = ['control', 'shift', 'alt']
     combined_key = ''
@@ -21,7 +22,7 @@ def get_combined_key(key):
 
 input_handler = {'get_combined_key':get_combined_key}
 
-
+color.green = '#08973a'
 set_window_color('#222')
 set_background_color('#111')
 if browser_aspect_ratio > 1:
@@ -318,7 +319,7 @@ def set_brush(brush):
 
 brush_size = [64,64]
 brush_cursor = Entity(parent=bg, color=color.clear, scale=.1, z=-10)
-brush_cursor.model.style.borderWidth = '1px'
+brush_cursor.model.style.borderWidth = '2px'
 brush_cursor.model.style.borderColor = '#cccccc33'
 brush_cursor.model.style.borderStyle = 'solid'
 brush_cursor.model.style.borderRadius = '50%'
@@ -518,7 +519,7 @@ def get_canvas_position(layer=current_layer):
 
 COLOR_JITTER = 32
 JITTER_TYPE = 'hue' # hue, saturation
-jitter_type_button = *Button(scale=.1, text='hue', x=window.right[0], y=0)
+jitter_type_button = *Button(scale=.09, text='hue', x=window.right[0], y=0)
 jitter_type_button.title = Entity(parent=jitter_type_button, scale=1, origin=jitter_type_button.origin, text='jitter type', text_color=color.light_gray, color=color.clear, y=-.1, text_origin=[0,.5], text_size=1.5)
 jitter_settings = {
     'hue~128': ['hue', 128],
@@ -636,7 +637,23 @@ def draw_brush_image(brush_canvas, x, y):
             #         # if current_pixel_color[0] == current_color[0] and current_pixel_color[1] == current_color[1] and current_pixel_color[2] == current_color[2]:
             #             current_layer.ctx.fillRect(int(_x), int(_y), 1, 1);
 
-alt_button = *Button(scale=.1, text='eyeropper\n(hold)', x=window.right[0], y=.1, color=color.azure, roundness=.5)
+
+alt_button = *Button(scale=.1, text='eyedropper\n(hold)', x=window.right[0], y=.1, color=color.green, roundness=.5)
+
+SAMPLE_ON_START = False
+sample_on_start_toggle = *Button(position=[window.right[0],-.1], scale=.09, text='Sample on start:', text_size=2)
+sample_on_start_toggle.input = def input(key):
+    if key == 'f':
+        sample_on_start_toggle.on_click()
+
+sample_on_start_toggle.on_click = def():
+    SAMPLE_ON_START = not SAMPLE_ON_START
+    sample_on_start_toggle.text = `Sample on start:\n${SAMPLE_ON_START}`
+    if SAMPLE_ON_START:
+        sample_on_start_toggle.color = '#08973a'
+    else:
+        sample_on_start_toggle.color = '#4c4c4c'
+
 
 def sample_color(position=None):
     # combined_sample = canvas_entity.color
@@ -716,7 +733,7 @@ def paint():
         prev_pos = [x,y]
         pixels_traveled = 0
 
-        if SMUDGE: # sample color on start
+        if SAMPLE_ON_START: # sample color on start
             set_color(sample_color())
 
         return
@@ -818,8 +835,8 @@ zoom_label.update = def zoom_label_update():
     bg.scale_x = lerp(bg.scale[0], target_zoom*canvas_aspect, .2)
     bg.scale_y = lerp(bg.scale[1], target_zoom, .2)
 
-zoom_out_button = *Button(text='zoom\nout', scale=.1, x=window.right[0], y=-.25-.1, z=-1, color=color.red, on_click=def():target_zoom-=.25)
-zoom_in_button = *Button(text='zoom\nin', scale=.1, x=window.right[0], y=-.25, z=-1, color=color.red, on_click=def():target_zoom+=.25)
+zoom_out_button = *Button(text='zoom\nout', scale=.09, x=window.right[0], y=-.25-.1, z=-1, on_click=def():target_zoom-=.25)
+zoom_in_button = *Button(text='zoom\nin', scale=.09, x=window.right[0], y=-.25, z=-1, on_click=def():target_zoom+=.25)
 
 def input(key):
     # print(key)
@@ -892,9 +909,6 @@ def input(key):
         bg.lock_y = True
         bg.dragging = False
 
-    if key == 'f':
-        SMUDGE = True
-        print('toggle smudge:', SMUDGE)
 
     if not held_keys['control'] and key == 'h':
         for layer in layers:
