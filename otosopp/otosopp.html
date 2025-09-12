@@ -1657,7 +1657,7 @@ async def import_file():
     _IMG = new Image()
     reader.onload = def on_load(event):
         _IMG.onload = def():
-            new_document(this.width, this.height)
+            new_document(_IMG.width, _IMG.height)
             current_layer.ctx.drawImage(_IMG,0,0)
             record_undo()
 
