@@ -348,7 +348,6 @@ current_color = [32, 128, 128, 255]
 # print('----------------', random.randint(0,360)/60)
 current_color = hsv(random.randint(0,360), 1, 1, 1)
 drawing = False
-smoothing = False
 prev_pos = None
 start_position = None
 snap_to_hex = False
@@ -517,6 +516,7 @@ def get_canvas_position(layer=current_layer):
     return [int((((pos[0]-(layer.x*.5))*2)+.5) * W), int((((pos[1]-(layer.y*.5))*2)-.5) * -H)]
     # return [int((((pos[0])*2)+.5) * W), int((((pos[1])*2)-.5) * -H)]
 
+# region color jitter
 COLOR_JITTER = 32
 JITTER_TYPE = 'hue' # hue, saturation
 jitter_type_button = *Button(scale=.09, text='hue', x=window.right[0], y=0)
@@ -638,6 +638,7 @@ def draw_brush_image(brush_canvas, x, y):
             #             current_layer.ctx.fillRect(int(_x), int(_y), 1, 1);
 
 
+# region sample
 alt_button = *Button(scale=.1, text='eyedropper\n(hold)', x=window.right[0], y=.1, color=color.green, roundness=.5)
 
 SAMPLE_ON_START = False
@@ -678,6 +679,22 @@ def sample_color(position=None):
     return combined_sample
 
 
+SMOOTHING = False
+smoothing_toggle = *Button(position=[window.right[0],.2], scale=.09, text='smoothing:', text_size=2)
+smoothing_toggle.input = def input(key):
+    if key == 'u':
+        smoothing_toggle.on_click()
+
+smoothing_toggle.on_click = def():
+    SMOOTHING = not SMOOTHING
+    smoothing_toggle.text = `Smoothing:\n${SMOOTHING}`
+    if SMOOTHING:
+        smoothing_toggle.color = color.green
+    else:
+        smoothing_toggle.color = '#4c4c4c'
+
+
+# region paint()
 def paint():
     if not current_layer or not current_layer.enabled:
         return
@@ -710,7 +727,7 @@ def paint():
     if current_brush['min_pressure'] < 1:
         update_brush_tip(current_color)
 
-    if held_keys['w'] and prev_pos:
+    if SMOOTHING and prev_pos:
         x = lerp(prev_pos[0], x, .025)
         y = lerp(prev_pos[1], y, .025)
 
