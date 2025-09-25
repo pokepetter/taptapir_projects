@@ -2069,6 +2069,86 @@ set_brush(round_bitmap_brush)
 set_brush_size([100,100])
 SMUDGE = True
 
+# region filter
+# let filterer = Button(text='filter')
+# filter_grid = [100,100]
+# filterer.on_click = def apply_filter():
+#     for x in range(W/filter_grid[0]):
+#         for y in range(H/filter_grid[1]):
+#             # print(x, y)
+#             # current_color[0] = random.randint(0, 255)
+#             # current_color[1] = random.randint(0, 255)
+#             # current_color[2] = random.randint(0, 255)
+#             # print(current_color)
+#             # mouse.position = [x*100,y*100]
+#             brush_size = [3,3]
+#             current_color = sample_color([x*filter_grid[0],y*filter_grid[1]])
+#             # draw_circle(x*100, y*100)
+#             for dx in range(filter_grid[0]/brush_size[0]):
+#                 for dy in range(filter_grid[1]/brush_size[1]):
+#                     # current_color = sample_color([(x*100)+(dx*brush_size[0]), (y*100)+(dy*brush_size[1])])
+#                     draw_circle((x*filter_grid[1])+(dx*brush_size[0]), (y*filter_grid[1])+(dy*brush_size[1]))
+#                     # mouse.position = [(x*100)+dx, (y*100)+dy]
+
+# fiterer.on_click()
+
+# filterer.input = def filterer_input(key):
+#     if key == 'k':
+#         filterer.on_click()
+
+
+# region grid
+grid = Entity(parent=canvas_entity, visible_self=False, z=-1)
+grid.auto_select_subsection = False
+grid.visuals = Entity(parent=grid, visible_self=False, enabled=False)
+for x in range(4):
+    for y in range(4):
+        let grid_section = Entity(parent=grid.visuals, scale=1/4, roundness=0, origin=[-.5,-.5], position=[-.5+(x/4),-.5+(y/4)], color=color.clear)
+        grid_section.model.style.borderStyle = 'solid'
+        grid_section.model.style.borderWidth = '1px'
+        grid_section.model.style.borderColor = '#b8b8b822'
+grid.active_section_indicator = Entity(parent=grid.visuals, origin=[-.5,-.5], scale=1/4, color=color.clear, z=-1)
+# grid.active_section_indicator.model.style.borderStyle = 'solid'
+# grid.active_section_indicator.model.style.borderWidth = '4px'
+# grid.active_section_indicator.model.style.borderColor = '#b8b8b82'
+
+grid.input = def grid_input(key):
+    if key == 'g':
+        if held_keys['alt']:
+            grid.visuals.enabled = False
+            selection.matrix = Array2D(W,H)
+            render_selection()
+        elif held_keys['control']:
+            grid.auto_select_subsection = True
+            grid.visuals.enabled = True
+        else:
+            grid.visuals.enabled = True
+        grid.select_subsection()
+
+
+    elif grid.auto_select_subsection:
+        print(key, held_keys['alt'], mouse.hovered_entity == bg)
+        if key == 'left mouse down' and not held_keys['alt'] and mouse.hovered_entity == bg:
+            grid.select_subsection()
+
+
+grid.select_subsection = def():
+    cursor_pos = get_canvas_position()
+    coord = [floor(cursor_pos[0]/W*4), floor((cursor_pos[1])/H*4)+1]
+    print(cursor_pos, coord)
+    grid.active_section_indicator.position = [-.5+(coord[0]/4),.5-(coord[1]/4)]
+    section_size = [W/4, H/4]
+    start_x = floor(cursor_pos[0]/(W/4))*section_size[0]
+    start_y = floor(cursor_pos[1]/(H/4))*section_size[1]
+    print('coord:', start_x, start_y)
+
+    selection.matrix = Array2D(W,H)
+    for x in range(start_x, start_x+section_size[0]):
+        for y in range(start_y, start_y+section_size[1]):
+            selection.matrix[x][y] = True
+
+    render_selection()
+
 </script>
 
 // <script src="https://cdn.cde.run/Joycon.min.js"></script>
