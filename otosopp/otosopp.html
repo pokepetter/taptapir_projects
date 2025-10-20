@@ -261,6 +261,7 @@ star_brush = {'name':'star_brush', 'textures':["star_brush.png", ], 'size':[128,
 chaos = {'name':'chaos', 'textures':["chaos_0.png", "chaos_1.png", "chaos_2.png"], 'size':[256, 256], 'spacing':.2, 'painterly_brush':0, 'rotate':'random', 'draw_on_click':True, 'min_pressure':0}
 lasso_line_100 = {'name':'lasso_line_100', 'textures':None, 'shape':'circle', 'size':[2, 2], 'spacing':1, line_spacing:100, brush_type:'lasso', 'rotate':False, 'draw_on_click':True, 'min_pressure':1, steps:2}
 lasso_line = {'name':'lasso_line', 'textures':None, 'shape':'circle', 'size':[2, 2], 'spacing':1, line_spacing:'auto', brush_type:'lasso', 'rotate':False, 'draw_on_click':True, 'min_pressure':1}
+line = {'name':'line', 'textures':None, 'shape':'circle', 'size':[2, 2], 'spacing':1, line_spacing:'auto', brush_type:'line', 'rotate':False, 'draw_on_click':False, 'min_pressure':1}
 # lasso_line.draw = def(x, y, )
 
 brushes = [heavypaint_dry_brush,
@@ -277,6 +278,7 @@ starfield_brush,
 chaos,
 lasso_line_100,
 lasso_line,
+line,
 ]
 # poke_brush_scatter,
 # poke_brush_scatter,
@@ -341,6 +343,7 @@ rotate_brush = True
 using_painterly_brush = True
 prev_brush_tip = -1
 set_brush(lasso_line)
+set_brush(line)
 # set_brush(round_brush)
 # set_brush_size([64,64])
 IMG = new Image()
@@ -474,6 +477,10 @@ brush_tool.input = def brush_tool_input(key):
             prev_pos = None
 
         drawing = True
+
+        if current_brush.brush_type == 'line':
+            line_preview.enabled = True
+            line_preview.position = brush_cursor.xy
         # print('start drawing')
         # temp_ctx.clearRect(0, 0, W, H)
         # current_layer.ctx.putImageData(img_data, x-(brush_size[0]/2), y-(brush_size[1]/2))
@@ -495,6 +502,37 @@ brush_tool.input = def brush_tool_input(key):
 
     if drawing and key == 'left mouse up':
         drawing = False
+        start_color = sample_color(start_position)
+        end_color = sample_color([x,y])
+        line_preview.enabled = False
+        if current_brush.brush_type == 'line':
+            # # draw_line(start_position, [x,y], 10)
+            dist = distanceApprox(start_position, [x,y])
+            # spacing_in_pixels = brush_size[1]*SPACING
+            # steps = current_brush.steps
+            steps = dist
+            if not steps:
+                steps = floor(dist / spacing_in_pixels)
+            print('line steps:', steps, dist)
+
+            for i in range(0, steps):
+                t = i / steps
+                let _x = lerp(start_position[0], x, t)
+                let _y = lerp(start_position[1], y, t)
+
+                if current_brush.rotate == 'random':
+                    radians = random.randint(0, 360) * Math.PI / 180
+
+                current_color = [
+                    lerp(start_color[0], end_color[0], t),
+                    lerp(start_color[1], end_color[1], t),
+                    lerp(start_color[2], end_color[2], t),
+                    lerp(start_color[3], end_color[3], t),
+                    ]
+                # print('*---', current_color)
+                stamp(_x, _y, radians)
+
+        # current_color = original_color
         # print('stop drawing')
         # img_data = temp_ctx.getImageData(0, 0, W, H)
         # current_layer.ctx.putImageData(img_data, 0, 0)
@@ -515,6 +553,9 @@ def get_canvas_position(layer=current_layer):
     pos = mouse.point
     return [int((((pos[0]-(layer.x*.5))*2)+.5) * W), int((((pos[1]-(layer.y*.5))*2)-.5) * -H)]
     # return [int((((pos[0])*2)+.5) * W), int((((pos[1])*2)-.5) * -H)]
+
+def pixel_position_to_bg_pos(pos):
+    return [(-.5+pos[0]/W)/2, (.5-pos[1]/H)/2]
 
 # region color jitter
 COLOR_JITTER = 32
@@ -679,14 +720,18 @@ def sample_color(position=None):
     return combined_sample
 
 
-SMOOTHING = False
+SMOOTHING = 0
 smoothing_toggle = *Button(position=[window.right[0],.2], scale=.09, text='smoothing:', text_size=2)
 smoothing_toggle.input = def input(key):
     if key == 'u':
         smoothing_toggle.on_click()
 
 smoothing_toggle.on_click = def():
-    SMOOTHING = not SMOOTHING
+    if SMOOTHING == 0:
+        SMOOTHING = .025
+    else:
+        SMOOTHING = 0
+
     smoothing_toggle.text = `Smoothing:\n${SMOOTHING}`
     if SMOOTHING:
         smoothing_toggle.color = color.green
@@ -727,9 +772,9 @@ def paint():
     if current_brush['min_pressure'] < 1:
         update_brush_tip(current_color)
 
-    if SMOOTHING and prev_pos:
-        x = lerp(prev_pos[0], x, .025)
-        y = lerp(prev_pos[1], y, .025)
+    if SMOOTHING > 0 and prev_pos:
+        x = lerp(prev_pos[0], x, SMOOTHING)
+        y = lerp(prev_pos[1], y, SMOOTHING)
 
 
     if prev_pos == None:
@@ -793,12 +838,39 @@ def paint():
             let _x = lerp(prev_pos[0], x, t)
             let _y = lerp(prev_pos[1], y, t)
             draw_line(start_position, [_x,_y], _line_spacing)
+
+    elif current_brush.brush_type == 'line':
+        line_preview.look_in_direction(get_direction_vector(start_position[0], -start_position[1], x, -y))
+        line_preview.scale_x = distance([line_preview.x, line_preview.y/canvas_aspect], [mouse.point[0], mouse.point[1]/canvas_aspect])
+        start_color = sample_color(start_position)
+        start_color = `rgba(${start_color[0]}, ${start_color[1]}, ${start_color[2]}, ${start_color[3]})`
+        end_color = sample_color([x,y])
+        end_color = `rgba(${end_color[0]}, ${end_color[1]}, ${end_color[2]}, ${end_color[3]})`
+        # print(start_color, end_color)
+        line_preview.model.style.background = `linear-gradient(90deg, ${start_color}, ${end_color})`
+
     else:
         draw_line(prev_pos, [x,y], steps)
 
     pixels_traveled -= steps * spacing_in_pixels
     prev_pos = [x, y]
 
+
+def get_direction_vector(start_x, start_y, x, y, normalize=True):
+    const dx = x - start_x
+    const dy = y - start_y
+
+    if not normalize:
+        return [dx, dy]
+
+
+    const magnitude = Math.sqrt(dx * dx + dy * dy)
+    if magnitude == 0:
+        return [0, 0]
+
+    return [dx / magnitude, dy / magnitude]
+
+line_preview = Entity(parent=bg, scale=[.1,.025], origin=[-.5,0], enabled=False, z=-1)
 
 
 def draw_line(from_pos, to_pos, steps=1):
@@ -939,7 +1011,7 @@ def input(key):
 
     if key == '?':
         current_color_as_hsv = rgb_to_hsv(current_color)
-        # random_color = [random.randint(0,360), current_color[1], current_color[2], current_color[3]]  # this was a mistake, but creates only a small variation and could be useful to have
+        # random_color = [random.randint(0,360), current_color[1], current_color[2], current_color[3]]  # self was a mistake, but creates only a small variation and could be useful to have
         random_color = hsv(random.randint(0,360), current_color_as_hsv[1], current_color_as_hsv[2], current_color_as_hsv[3])
         set_color(random_color)
 
@@ -978,7 +1050,7 @@ def flip_image_data_vertically(imageData):
 
 def update():
     if mouse.hovered_entity == bg:
-        if not held_keys['alt'] and current_tool == brush_tool and current_brush.brush_type != 'lasso': # if not sampling color
+        if not held_keys['alt'] and current_tool == brush_tool and current_brush.brush_type != 'lasso' and current_brush.brush_type != 'line': # if not sampling color
             document.body.style.cursor = 'none'
         else:
             document.body.style.cursor = 'crosshair'
@@ -1742,53 +1814,53 @@ if '?' in window.location.href:
     print('---------------', args)
 
 
-class RadialMenu extends Entity:
-    constructor(kwargs):
+class RadialMenu(Entity):
+    def __init__(self, kwargs):
         let settings = dict(parent=camera.ui, visible_self=False, active=False, shortcut=None)
         for key, value in kwargs.items():
             settings[key] = value
 
-        super(settings)
-        this.buttons = settings['buttons']
-        this.menu = Entity(parent=this, visible_self=False, enabled=settings['active'])
-        this._center_indicator = Entity(parent=this.menu, scale=.05, color=color.azure, shadow=True, alpha=.5, roundness=.5)
-        this.line = Entity(parent=this.menu, scale=[.5, .005], origin=[-.5,0], color=color.azure, z=-2, roundness=.5)
-        this.bg = Entity(parent=this.menu, z=0, color=color.black, alpha=.25, scale=10)
-        this.selected_button = None
-        for i, b in enumerate(this.buttons):
-            b.parent = this.menu
-            let angle = (Math.PI/2) -(i / (len(this.buttons)/2)) * Math.PI
+        super().__init__(settings)
+        self.buttons = settings['buttons']
+        self.menu = Entity(parent=self, visible_self=False, enabled=settings['active'])
+        self._center_indicator = Entity(parent=self.menu, scale=.05, color=color.azure, shadow=True, alpha=.5, roundness=.5)
+        self.line = Entity(parent=self.menu, scale=[.5, .005], origin=[-.5,0], color=color.azure, z=-2, roundness=.5)
+        self.bg = Entity(parent=self.menu, z=0, color=color.black, alpha=.25, scale=10)
+        self.selected_button = None
+        for i, b in enumerate(self.buttons):
+            b.parent = self.menu
+            let angle = (Math.PI/2) -(i / (len(self.buttons)/2)) * Math.PI
             b.x = (.15 * Math.cos(angle))
             b.y = (.15 * Math.sin(angle))
 
-    update():
-        this.line.scale_x = distance(this.menu.xy, mouse.position)
-        this.line.look_at([mouse.position[0]-this.menu.x, mouse.position[1]-this.menu.y])
+    def update(self):
+        self.line.scale_x = distance(self.menu.xy, mouse.position)
+        self.line.look_at([mouse.position[0]-self.menu.x, mouse.position[1]-self.menu.y])
 
-        if distance(this.menu.xy, mouse.position) < .1:
-            this.selected_button = None
-            for e in this.buttons:
+        if distance(self.menu.xy, mouse.position) < .1:
+            self.selected_button = None
+            for e in self.buttons:
                 e.color = color.black
             return
 
-        let angle = this.line.rotation + 90 + (180/len(this.buttons))
+        let angle = self.line.rotation + 90 + (180/len(self.buttons))
         if angle < 0:
             angle = 360 + angle
 
-        this.selected_button = this.buttons[int(angle / 360 * len(this.buttons))]
+        self.selected_button = self.buttons[int(angle / 360 * len(self.buttons))]
 
-        for e in this.buttons:
+        for e in self.buttons:
             e.color = color.black
-        this.selected_button.color = color.azure
+        self.selected_button.color = color.azure
 
-    input(key):
-        if key == this.shortcut:
-            this.menu.xy = mouse.position
-            this.menu.enabled = True
-        elif key == this.shortcut + ' up':
-            this.menu.enabled = False
-            if this.selected_button:
-                this.selected_button.on_click()
+    def input(self, key):
+        if key == self.shortcut:
+            self.menu.xy = mouse.position
+            self.menu.enabled = True
+        elif key == self.shortcut + ' up':
+            self.menu.enabled = False
+            if self.selected_button:
+                self.selected_button.on_click()
 
 
 sunsnake.define(*ShortcutMenuButton(,Button(roundness=.5, scale=.1, color=color.black, text_color=color.white, alpha=.75, text_size=1.5, ignore_collision=False, )
@@ -2065,9 +2137,9 @@ def goto_frame(to_frame, save_previous_frame=True):
     frame_counter.text = `frame ${animator.i}/${len(animator.frames)-1}`
 
 
-set_brush(round_bitmap_brush)
-set_brush_size([100,100])
-SMUDGE = True
+# set_brush(round_bitmap_brush)
+# set_brush_size([100,100])
+# SMUDGE = True
 
 # region filter
 # let filterer = Button(text='filter')

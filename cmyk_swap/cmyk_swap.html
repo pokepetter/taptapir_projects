@@ -451,12 +451,10 @@ def open_loot_box(cost, num, items):
 
 grid_layout(l=shop_menu.children, max_x=2, spacing=[1.05,1.1])
 shop_menu.on_enable = def():
-
-    for i, e in shop_menu.children:
-        e.original_x = e.x
-        e.x += .2 + (i*.05)
-        e.animate('x', e.original_x, duration=.005+(.05*i))
-
+    # for i, e in shop_menu.children:
+    #     e.original_x = e.x
+    #     e.x += .2 + (i*.05)
+    #     e.animate('x', e.original_x, duration=.005+(.05*i))
     refresh_shop()
 
 def refresh_shop():

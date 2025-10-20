@@ -3,7 +3,7 @@
 <script type='text/sunsnake'>
 
 set_background_color("#111")
-set_window_color("#222")
+set_window_color("#2d2d2d")
 
 lines = []
 load()
@@ -39,9 +39,9 @@ def set_mode(value):
         return
 
     mode = value
-    savesystem.save('current_mode', mode)
+    save_system_save('current_mode', mode)
 
-    for (const [i, e] of tools.entries()):
+    for i, e in enumerate(tools):
         if i == ['new', 'move', 'erase'].index(mode):
             e.color = 'green'
         else:
@@ -55,31 +55,60 @@ def set_mode(value):
 
 
 mode = null
-if savesystem.load('current_mode'):
-    set_mode(savesystem.load('current_mode'))
+if save_system_load('current_mode'):
+    set_mode(save_system_load('current_mode'))
 else:
     set_mode('new')
 
-bg = Entity(color='gray', z=1)
+bg = Entity(color='#222222', z=1, shadow=True)
 bg.on_click = def():
-    if mode != 'new':
-        return
+    if mouse.hovered_entity == bg and mode == 'new' or held_keys['control']:
+        line = create_line(mouse.point, mouse.point)
+        hor_step = 1 / line.start_point.snap_x
+        line.start_point.x = round(line.start_point.x * hor_step) / hor_step
+        line.start_point.y = round(line.start_point.y * hor_step) / hor_step
+        save()
 
-    create_line(mouse.position, mouse.position)
-    save()
+bg.input = def _input(key):
+    print(key)
+    if key == 'scroll down':
+        camera.fov /= .9
+        # bg.scale_x *= .9
+        # bg.scale_y *= .9
+        # print(bg.scale)
+    elif key == 'scroll up':
+        camera.fov *= .9
+        # bg.scale_x /= .9
+        # bg.scale_y /= .9
+
+grid_handler = Entity(visible_self=False)
+grid_handler.input = def grid_handler_input(key):
+    if key == 'r':
+        grid_parent.enabled = not grid_parent.enabled
+grid_parent = Entity(visible_self=False)
+for x in range(16):
+    for y in range(16):
+        grid = Entity(parent=grid_parent, scale=1/16*.9, on_click=None, color='#111111', roundness=.1, position=[-.5+(1/16*x+(1/16*.1/2)),-.5+(1/16*y)+(1/16*.1/2)], origin=[-.5,-.5])
+middle_indicator = Entity(parent=grid_parent, scale=.01, color=color.azure)
+vertical_middle = Entity(parent=grid_parent, scale=[.0025,1], color=color.azure, alpha=.2)
+horizontal_middle = Entity(parent=grid_parent, scale=[1,.0025], color=color.azure, alpha=.2)
+
+line_color = color.light_gray
+camera.fov = 1.1
+
 
 def create_line(start, end, start_dragging=true):
-    let line = Entity(scale=.01, color=color.black, origin=[-.5,0], position=start, ignore_collision=true)
+    let line = Entity(scale=.05, color=line_color, origin=[-.5,0], position=start, ignore_collision=true, snap_x=1/16, snap_y=1/16)
     lines.append(line)
     line.el.addEventListener('mouseenter', e => {line.color = 'darkgray'})
-    line.el.addEventListener('mouseleave', e => {line.color = 'black'})
+    line.el.addEventListener('mouseleave', e => {line.color = line_color})
     line.on_click = def():
         if mode == 'move':
             line.start_x = line.x
             line.start_y = line.y
-        elif mode == 'erase':
-            // lines.remove(line)
-            // lines = [e for e in lines if not e === line]
+        if mode == 'erase' or held_keys['alt']:
+            # // lines.remove(line)
+            # // lines = [e for e in lines if not e === line]
             destroy(line.start_point)
             destroy(line.end_point)
             destroy(line)
@@ -93,9 +122,9 @@ def create_line(start, end, start_dragging=true):
         line.end_point.y += line.y - line.start_y
         drop(line)
 
-    let start_point = Entity(scale=.01, color=color.black, draggable=true, roundness=.5, line=line, position=start, start_offset=[0,0], drop=drop)
+    let start_point = Entity(scale=.05, color=line_color, draggable=true, roundness=.5*camera.fov, line=line, position=start, start_offset=[0,0], drop=drop, snap_x=1/16, snap_y=1/16)
     start_point.el.addEventListener('mouseenter', e => {start_point.color = 'cyan'})
-    start_point.el.addEventListener('mouseleave', e => {start_point.color = 'black'})
+    start_point.el.addEventListener('mouseleave', e => {start_point.color = line_color})
     line.start_point = start_point
     start_point.while_dragging = def():
         update_line_position(line)
@@ -103,10 +132,10 @@ def create_line(start, end, start_dragging=true):
     start_point.drop = def():
         drop(line)
 
-    let end_point = Entity(scale=.01, color=color.black, draggable=true, roundness=.5, line=line, position=end, start_offset=[0,0])
+    let end_point = Entity(scale=.05, color=line_color, draggable=true, roundness=.5*camera.fov, line=line, position=end, start_offset=[0,0], snap_x=1/16, snap_y=1/16)
     line.end_point = end_point
     end_point.el.addEventListener('mouseenter', e => {end_point.color = 'magenta'})
-    end_point.el.addEventListener('mouseleave', e => {end_point.color = 'black'})
+    end_point.el.addEventListener('mouseleave', e => {end_point.color = line_color})
     end_point.dragging = start_dragging
     end_point.while_dragging = def():
         update_line_position(line)
@@ -130,21 +159,21 @@ def update_line_position(line):
     line.look_at(line.end_point.position)
 
 
-def save():
-    points = [[[line.start_point.x, line.start_point.y], [line.end_point.x, line.end_point.y]] for line in lines]
-    data = JSON.stringify(points)
-    savesystem.save('lines', data)
+# def save():
+#     points = [[[line.start_point.x, line.start_point.y], [line.end_point.x, line.end_point.y]] for line in lines]
+#     data = JSON.stringify(points)
+#     savesystem.save('lines', data)
 
 def load():
-    data = JSON.parse(savesystem.load('lines'))
+    data = JSON.parse(save_system_load('lines'))
     if not data:
         return false
-    // print('load:', data)
+    # // print('load:', data)
     for e in data:
         line = create_line(e[0], e[1], false)
         update_line_position(line)
 
-// savesystem.clear()
+# // savesystem.clear()
 
 
 
