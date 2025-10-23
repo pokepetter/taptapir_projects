@@ -6,6 +6,7 @@
 
 set_background_color("#111111")
 set_window_color("#222")
+print('Platform:', __PLATFORM__)
 
 SCORE = save_system_load('score')
 BLACK_COINS = save_system_load('black_coins')
@@ -362,30 +363,37 @@ green_box_items = [
     [0, 100%, 'frame.png']
 ]
 
-lucky_bag_cost = ['gold', 50]
-bag_button = *ShopButton(text='Lucky Bag\n\n🪙 50', cost=lucky_bag_cost)
+lucky_bag_cost = ['gold', 40]
+bag_button = *ShopButton(text='Lucky Bag\n\n🪙 40', cost=lucky_bag_cost)
 bag_button.on_click = def():
     open_loot_box(cost=lucky_bag_cost[1], num=3, items=lucky_bag_items)
+    set_green_coins(GREEN_COINS+1)
 
-# cost = ['gold', 0]
-# watch_ad_button = *ShopButton(text='+🪙 20\n\nWatch AD', cost=cost)
-# watch_ad_button.on_click = def():
-#     # Android.startRewardVideoAndroidFunction(paramFromJS)
-#     set_score(SCORE+20)
-#     refresh_shop()
+if __PLATFORM__ == 'Android':
+    cost = ['Free', 0]
+    watch_ad_button = *ShopButton(text='+🪙 20\n\nWatch AD', cost=cost)
+    watch_ad_button.on_click = def():
+        Android.show_reward_ad()
+
+    def __on_reward_earned__(reward_type, amount):
+        print('got ad reward:', reward_type, amount)
+        set_score(SCORE+20)
+        refresh_shop()
+
 
 black_box_cost = ['gold', 500]
 black_box = *ShopButton(text=`Black Box\n\n🪙  ${black_box_cost[1]}`, cost=black_box_cost)
 black_box.on_click = def():
     open_loot_box(cost=black_box_cost[1], num=3, items=black_box_items)
+    set_black_coins(BLACK_COINS+1)
 
 green_box_cost = ['gold', 600]
 green_box = *ShopButton(text=`Green Box\n\n🪙  ${green_box_cost[1]}`, cost=green_box_cost)
 green_box.on_click = def():
     open_loot_box(cost=green_box_cost[1], num=3, items=green_box_items)
 
-sell_green_coin_cost = ['green_coin', 1]
-sell_green_coin_button = *ShopButton(text='Gain +🪙 100\n\n🟢 1', cost=sell_green_coin_cost)
+sell_green_coin_cost = ['green_coin', 10]
+sell_green_coin_button = *ShopButton(text='Gain +🪙 100\n\n🟢 10', cost=sell_green_coin_cost)
 sell_green_coin_button.on_click = def():
     if GREEN_COINS <= 0:
         return
@@ -456,6 +464,9 @@ shop_menu.on_enable = def():
     #     e.x += .2 + (i*.05)
     #     e.animate('x', e.original_x, duration=.005+(.05*i))
     refresh_shop()
+    if __PLATFORM__ == 'Android':
+        Android.load_reward_ad()
+
 
 def refresh_shop():
     print('update shop')
@@ -487,7 +498,7 @@ upgrade_panel_data = [
     {'title':'Ink Dispenser', 'description':'% chance og spawning extra gold', 'varname':'extra_ink_chance', 'slider':None, 'button':None},
 ]
 gradient = [hsv(150+(i*40), .8, .7) for i in range(5)]
-upgrade_costs = [0, 500, 1000, 2000, 5000]
+upgrade_costs = [0, 250, 500, 1000, 2000]
 
 for y, data in upgrade_panel_data:
     y_pos = (-y*.2*1.1) -.05
@@ -592,7 +603,7 @@ def input(key):
         set_score(SCORE + 100)
         refresh_shop()
         refresh_upgrade_menu()
-    if key == 'r':
+    if held_keys['shift'] and key == 'r':
         set_score(0)
         save_system_save('extra_ink_chance', 1)
         save_system_save('green_slot_chance', 1)
