@@ -343,7 +343,7 @@ rotate_brush = True
 using_painterly_brush = True
 prev_brush_tip = -1
 set_brush(lasso_line)
-set_brush(line)
+# set_brush(line)
 # set_brush(round_brush)
 # set_brush_size([64,64])
 IMG = new Image()
@@ -541,8 +541,8 @@ brush_tool.input = def brush_tool_input(key):
         record_undo()
 
 brush_tool.update = def brush_tool_update():
+    print(drawing)
     if drawing:
-
         paint()
 
 
@@ -741,6 +741,7 @@ smoothing_toggle.on_click = def():
 
 # region paint()
 def paint():
+    print('p')
     if not current_layer or not current_layer.enabled:
         return
 
@@ -1835,7 +1836,7 @@ class RadialMenu(Entity):
 
     def update(self):
         self.line.scale_x = distance(self.menu.xy, mouse.position)
-        self.line.look_at([mouse.position[0]-self.menu.x, mouse.position[1]-self.menu.y])
+        //self.line.look_at([mouse.position[0]-self.menu.x, mouse.position[1]-self.menu.y])
 
         if distance(self.menu.xy, mouse.position) < .1:
             self.selected_button = None
