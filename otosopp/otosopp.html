@@ -575,11 +575,15 @@ jitter_type_button.on_click = def():
     if index >= len(jitter_settings.keys()):
         index = 0
     print(index, 'JITTER_TYPE:', JITTER_TYPE, )
-    next_name = jitter_settings.keys()[index]
-    jitter_type_button.text = next_name
-    JITTER_TYPE = jitter_settings[next_name][0]
-    COLOR_JITTER = jitter_settings[next_name][1]
+    name = jitter_settings.keys()[index]
+    set_color_jitter_type(name)
 
+def set_color_jitter_type(name):
+    jitter_type_button.text = name
+    JITTER_TYPE = jitter_settings[name][0]
+    COLOR_JITTER = jitter_settings[name][1]
+
+set_color_jitter_type('RGB~64')
 
 def draw_circle(x, y):
     current_layer.ctx.globalAlpha = current_color[3]/255
@@ -683,21 +687,43 @@ def draw_brush_image(brush_canvas, x, y):
 alt_button = *Button(scale=.1, text='eyedropper\n(hold)', x=window.right[0], y=.1, color=color.green, roundness=.5)
 
 SAMPLE_ON_START = False
-sample_on_start_toggle = *Button(position=[window.right[0],-.1], scale=.09, text='Sample on start:', text_size=2)
+sample_on_start_toggle = *Button(position=[window.right[0],-.1], scale=[.09,.05], text=`Sample\non start:\n${SAMPLE_ON_START}`, text_size=2)
 sample_on_start_toggle.input = def input(key):
     if key == 'f':
         sample_on_start_toggle.on_click()
 
 sample_on_start_toggle.on_click = def():
     SAMPLE_ON_START = not SAMPLE_ON_START
-    sample_on_start_toggle.text = `Sample on start:\n${SAMPLE_ON_START}`
+    sample_on_start_toggle.text = `Sample\non start:\n${SAMPLE_ON_START}`
     if SAMPLE_ON_START:
         sample_on_start_toggle.color = '#08973a'
     else:
         sample_on_start_toggle.color = '#4c4c4c'
 
+SAMPLE_BENEATH = False
+sample_beneath_toggle = *Button(position=[window.right[0],-.155], scale=[.09,.05], text=`Sample\nbeneath:\n${SAMPLE_BENEATH}`, text_size=2)
+sample_beneath_toggle.on_click = def():
+    SAMPLE_BENEATH = not SAMPLE_BENEATH
+    sample_beneath_toggle.text = `Sample\nbeneath:\n${SAMPLE_BENEATH}`
+    if SAMPLE_BENEATH:
+        sample_beneath_toggle.color = '#08973a'
+    else:
+        sample_beneath_toggle.color = '#4c4c4c'
+
+
 
 def sample_color(position=None):
+    current_layer_index = layers.index(current_layer)
+    print('sample beneath', SAMPLE_BENEATH, current_layer_index, len(layers))
+    if SAMPLE_BENEATH and current_layer_index > 0 and len(layers) > 1:
+        layer_beneath = layers[current_layer_index-1]
+        print(layer_beneath)
+        if not position:
+            pos = get_canvas_position(layer_beneath)
+        else:
+            pos = position
+        return layer_beneath.ctx.getImageData(pos[0], pos[1], 1, 1).data
+
     # combined_sample = canvas_entity.color
     combined_sample = [0,0,0,0]
     for layer in layers:
