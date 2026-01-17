@@ -38,7 +38,7 @@ TEXT_SIZE_MULTIPLIER = .5
 document.addEventListener('contextmenu', event => event.preventDefault());
 
 
-bg = Entity(visible_self=False, scale=[2*canvas_scale, 2*canvas_scale], draggable=True, lock_x=True, lock_y=True, ignore_collision=False, min_x=-30, max_x=30, min_y=-30, max_y=30)
+bg = Entity(visible_self=False, scale=[2*canvas_scale, 2*canvas_scale], draggable=True, lock_x=True, lock_y=True, ignore_collision=False)
 
 right_menu_bg = Entity(origin=[.5,0], scale=[.115,1], position=window.right, color=hsv(0,0,.07), alpha=.9, ignore_collision=False)
 menu_parent = Entity(parent=camera.ui, visible_self=False)
@@ -541,8 +541,8 @@ brush_tool.input = def brush_tool_input(key):
         record_undo()
 
 brush_tool.update = def brush_tool_update():
-    print(drawing)
     if drawing:
+
         paint()
 
 
@@ -767,7 +767,6 @@ smoothing_toggle.on_click = def():
 
 # region paint()
 def paint():
-    print('p')
     if not current_layer or not current_layer.enabled:
         return
 
@@ -1218,10 +1217,11 @@ save_button.on_click = def save():
     canvas_for_saving.getContext('2d').clearRect(0, 0, W, H)
     canvas_for_saving.getContext('2d').fillStyle = canvas_entity.color
     canvas_for_saving.getContext('2d').fillRect(0, 0, W, H)
+    # canvas_for_saving.getContext('2d').globalCompositeOperation = "source-over"
     for layer in layers:
         if layer.enabled:
             canvas_for_saving.getContext('2d').drawImage(layer.canvas, 0, 0)
-    save_file(current_layer.canvas)
+    save_file(canvas_for_saving)
 
 save_button.input = def input(key):
     if held_keys['shift'] and key == 's':
@@ -1862,7 +1862,7 @@ class RadialMenu(Entity):
 
     def update(self):
         self.line.scale_x = distance(self.menu.xy, mouse.position)
-        //self.line.look_at([mouse.position[0]-self.menu.x, mouse.position[1]-self.menu.y])
+        self.line.look_at([mouse.position[0]-self.menu.x, mouse.position[1]-self.menu.y])
 
         if distance(self.menu.xy, mouse.position) < .1:
             self.selected_button = None
@@ -2014,6 +2014,15 @@ paint_filter.apply_paint_filter = def():
 # hsv_menu.hue_slider.on_value_changed = apply_hsv_filter
 # hsv_menu.sat_slider.on_value_changed = apply_hsv_filter
 # hsv_menu.val_slider.on_value_changed = apply_hsv_filter
+
+# combiner = Entity(visible_self=False)
+# combiner.input = def(key):
+#     combined_key = input_handler.get_combined_key(key)
+#     if combined_key == 'control+shift+e':
+#         layer = add_layer()
+
+
+
 
 
 def apply_relative_hsv_adjustment(hue, sat, val):
