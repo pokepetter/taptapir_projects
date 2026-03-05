@@ -120,7 +120,7 @@ shadow_entity = Entity(parent=bg, scale=canvas_entity.scale, shadow='0px 0px 100
 layer_menu = *Button(scale=[.105,.4], origin=[0,-.5], x=(right[0]-.0125-.1)-.045, y=window.bottom_right[1]+.1, visible_self=True, roundness=.005, color=hsv(0,0,.03), ignore_collision=False)
 
 background_color_menu = Entity(parent=layer_menu.parent, x=layer_menu.x, origin=layer_menu.origin, y=0, visible_self=False, scale=[layer_menu.scale_x*.95, .010], z=1, alpha=.4)
-for i, col in ['#000000', '#111111', '#606060', '#bfbfbf', '#ffffff']:
+for i, col in ['#000000', '#111111', '#606060', '#bfbfbf', '#ffffff', '#ffffff00']:
     let change_bg_color_button = *Button(parent=background_color_menu, x=-.5+(i/5), color=col, origin=[-.5,-.5], scale=[1/6,1], roundness=.25, on_click=def():canvas_entity.color=col)
 
 add_layer_button = *Button(text='+', scale=[layer_menu.scale_x/2,.1], roundness=.005, origin=[.5,-.5], x=layer_menu.x, y=layer_menu.y-.1, on_click=add_layer)
