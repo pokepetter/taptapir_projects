@@ -684,7 +684,7 @@ def draw_brush_image(brush_canvas, x, y):
 
 
 # region sample
-alt_button = *Button(scale=.1, text='eyedropper\n(hold)', x=window.right[0], y=.1, color=color.green, roundness=.5)
+eyedropper_button = *Button(scale=.1, text='eyedropper\n(hold)', x=window.right[0], y=.1, color=color.green, roundness=.5)
 
 SAMPLE_ON_START = False
 sample_on_start_toggle = *Button(position=[window.right[0],-.1], scale=[.09,.05], text=`Sample\non start:\n${SAMPLE_ON_START}`, text_size=2)
@@ -972,6 +972,10 @@ def input(key):
     # if held_keys['control'] and key == 'y':
     if key == 'y':
         redo()
+
+    if key == ',':
+        current_tool.input('left mouse up')
+        current_tool.input('left mouse down')
 
     # if key == 'a':
     #     for y in range(H/2):
@@ -1396,6 +1400,8 @@ def record_undo():
         # print('delete old undo data')
 
     undo_data.push(current_layer.canvas.toDataURL())
+    if len(undo_data) > 1000:
+        undo_data.pop(0)
     # undo_data.push(['paint_stroke', [current_layer, current_layer.canvas.toDataURL()]])
     print('record undo')
     undo_index += 1
@@ -2209,16 +2215,36 @@ def goto_frame(to_frame, save_previous_frame=True):
 grid = Entity(parent=canvas_entity, visible_self=False, z=-1)
 grid.auto_select_subsection = False
 grid.visuals = Entity(parent=grid, visible_self=False, enabled=False)
-for x in range(4):
-    for y in range(4):
-        let grid_section = Entity(parent=grid.visuals, scale=1/4, roundness=0, origin=[-.5,-.5], position=[-.5+(x/4),-.5+(y/4)], color=color.clear)
-        grid_section.model.style.borderStyle = 'solid'
-        grid_section.model.style.borderWidth = '1px'
-        grid_section.model.style.borderColor = '#b8b8b822'
-grid.active_section_indicator = Entity(parent=grid.visuals, origin=[-.5,-.5], scale=1/4, color=color.clear, z=-1)
+def make_grid(w, h):
+    grid.w = w
+    grid.h = h
+    destroy(grid.visuals)
+    grid.visuals = Entity(parent=grid, visible_self=False, enabled=False)
+    for x in range(grid.w):
+        for y in range(grid.h):
+            let grid_section = Entity(parent=grid.visuals, scale=[1/grid.w,1/grid.h], roundness=0, origin=[-.5,-.5], position=[-.5+(x/grid.w),-.5+(y/grid.h)], color=color.clear)
+            grid_section.model.style.borderStyle = 'solid'
+            grid_section.model.style.borderWidth = '1px'
+            grid_section.model.style.borderColor = '#b8b8b822'
+    grid.active_section_indicator = Entity(parent=grid.visuals, origin=[-.5,-.5], scale=[1/grid.w,1/grid.h], color=color.clear, z=-1)
+
+    # index = grid_sizes.index([w,h])
+    # grid_size_buttons[index].color = color.green
+
+
 # grid.active_section_indicator.model.style.borderStyle = 'solid'
 # grid.active_section_indicator.model.style.borderWidth = '4px'
 # grid.active_section_indicator.model.style.borderColor = '#b8b8b82'
+Text('woijefwoiefjoij')
+grid_size_buttons = []
+grid_sizes = [0,4,8,16,32,64]
+for i, e in enumerate(grid_sizes):
+    print(i, e)
+    let grid_button = *Button(scale=[.09/5*.9,.05*.9], roundness=0, text=`${e}`, position=[right_menu_bg.x-.1+((.09/5)*i),.25], origin=[0,.5], on_click=def():print('a');make_grid(e,e))
+    grid_size_buttons.append(grid_button)
+    # grid_button.on_click = def _(size=e):
+        # make_grid(size, size)
+
 
 grid.input = def grid_input(key):
     if key == 'g':
@@ -2242,12 +2268,12 @@ grid.input = def grid_input(key):
 
 grid.select_subsection = def():
     cursor_pos = get_canvas_position()
-    coord = [floor(cursor_pos[0]/W*4), floor((cursor_pos[1])/H*4)+1]
+    coord = [floor(cursor_pos[0]/W*grid.w), floor((cursor_pos[1])/H*grid.h)+1]
     print(cursor_pos, coord)
-    grid.active_section_indicator.position = [-.5+(coord[0]/4),.5-(coord[1]/4)]
-    section_size = [W/4, H/4]
-    start_x = floor(cursor_pos[0]/(W/4))*section_size[0]
-    start_y = floor(cursor_pos[1]/(H/4))*section_size[1]
+    grid.active_section_indicator.position = [-.5+(coord[0]/grid.w),.5-(coord[1]/grid.h)]
+    section_size = [W/grid.w, H/grid.h]
+    start_x = floor(cursor_pos[0]/(W/grid.w))*section_size[0]
+    start_y = floor(cursor_pos[1]/(H/grid.h))*section_size[1]
     print('coord:', start_x, start_y)
 
     selection.matrix = Array2D(W,H)
