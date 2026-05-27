@@ -502,10 +502,10 @@ brush_tool.input = def brush_tool_input(key):
 
     if drawing and key == 'left mouse up':
         drawing = False
-        start_color = sample_color(start_position)
-        end_color = sample_color([x,y])
         line_preview.enabled = False
         if current_brush.brush_type == 'line':
+            start_color = sample_color(start_position)
+            end_color = sample_color([x,y])
             # # draw_line(start_position, [x,y], 10)
             dist = distanceApprox(start_position, [x,y])
             # spacing_in_pixels = brush_size[1]*SPACING
@@ -598,6 +598,7 @@ def draw_circle(x, y):
         _colr =hsv(_color_as_hsv[0] + random.randint(-COLOR_JITTER, COLOR_JITTER), _color_as_hsv[1], _color_as_hsv[2])
 
     current_layer.ctx.fillStyle = `rgba(${_colr[0]}, ${_colr[1]}, ${_colr[2]}, ${current_color[3]})`
+    print('ERASING:', ERASING)
     if ERASING:
         current_layer.ctx.globalAlpha = 0
         # current_layer.ctx.fillStyle = `rgba(256, 256, 256, 64)`
@@ -788,9 +789,11 @@ def paint():
         return
 
     if mouse.hovered_entity != bg:
+        print('tryingtodraw on something else than bg')
         return
 
     if held_keys['space']:
+        print('pan')
         return
 
     [x, y] = get_canvas_position()
@@ -826,6 +829,7 @@ def paint():
 
         return
 
+    print('current_color:', current_color)
     if snap_to_hex:
         y = start_position[1] + (x-start_position[0])
 
@@ -849,8 +853,8 @@ def paint():
     if current_brush.rotate == True:
         radians = -math.atan2(delta_pos[0], delta_pos[1])
 
-    if steps > 0 and held_keys['n']:
-        update_brush_tip(sample_color([x,y]))
+    # if steps > 0 and held_keys['n']:
+    #     update_brush_tip(sample_color([x,y]))
 
     if current_brush.brush_type == 'lasso':
         _line_spacing = current_brush.line_spacing
